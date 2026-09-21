@@ -16,7 +16,9 @@ function load(){
     SpreadsheetApp:{getActiveSpreadsheet:()=>({getSheetByName:n=>sheets[n]||null,insertSheet:n=>(sheets[n]=makeSheet(n))})},
     LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},
     ContentService:{MimeType:{JSON:'json'},createTextOutput:t=>({t,setMimeType(){return this;},getContent(){return t;}})},
-    Utilities:{formatDate:(d,tz,f)=>new Date(d).toISOString().replace('T',' ').slice(0,19)},
+    Utilities:{formatDate:(d,tz,f)=>new Date(d).toISOString().replace('T',' ').slice(0,19),
+      DigestAlgorithm:{SHA_256:'sha256'},
+      computeDigest:(alg,s)=>Array.from(require('crypto').createHash('sha256').update(s).digest()).map(b=>b>127?b-256:b)},
     JSON,Date,Math,Number,String,Object,isFinite};
   vm.createContext(ctx);vm.runInContext(fs.readFileSync(__dirname+'/../backend/Code.gs','utf8'),ctx);
   return {ctx,sheets};

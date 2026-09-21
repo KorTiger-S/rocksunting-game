@@ -1,7 +1,7 @@
 const {load}=require('./mock_gas');
 const {ctx,sheets}=load();
-const get=p=>JSON.parse(ctx.doGet({parameter:p}).getContent());
-const post=p=>JSON.parse(ctx.doPost({postData:{contents:JSON.stringify(p)}}).getContent());
+const get=p=>JSON.parse(ctx.doGet({parameter:Object.assign({pin:'1234'},p)}).getContent());
+const post=p=>JSON.parse(ctx.doPost({postData:{contents:JSON.stringify(Object.assign({pin:'1234'},p))}}).getContent());
 let fails=0;const ok=(c,m)=>{if(!c){fails++;console.log('FAIL',m);}else console.log('ok  ',m);};
 ok(get({action:'ping'}).ok,'ping');
 ok(get({action:'load',id:'a'}).error==='bad_id','짧은 ID 거부');
@@ -32,6 +32,17 @@ ok(t.list[0].id==='철수'&&t.list.length===3,'소지금 랭킹 1위');
 t=get({action:'top',metric:'wins'});ok(t.list[0].id==='짱구','승리 랭킹 1위');
 t=get({action:'top',metric:'bestPts'});ok(t.list[0].id==='짱구','최고점 랭킹 1위');
 ok(get({action:'zzz'}).error==='unknown_action','알 수 없는 action');
+ok(get({action:'load',id:'히포우',pin:'9999'}).error==='bad_pin','틀린 비밀번호로 불러오기 거부');
+ok(get({action:'load',id:'히포우',pin:'12'}).error==='bad_pin','4자리 아닌 비밀번호 거부');
+ok(get({action:'load',id:'히포우',pin:'abcd'}).error==='bad_pin','숫자 아닌 비밀번호 거부');
+ok(post({action:'save',id:'히포우',pin:'9999',updatedAt:9000,data:{money:1}}).error==='bad_pin','틀린 비밀번호로 저장 거부');
+ok(get({action:'load',id:'히포우'}).data.money===1000,'거부된 저장은 데이터를 바꾸지 않음');
+ok(post({action:'score',id:'히포우',pin:'9999',bet:1,goals:1,pts:1,result:'승'}).error==='bad_pin','틀린 비밀번호로 점수 기록 거부');
+ok(sheets.Users.rows[1][12]&&sheets.Users.rows[1][12]!=='1234'&&sheets.Users.rows[1][12].length===64,'비밀번호는 해시로만 저장');
+sheets.Users.rows.push(['옛날이','옛날이',100,0,0,0,1,'',1,'','', JSON.stringify({money:100})]);   // pin 열이 없는 예전 계정
+ok(get({action:'load',id:'옛날이',pin:'5555'}).exists,'예전 계정은 처음 로그인 허용');
+post({action:'save',id:'옛날이',pin:'5555',updatedAt:5,data:{money:200}});
+ok(get({action:'load',id:'옛날이',pin:'1111'}).error==='bad_pin'&&get({action:'load',id:'옛날이',pin:'5555'}).exists,'예전 계정도 저장 시 비밀번호가 등록됨');
 console.log('\nUsers 시트 헤더:',sheets.Users.rows[0].join(' | '));
 console.log(fails?('실패 '+fails+'건'):'전부 통과');
 process.exit(fails?1:0);
