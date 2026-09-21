@@ -87,20 +87,24 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   ok(s.ok && s.season.key === SEASON && s.season.number === 1 && s.season.game === 'football', '시즌1(2026-09, 축구)이 기본 시즌');
   ok(s.season.endsAt === '2026-09-30T15:00:00Z', '기본 마감은 2026-10-01 00:00 KST');
   r = await load('히포우');
-  ok(r.season === SEASON && r.current.key === SEASON && r.admin === false, '불러오기 응답에 시즌 정보 + 운영자 여부');
+  ok(r.season === SEASON && r.current.key === SEASON && !('admin' in r), '불러오기 응답에 시즌 정보가 있고 운영자 정보는 없음');
   ok((await load('새사람')).current.key === SEASON, '없는 ID도 현재 시즌 정보를 받음');
 
-  const setEnd = (id, pin, date) => rpc('season_set', { id, pin, date });
-  ok((await setEnd('히포우', P, kst(3))).error === 'not_admin', '운영자가 아니면 마감일 변경 거부');
-  await db.exec(`update public.rk_users set is_admin = true where id = '히포우'`);
-  ok((await load('히포우')).admin === true, '운영자 계정은 admin=true');
-  ok((await setEnd('히포우', '9999', kst(3))).error === 'bad_pin', '운영자라도 비밀번호가 틀리면 거부');
-  ok((await setEnd('히포우', P, '2000-01-01')).error === 'past_date', '지난 날짜로는 변경 불가');
-  ok((await setEnd('히포우', P, '2026-13-45')).error === 'bad_date' && (await setEnd('히포우', P, 'abc')).error === 'bad_date', '잘못된 날짜 거부');
-  r = await setEnd('히포우', P, kst(3));
+  // 마감일 변경은 대시보드(SQL Editor = 관리자 권한)에서만 가능. anon(게임)은 호출할 수 없다.
+  const setEnd = async (d) => (await db.query('select public.rk_set_season_end($1::date) as r', [d])).rows[0].r;
+  let denied0 = false;
+  await db.exec('set role anon'); try { await db.query(`select public.rk_set_season_end('${kst(3)}')`); } catch (e) { denied0 = true; } await db.exec('reset role');
+  ok(denied0, 'anon(게임)은 마감일을 바꿀 수 없음');
+  denied0 = false; try { await rpc('season_set', { id: '히포우', pin: P, date: kst(3) }); } catch (e) { denied0 = true; }
+  ok(denied0, '게임에서 부르던 운영자용 함수(rk_season_set)는 없어짐');
+  let pastErr = ''; try { await setEnd('2000-01-01'); } catch (e) { pastErr = String(e.message); }
+  ok(pastErr.includes('이전 날짜'), '지난 날짜로는 변경 불가');
+  r = await setEnd(kst(3));
   const want = new Date(Date.parse(kst(3) + 'T00:00:00Z') + 864e5 - 9 * 3600e3).toISOString().slice(0, 19) + 'Z';
-  ok(r.ok && r.season.endsAt === want, '운영자가 마감일을 바꾸면 그 날 다음 0시(KST)에 마감');
+  ok(r.endsAt === want, '대시보드에서 마감일을 바꾸면 그 날 다음 0시(KST)에 마감');
   ok((await rpc('season_get')).season.endsAt === want, '바뀐 마감일이 모두에게 보임');
+  const users = await db.query(`select column_name from information_schema.columns where table_name = 'rk_users' and column_name = 'is_admin'`);
+  ok(users.rows.length === 0, 'rk_users에 운영자 표시 열이 없음');
 
   r = await db.query('select public.rk_close_season($1::jsonb) as r', ['{}']);
   ok(r.rows[0].r.closed === false, '마감일 전에는 마감하지 않음');

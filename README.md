@@ -80,19 +80,25 @@ node dev/build.js "https://프로젝트ID.supabase.co" "anon-public-key"
 - 마감 뒤 예전 화면에서 늦게 저장하거나 이 기기에 지난 시즌 기록이 남아 있어도, 서버가 시즌이 다르면 저장을 거부하고 초기화된 기록을 내려줘서 되살아나지 않아요.
 
 ### 처음 한 번 설정 (운영자)
+게임 안에는 운영자 기능이 없어요. 시즌 관리는 **Supabase 대시보드**와 **GitHub**에서만 해요. (이 두 계정을 2단계 인증으로 보호하세요.)
 1. Supabase SQL Editor에서 `backend/schema.sql`을 다시 Run (시즌 테이블 추가, 여러 번 실행해도 안전)
-2. 내 계정을 **운영자**로 지정 (게임에서 한 번 가입한 뒤, ID는 소문자로):
-   ```sql
-   update public.rk_users set is_admin = true where id = '내아이디';
-   ```
-   이 계정으로 로그인하면 왼쪽 패널에 **⚙ 시즌 관리**가 보이고, 시즌 **마감일**을 바꿀 수 있어요. (서버가 운영자 여부를 다시 확인해요)
-3. GitHub에 자동 마감용 비밀 키 등록: Supabase → Project Settings → API Keys의 **Secret key**(`sb_secret_...`)를 복사해서
+2. GitHub에 자동 마감용 비밀 키 등록: Supabase → Project Settings → API Keys의 **Secret key**(`sb_secret_...`)를 복사해서
    ```
    gh secret set SUPABASE_SERVICE_KEY
    ```
    (프롬프트에 붙여넣기. 이 키는 저장소나 채팅에 절대 올리지 마세요.)
-4. 저장소 Actions 탭 → **Season close** → Run workflow 로 한 번 시험해 보세요. 마감일 전이면 "아직 시즌이 끝나지 않았어요"만 나오고 아무 것도 바뀌지 않아요.
-5. 이미 마감된 시즌의 보고서를 다시 만들려면 Run workflow의 `report_key`에 시즌 키(예: `2026-09`)를 넣어요.
+3. 저장소 Actions 탭 → **Season close** → Run workflow 로 한 번 시험해 보세요. 마감일 전이면 "아직 시즌이 끝나지 않았어요"만 나오고 아무 것도 바뀌지 않아요.
+
+### 시즌 마감일 바꾸기
+Supabase SQL Editor에서 실행해요. (게임에서는 호출할 수 없어요.)
+```sql
+select public.rk_set_season_end('2026-09-30');   -- 이 날 밤 12시(한국 시간)까지 진행, 다음 날 0시에 마감
+select public.rk_season_json();                  -- 지금 시즌 정보 확인
+```
+오늘보다 이전 날짜는 거부돼요. 바꾼 마감일은 게임 헤더의 `D-N`에도 바로 반영돼요.
+
+### 보고서 다시 만들기
+이미 마감된 시즌의 보고서는 Actions → Season close → Run workflow의 `report_key`에 시즌 키(예: `2026-09`)를 넣어요.
 ## 백엔드 로컬 테스트 (계정 없이)
 ```
 npm install
