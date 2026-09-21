@@ -182,6 +182,126 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     srv.close(); fs.rmSync(outDir, { recursive: true, force: true });
   }
 
+  // ----- 1:1 페널티킥 대결 (피파 온라인 방식: 슈터는 조준+파워, 골키퍼는 다이브 칸) -----
+  {
+    const A = { id: '방장', pin: P }, B = { id: '손님', pin: P }, Cc = { id: '제삼자', pin: P };
+    for (const u of [A, B, Cc]) await save(u.id, 1, { money: 1000 });
+    const st = async (u, code) => rpc('duel_state', { ...u, code });
+    const shoot = (u, code, round, ax, ay, pw) => rpc('duel_pick', { ...u, code, round, ax, ay, pw });
+    const dive = (u, code, round, pick) => rpc('duel_pick', { ...u, code, round, pick });
+    const row = async code => (await db.query('select * from public.rk_duels where code = $1', [code])).rows[0];
+    // 결과가 확실한 슛: 골 = 왼쪽 아래로 차는데 골키퍼는 위쪽 오른쪽(칸 2) / 막힘 = 왼쪽 아래 정중앙으로 차는데 골키퍼도 왼쪽 아래(칸 3)
+    const GOAL = [-0.6, 0.25, 0.8], SAVE = [-0.667, 0.25, 0.8], GOAL_DIVE = 2, SAVE_DIVE = 3;
+    const play = async (code, round, goal) => {       // 한 킥을 끝까지 진행하고 마지막 응답을 돌려준다
+      const sh = round % 2 === 0 ? A : B, kp = round % 2 === 0 ? B : A;
+      await shoot(sh, code, round, ...(goal ? GOAL : SAVE));
+      return dive(kp, code, round, goal ? GOAL_DIVE : SAVE_DIVE);
+    };
+
+    ok((await rpc('duel_create', { ...A, pin: '9999' })).error === 'bad_pin', '대결: 틀린 비밀번호로 방 만들기 거부');
+    ok((await rpc('duel_create', { id: '없는사람', pin: P })).error === 'no_user', '대결: 없는 ID는 방을 만들 수 없음');
+    let r = await rpc('duel_create', A);
+    const code = r.code;
+    ok(r.ok && /^[A-Z2-9]{4}$/.test(code) && r.status === 'waiting' && r.me === 'host', '대결: 방 만들기 → 4자리 코드, 대기 중');
+    ok((await rpc('duel_create', A)).code === code, '대결: 방이 있으면 새로 만들지 않고 같은 방으로 돌아감');
+    ok((await rpc('duel_join', { ...B, code: 'ZZZZ' })).error === 'no_room', '대결: 없는 코드는 참가 불가');
+    ok((await st(Cc, code)).error === 'not_member', '대결: 참가자가 아니면 상태를 볼 수 없음');
+    r = await rpc('duel_join', { ...B, code: code.toLowerCase() });
+    ok(r.ok && r.status === 'playing' && r.me === 'guest' && r.host === '방장' && r.guest === '손님', '대결: 코드로 참가(소문자도 허용) → 시작');
+    ok((await rpc('duel_join', { ...Cc, code })).error === 'full', '대결: 이미 시작한 방은 제3자가 못 들어감');
+    ok((await rpc('duel_create', Cc)).ok && (await rpc('duel_join', { ...Cc, code })).error === 'busy', '대결: 다른 방에 참여 중이면 참가 불가(busy)');
+    await rpc('duel_leave', { ...Cc, code: (await rpc('duel_create', Cc)).code });
+
+    // 라운드 0: 방장이 슈터, 손님이 골키퍼
+    r = await st(A, code);
+    ok(r.role === 'kick' && !r.mine && !r.theirs, '대결: 방장이 먼저 슈터');
+    ok((await st(B, code)).role === 'keep', '대결: 손님은 골키퍼');
+    ok((await shoot(A, code, 0, 'abc', 0.5, 0.8)).error === 'bad_pick', '대결: 숫자가 아닌 조준값은 거부');
+    ok((await rpc('duel_pick', { ...A, code, round: 0, pick: 3 })).error === 'bad_pick', '대결: 슈터가 칸(pick)만 보내면 거부');
+    ok((await rpc('duel_pick', { ...B, code, round: 0, ax: 0, ay: 0.5, pw: 0.8 })).error === 'bad_pick', '대결: 골키퍼가 조준값만 보내면 거부');
+    ok((await dive(B, code, 0, 7)).error === 'bad_pick', '대결: 0~5 밖의 다이브 칸은 거부');
+    r = await shoot(A, code, 0, ...GOAL);
+    ok(r.mine && !r.theirs && r.round === 0, '대결: 내 선택만 기록되고 판정은 대기');
+    r = await st(B, code);
+    ok(r.theirs === true && !JSON.stringify(r).includes('"ax"') && !JSON.stringify(r).includes('k_ax'), '대결: 상대가 골랐는지만 보이고 조준 위치는 안 보임');
+    await shoot(A, code, 0, 0.9, 0.9, 0.2);
+    let d0 = await row(code);
+    ok(d0.k_ax === GOAL[0] && d0.k_pw === GOAL[2], '대결: 이미 제출한 슛은 바꿀 수 없음');
+    r = await dive(B, code, 0, GOAL_DIVE);
+    ok(r.round === 1 && r.hg === 1 && r.hist[0].r === 'goal' && r.hist[0].gp === 2 && r.hist[0].ax === -0.6 && typeof r.hist[0].fx === 'number', '대결: 둘 다 고르면 서버가 판정(골) + 조준/최종 위치 공개');
+    ok(r.role === 'kick', '대결: 다음 킥은 손님이 슈터(손님 입장에서 kick)');
+    ok((await dive(A, code, 0, 1)).round === 1, '대결: 지난 킥에 대한 늦은 선택은 무시');
+    r = await play(code, 1, false);
+    ok(r.round === 2 && r.gg === 0 && r.hist[1].r === 'saved', '대결: 골키퍼가 방향을 맞히면 막힘');
+    r = await play(code, 2, true);   // 방장 2골째
+    await shoot(B, code, 3, 1.3, 0.5, 0.8); r = await dive(A, code, 3, 4);
+    ok(r.hist[3].r === 'miss' && r.gg === 0, '대결: 골대 밖으로 차면 빗나감');
+
+    // 판정 규칙(직접): 파워 게이지에 따른 흔들림, 프레임(post), 파워가 약하면 골키퍼 반경이 커짐
+    const shots = async (ax, ay, pw, gp, n) => {
+      const o = { goal: 0, saved: 0, miss: 0, post: 0 };
+      for (let i = 0; i < n; i++) o[(await db.query('select public.rk_duel_shot($1, $2, $3, $4)->>\'r\' as r', [ax, ay, pw, gp])).rows[0].r]++;
+      return o;
+    };
+    let o = await shots(0.4, 0.5, 0.8, 3, 200);
+    ok(o.miss + o.post === 0 && o.goal === 200, '대결: 초록 구간(파워 0.8)이면 조준한 곳으로 정확히 감(골키퍼가 먼 칸이면 골)');
+    o = await shots(0, 0.5, 0.2, 5, 300);
+    ok(o.miss + o.post > 0, '대결: 파워가 초록 구간에서 멀면 공이 흔들려 골대 밖/프레임으로 갈 수 있음');
+    o = await shots(1.03, 0.5, 0.8, 3, 200);
+    ok(o.post > 140 && o.miss < 30, '대결: 골포스트 바깥선을 노리면 대부분 프레임을 맞힘(post)');
+    o = await shots(0, 1.03, 0.8, 3, 200);
+    ok(o.post > 140, '대결: 크로스바를 노리면 대부분 프레임을 맞힘(post)');
+    o = await shots(-0.9, 0.9, 0.8, 0, 200);
+    ok(o.saved > 190, '대결: 골키퍼가 그 구석 칸으로 다이브하면 막힘');
+    o = await shots(-0.9, 0.9, 0.8, 5, 200);
+    ok(o.goal === 200, '대결: 골키퍼가 반대편으로 다이브하면 골');
+    o = await shots(0, 0.5, 0.8, 1, 100);
+    ok(o.saved === 100, '대결: 가운데 높이의 슛은 가운데 위쪽 다이브로 막힘');
+    const oWeak = await shots(0.55, 0.5, 0.35, 1, 200), oStrong = await shots(0.55, 0.5, 0.85, 1, 200);
+    ok(oWeak.saved > oStrong.saved, '대결: 약한 슛은 골키퍼가 더 넓게 막음 (약한 슛 ' + oWeak.saved + ' > 강한 슛 ' + oStrong.saved + ')');
+
+    // 시간 초과: 25초 지나면 안 고른 쪽은 무작위 선택 → 판정
+    const before = (await st(A, code)).round;
+    await db.query(`update public.rk_duels set round_at = now() - interval '30 seconds' where code = $1`, [code]);
+    r = await st(A, code);
+    ok(r.round === before + 1 && r.hist.length === before + 1, '대결: 25초가 지나면 무작위로 선택되어 다음 킥으로 넘어감');
+
+    // 자리 비움: 90초 넘게 안 보이면 몰수패(남아 있는 쪽 승리)
+    await db.query(`update public.rk_duels set guest_seen = now() - interval '100 seconds' where code = $1`, [code]);
+    r = await st(A, code);
+    ok(r.status === 'done' && r.winner === 'host' && r.reason === 'left', '대결: 상대가 자리를 비우면 몰수승');
+    ok((await dive(A, code, r.round, 1)).status === 'done', '대결: 끝난 방에는 더 이상 선택할 수 없음');
+    ok((await rpc('duel_create', A)).code !== code, '대결: 끝난 뒤에는 새 방을 만들 수 있음');
+    await rpc('duel_leave', { ...A, code: (await rpc('duel_create', A)).code });
+
+    // 방장 전부 골, 손님 전부 막힘 → 남은 킥으로 따라잡을 수 없으면 조기 종료
+    r = await rpc('duel_create', A); const c2 = r.code; await rpc('duel_join', { ...B, code: c2 });
+    for (let i = 0; i < 10; i++) { r = await st(A, c2); if (r.status === 'done') break; r = await play(c2, i, i % 2 === 0); }
+    ok(r.status === 'done' && r.winner === 'host' && r.hg === 3 && r.gg === 0 && r.reason === 'score', '대결: 남은 킥으로 따라잡을 수 없으면 조기 종료(3:0)');
+
+    // 동점 → 서든데스
+    r = await rpc('duel_create', A); const c3 = r.code; await rpc('duel_join', { ...B, code: c3 });
+    for (let i = 0; i < 10; i++) r = await play(c3, i, true);       // 전부 골 → 5:5
+    ok(r.status === 'playing' && r.round === 10 && r.hg === 5 && r.gg === 5, '대결: 5:5 동점이면 서든데스로 계속');
+    r = await play(c3, 10, true);
+    ok(r.status === 'playing' && r.hg === 6, '대결: 서든데스에서 방장이 넣어도 손님 차례가 남아 있으면 계속');
+    r = await play(c3, 11, false);
+    ok(r.status === 'done' && r.winner === 'host' && r.hg === 6 && r.gg === 5, '대결: 서든데스 한 쌍이 끝났을 때 앞서면 승리');
+
+    // 나가기
+    r = await rpc('duel_create', A); const c4 = r.code;
+    ok((await rpc('duel_leave', { ...A, code: c4 })).ok && !(await row(c4)), '대결: 대기 중에 나가면 방이 사라짐');
+    r = await rpc('duel_create', A); const c5 = r.code; await rpc('duel_join', { ...B, code: c5 });
+    await rpc('duel_leave', { ...B, code: c5 });
+    r = await st(A, c5);
+    ok(r.status === 'done' && r.winner === 'host' && r.reason === 'left', '대결: 진행 중에 나가면 상대 승리');
+    // 대기방 만료
+    r = await rpc('duel_create', B); const c6 = r.code;
+    await db.query(`update public.rk_duels set created_at = now() - interval '20 minutes' where code = $1`, [c6]);
+    r = await st(B, c6);
+    ok(r.status === 'done' && r.reason === 'expired', '대결: 15분 넘게 기다린 방은 만료');
+  }
+
   // ----- 권한: anon은 테이블에 직접 접근 불가, rk_ 함수만 실행 가능 -----
   await db.exec('set role anon');
   let denied = false; try { await db.query('select * from public.rk_users'); } catch (e) { denied = true; }
