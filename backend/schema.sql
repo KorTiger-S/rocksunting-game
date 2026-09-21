@@ -50,6 +50,38 @@ create table if not exists public.rk_attempts (
   locked_until timestamptz
 );
 
+-- ---------- 시즌 ----------
+-- rk_config 'season' : 지금 진행 중인 시즌. 이 값은 스키마를 다시 실행해도 덮어쓰지 않는다.
+create table if not exists public.rk_config (
+  key   text primary key,
+  value jsonb not null
+);
+-- 마감된 시즌의 랭킹 스냅샷(운영자 보고서의 원본)
+create table if not exists public.rk_seasons (
+  season_key   text primary key,
+  number       int  not null,
+  game         text not null,
+  game_name    text not null,
+  started_at   timestamptz,
+  ended_at     timestamptz not null,
+  closed_at    timestamptz not null default now(),
+  player_count int  not null default 0,
+  match_count  int  not null default 0,
+  snapshot     jsonb not null
+);
+
+alter table public.rk_users   add column if not exists season_key text;                       -- 이 기록이 속한 시즌
+alter table public.rk_users   add column if not exists is_admin boolean not null default false;  -- 운영자 계정
+alter table public.rk_matches add column if not exists season_key text;
+
+insert into public.rk_config (key, value) values ('season', jsonb_build_object(
+  'key', '2026-09', 'number', 1, 'game', 'football', 'game_name', '프리킥 축구',
+  'started_at', '2026-08-31T15:00:00Z',     -- 2026-09-01 00:00 KST
+  'ends_at',    '2026-09-30T15:00:00Z'))    -- 2026-10-01 00:00 KST (= 9월 30일까지 진행)
+on conflict (key) do nothing;
+update public.rk_users   set season_key = (select value->>'key' from public.rk_config where key = 'season') where season_key is null;
+update public.rk_matches set season_key = (select value->>'key' from public.rk_config where key = 'season') where season_key is null;
+
 create index if not exists rk_users_money_idx   on public.rk_users (money desc);
 create index if not exists rk_users_wins_idx    on public.rk_users (wins desc);
 create index if not exists rk_users_bestpts_idx on public.rk_users (best_pts desc);
@@ -57,8 +89,10 @@ create index if not exists rk_users_bestpts_idx on public.rk_users (best_pts des
 alter table public.rk_users    enable row level security;
 alter table public.rk_matches  enable row level security;
 alter table public.rk_attempts enable row level security;
+alter table public.rk_config   enable row level security;
+alter table public.rk_seasons  enable row level security;
 -- 정책(policy)을 만들지 않으므로 anon/authenticated 는 테이블에 직접 접근할 수 없다.
-revoke all on public.rk_users, public.rk_matches, public.rk_attempts from anon, authenticated;
+revoke all on public.rk_users, public.rk_matches, public.rk_attempts, public.rk_config, public.rk_seasons from anon, authenticated;
 
 -- ---------- 내부 도우미 ----------
 create or replace function public.rk_norm_id(t text) returns text
@@ -122,6 +156,22 @@ begin
   return 'bad_pin';
 end $$;
 
+-- 지금 진행 중인 시즌 정보
+create or replace function public.rk_season_json() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('key', value->>'key', 'number', (value->>'number')::int, 'game', value->>'game',
+                            'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at')
+  from public.rk_config where key = 'season'
+$$;
+
+-- 시즌 마감 때 되돌아가는 초기 저장 데이터 (클라이언트의 DEF()와 같은 값)
+create or replace function public.rk_default_data() returns jsonb
+language sql immutable as $$
+  select jsonb_build_object('fatigue', 0, 'hosp', 0, 'bestPts', 0, 'plays', 0, 'money', 10000, 'day', 0, 'week', 1,
+                            'wins', 0, 'losses', 0, 'cleared', false,
+                            'up', jsonb_build_object('shoes', 0, 'snack', 0, 'sneak', 0))
+$$;
+
 -- ---------- 게임이 호출하는 함수 (매개변수는 jsonb 하나: {"p": {...}}) ----------
 create or replace function public.rk_ping(p jsonb default '{}') returns jsonb
 language sql immutable as $$ select jsonb_build_object('ok', true, 'version', '2.0') $$;
@@ -133,10 +183,11 @@ begin
   if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
   if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
   a := public.rk_auth(k, p->>'pin');
-  if a = 'none' then return jsonb_build_object('ok', true, 'exists', false); end if;
+  if a = 'none' then return jsonb_build_object('ok', true, 'exists', false, 'current', public.rk_season_json()); end if;
   if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
   select * into u from public.rk_users where id = k;
-  return jsonb_build_object('ok', true, 'exists', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data);
+  return jsonb_build_object('ok', true, 'exists', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data,
+                            'season', u.season_key, 'current', public.rk_season_json(), 'admin', u.is_admin);
 end $$;
 
 create or replace function public.rk_save(p jsonb) returns jsonb
@@ -144,6 +195,7 @@ language plpgsql security definer set search_path = public, extensions as $$
 declare
   nm text := public.rk_norm_id(p->>'id'); k text := lower(nm); a text;
   d jsonb := public.rk_clean(p->'data'); u public.rk_users%rowtype; n int;
+  cur text := public.rk_season_json()->>'key';
   at bigint := coalesce(case when p->>'updatedAt' ~ '^[0-9]{1,15}$' then (p->>'updatedAt')::bigint end,
                         (extract(epoch from now()) * 1000)::bigint);
 begin
@@ -153,25 +205,26 @@ begin
   if a in ('bad_pin', 'locked') then return jsonb_build_object('ok', false, 'error', a); end if;
 
   if a = 'none' then                                   -- 새 ID: 이때 받은 비밀번호로 등록
-    insert into public.rk_users (id, name, pin_hash, money, wins, losses, best_pts, week, cleared, data, updated_at_ms)
+    insert into public.rk_users (id, name, pin_hash, money, wins, losses, best_pts, week, cleared, data, updated_at_ms, season_key)
     values (k, nm, crypt(p->>'pin', gen_salt('bf')), (d->>'money')::int, (d->>'wins')::int, (d->>'losses')::int,
-            (d->>'bestPts')::int, (d->>'week')::int, (d->>'cleared')::boolean, d, at)
+            (d->>'bestPts')::int, (d->>'week')::int, (d->>'cleared')::boolean, d, at, cur)
     on conflict (id) do nothing;
     get diagnostics n = row_count;
     if n = 0 then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;   -- 동시에 같은 ID가 만들어진 경우
-    return jsonb_build_object('ok', true, 'created', true, 'updatedAt', at);
+    return jsonb_build_object('ok', true, 'created', true, 'updatedAt', at, 'season', cur);
   end if;
 
   select * into u from public.rk_users where id = k for update;
-  if u.updated_at_ms > at then                         -- 다른 기기에서 더 최근에 저장됨
-    return jsonb_build_object('ok', true, 'conflict', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data);
+  -- 다른 기기에서 더 최근에 저장됐거나, 시즌이 바뀐 뒤 예전 시즌 기록을 보내온 경우 → 서버 기록을 돌려준다
+  if u.updated_at_ms > at or u.season_key is distinct from (p->>'season') then
+    return jsonb_build_object('ok', true, 'conflict', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data, 'season', u.season_key);
   end if;
   update public.rk_users set
     money = (d->>'money')::int, wins = (d->>'wins')::int, losses = (d->>'losses')::int,
     best_pts = (d->>'bestPts')::int, week = (d->>'week')::int, cleared = (d->>'cleared')::boolean,
     data = d, updated_at_ms = at, updated_at = now()
   where id = k;
-  return jsonb_build_object('ok', true, 'updatedAt', at);
+  return jsonb_build_object('ok', true, 'updatedAt', at, 'season', u.season_key);
 end $$;
 
 create or replace function public.rk_score(p jsonb) returns jsonb
@@ -183,8 +236,8 @@ begin
   a := public.rk_auth(k, p->>'pin');
   if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
   if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
-  insert into public.rk_matches (user_id, bet, goals, pts, result, money, week) values (
-    k, public.rk_int(p->'bet', 0, 100000, 0), public.rk_int(p->'goals', 0, 5, 0), public.rk_int(p->'pts', 0, 99999, 0),
+  insert into public.rk_matches (user_id, season_key, bet, goals, pts, result, money, week) values (
+    k, public.rk_season_json()->>'key', public.rk_int(p->'bet', 0, 100000, 0), public.rk_int(p->'goals', 0, 5, 0), public.rk_int(p->'pts', 0, 99999, 0),
     left(coalesce(p->>'result', ''), 10), public.rk_int(p->'money', 0, 100000000, 0), public.rk_int(p->'week', 1, 9999, 1));
   return jsonb_build_object('ok', true);
 end $$;
@@ -204,9 +257,97 @@ begin
   return res;
 end $$;
 
--- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미는 막아 둔다.
-revoke all on function public.rk_auth(text, text) from public, anon, authenticated;
+-- ---------- 시즌 ----------
+create or replace function public.rk_season_get(p jsonb default '{}') returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('ok', true, 'season', public.rk_season_json())
+$$;
+
+-- 운영자 전용: 시즌 마감일 변경. p = {id, pin, date:'YYYY-MM-DD'} — 그 날 자정(한국 시간)까지 진행하고 다음 날 0시에 마감된다.
+create or replace function public.rk_season_set(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text := lower(public.rk_norm_id(p->>'id')); a text; adm boolean; d date; ends timestamptz;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', case when a = 'none' then 'bad_pin' else a end); end if;
+  select is_admin into adm from public.rk_users where id = k;
+  if not adm then return jsonb_build_object('ok', false, 'error', 'not_admin'); end if;
+  if coalesce(p->>'date', '') !~ '^\d{4}-\d{2}-\d{2}$' then return jsonb_build_object('ok', false, 'error', 'bad_date'); end if;
+  begin d := (p->>'date')::date; exception when others then return jsonb_build_object('ok', false, 'error', 'bad_date'); end;
+  if d < (now() at time zone 'Asia/Seoul')::date then return jsonb_build_object('ok', false, 'error', 'past_date'); end if;
+  ends := ((d + 1)::timestamp at time zone 'Asia/Seoul');
+  update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')))
+  where key = 'season';
+  return jsonb_build_object('ok', true, 'season', public.rk_season_json());
+end $$;
+
+-- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
+-- 마감 시: 랭킹 스냅샷을 rk_seasons에 저장 → 모든 플레이어 기록 초기화 → 다음 시즌 시작.
+create or replace function public.rk_close_season(p jsonb default '{}') returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  cfg jsonb; ends timestamptz; players jsonb; mc int; nxt_key text; nxt_ends timestamptz; i int := 1; nowms bigint;
+begin
+  select value into cfg from public.rk_config where key = 'season' for update;
+  ends := (cfg->>'ends_at')::timestamptz;
+  if now() < ends then return jsonb_build_object('ok', true, 'closed', false, 'endsAt', cfg->>'ends_at'); end if;
+
+  select coalesce(jsonb_agg(jsonb_build_object('id', name, 'money', money, 'wins', wins, 'losses', losses,
+           'bestPts', best_pts, 'week', week, 'cleared', cleared, 'plays', coalesce((data->>'plays')::int, 0))
+           order by money desc, wins desc, updated_at_ms asc), '[]'::jsonb)
+    into players from public.rk_users where season_key = cfg->>'key';
+  select count(*) into mc from public.rk_matches where season_key = cfg->>'key';
+
+  insert into public.rk_seasons (season_key, number, game, game_name, started_at, ended_at, player_count, match_count, snapshot)
+  values (cfg->>'key', (cfg->>'number')::int, cfg->>'game', cfg->>'game_name', (cfg->>'started_at')::timestamptz, ends,
+          jsonb_array_length(players), mc,
+          jsonb_build_object('players', players, 'matchCount', mc));
+
+  -- 다음 시즌: 마감 시각이 속한 달(한국 시간)의 이름. 이미 쓴 이름이면 -2, -3 … 을 붙인다.
+  nxt_key := to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM');
+  while exists (select 1 from public.rk_seasons where season_key = nxt_key) or nxt_key = cfg->>'key' loop
+    i := i + 1; nxt_key := to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM') || '-' || i;
+  end loop;
+  nxt_ends := (date_trunc('month', ends at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul';
+  if nxt_ends <= now() then nxt_ends := (date_trunc('month', now() at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul'; end if;
+
+  update public.rk_config set value = jsonb_build_object('key', nxt_key, 'number', (cfg->>'number')::int + 1,
+      'game', cfg->>'game', 'game_name', cfg->>'game_name',
+      'started_at', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+      'ends_at', to_char(nxt_ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
+  where key = 'season';
+
+  nowms := (extract(epoch from now()) * 1000)::bigint;
+  update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
+    data = public.rk_default_data(), season_key = nxt_key, updated_at_ms = nowms, updated_at = now();
+
+  return jsonb_build_object('ok', true, 'closed', true,
+    'season', jsonb_build_object('key', cfg->>'key', 'number', (cfg->>'number')::int, 'game', cfg->>'game', 'gameName', cfg->>'game_name',
+                                 'startedAt', cfg->>'started_at', 'endedAt', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')),
+    'players', players, 'matchCount', mc, 'next', public.rk_season_json());
+end $$;
+
+-- 마감된 시즌의 보고서 원본 다시 가져오기(자동화 전용)
+create or replace function public.rk_season_report(p jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare r public.rk_seasons%rowtype;
+begin
+  select * into r from public.rk_seasons where season_key = p->>'key';
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_season'); end if;
+  return jsonb_build_object('ok', true, 'season', jsonb_build_object('key', r.season_key, 'number', r.number, 'game', r.game,
+      'gameName', r.game_name, 'startedAt', r.started_at, 'endedAt', r.ended_at),
+    'players', r.snapshot->'players', 'matchCount', r.match_count);
+end $$;
+
+-- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
+revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                       public.rk_score(jsonb), public.rk_top(jsonb) from public;
+                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_season_set(jsonb),
+                       public.rk_close_season(jsonb), public.rk_season_report(jsonb) from public;
+revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                          public.rk_score(jsonb), public.rk_top(jsonb) to anon, authenticated;
+                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_season_set(jsonb)
+  to anon, authenticated;
+grant execute on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) to service_role;
