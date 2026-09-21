@@ -123,3 +123,5 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .dialog .dumsg{min-height:24px;font-weight:700;color:var(--ink);margin:4px 0}
 .dialog .dupot{margin:2px 0 6px;font-size:14px;font-weight:700;color:var(--ring)}
 .dialog .dupot:empty{display:none}
+.dialog .stb{margin:0;font-weight:700;font-style:italic;color:var(--ring)}
+.dialog .stb[hidden]{display:none}

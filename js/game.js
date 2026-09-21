@@ -6,7 +6,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -34,7 +34,7 @@ function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();r
 
 /* ---------- save ---------- */
 const LEGACY_KEY='rocksunting-freekick-v1';
-const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,up:{shoes:0,snack:0,sneak:0},wins:0,losses:0,cleared:false,news:'월요일 아침, 부모님이 용돈 1만 원을 주셨다.'});
+const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,up:{shoes:0,snack:0,sneak:0},wins:0,losses:0,cleared:false,news:'월요일 아침, 오늘도 학교에서 살아남자.'});
 const MEM={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return MEM[k]===undefined?null:MEM[k];}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
@@ -111,7 +111,7 @@ function adoptCloud(r){
   const d=mergeData(r.data),newSeason=!!(r.season&&r.season!==USER.season);
   d.news=newSeason?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':'다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
   if(r.season)USER.season=r.season;
-  S=d;putLocal();renderHub();
+  S=d;putLocal();renderHub();maybeLoan();
 }
 async function cloudPush(){
   if(!USER||USER.guest||!cloudUrl()||pushBusy||!dirty)return;
@@ -158,7 +158,7 @@ function enterGuest(){
   $('#login').hidden=true;mode='hub';
   renderHub();updateUserChip();setSync('idle');
   toast('Guest로 시작해요. 기록은 저장되지 않아요.');
-  maybeShowNotes(false);
+  maybeShowNotes(false);maybeLoan();
 }
 async function startLogin(raw,rawPin){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
@@ -211,7 +211,7 @@ function enter(name,data,at,news,isNew){
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
-  maybeShowNotes(isNew);
+  maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
 async function logout(){
@@ -222,6 +222,11 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '1.3.0':{sub:'용돈이 사라지고, 라털 선생님이 나타났어요!',items:[
+    '🚫 주말마다 받던 부모님 용돈이 없어졌어요. 이제 소지금은 내가 직접 벌어야 해요!',
+    '🧔 소지금이 0원이 되면 라털 선생님이 1만 원을 빌려줘요. 돈을 빌려줄 때마다 말끝에 "바우!" 하고 트림을 한대요.',
+    '🏥 병원비가 모자라도 부모님이 내주지 않아요. 알바는 쉬엄쉬엄!'
+  ]},
   '1.2.0':{sub:'1:1 대결에 판돈이 생겼어요!',items:[
     '🪙 1:1 페널티킥 대결에 판돈을 걸 수 있어요. 방장이 0~5,000원 사이로 정하고, 방을 만들고 참가하는 순간 소지금에서 빠져요.',
     '💰 이긴 사람이 판돈 2배를 가져가요. 대결 중에 나가거나 자리를 비우면 몰수패예요!',
@@ -250,7 +255,7 @@ function maybeShowNotes(isNew){
   const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
   $('#wn').hidden=false;setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
 }
-function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);}
+function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);maybeLoan();}
 $('#wnOk').addEventListener('click',closeNotes);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value);
@@ -777,12 +782,12 @@ function settle(){
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
     `<tr><td>소지금</td><td>${fmt(before)} → ${fmt(S.money)}원</td></tr>`;
-  $('#sX').textContent=weekend?`주말이 됐다. 부모님이 용돈 1만 원을 주셨다! (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
+  $('#sX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
   $('#ovSet').hidden=false;
 }
 function advanceDay(){
   S.day++;
-  if(S.day>=5){S.day=0;S.week++;S.money+=10000;S.news=`${S.week-1}주차가 끝났다. 주말에 부모님이 용돈 1만 원을 주셨다. (${S.week}주차 월요일)`;return true;}
+  if(S.day>=5){S.day=0;S.week++;S.news=`${S.week-1}주차가 끝났다. 주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`;return true;}
   S.news=`${DAYS[S.day]}요일이 밝았다.`;return false;
 }
 
@@ -1156,7 +1161,7 @@ function renderHub(){
   $('#ups').innerHTML=UPS.map(u=>{const lv=S.up[u.id],mx=lv>=UPMAX[u.id],p=u.cost[lv];
     return `<div class="row"><div><h3>${u.n} <small>Lv.${lv}</small></h3><p>${mx?'최대 레벨':u.d(lv)}</p></div><button class="go alt" data-up="${u.id}" ${mx||S.money<p?'disabled':''}>${mx?'MAX':fmt(p)+'원'}</button></div>`;}).join('');
 }
-function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();}
+function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
   if(job)S.fatigue=(S.fatigue||0)+1;else S.fatigue=Math.max(0,(S.fatigue||0)-1);
@@ -1181,19 +1186,43 @@ function hospitalize(){
   S.money-=paid;const afterFee=S.money;S.fatigue=0;S.hosp=(S.hosp||0)+1;
   const dBefore=S.day,wk=S.week;advanceDay();const w2=S.week;advanceDay();
   const weekend=S.week>wk;const v=pick(VISIT);
-  S.news=`과로로 이틀 입원했다. 병원비 ${fmt(paid)}원이 나갔다.`+(weekend?` 주말이 지나 부모님이 용돈 1만 원을 주셨다. (${S.week}주차 ${DAYS[S.day]}요일)`:` (${DAYS[S.day]}요일)`);
+  S.news=`과로로 이틀 입원했다. 병원비 ${fmt(paid)}원이 나갔다.`+(weekend?` 주말이 지나 새 주가 시작됐다. (${S.week}주차 ${DAYS[S.day]}요일)`:` (${DAYS[S.day]}요일)`);
   const pages=[
     {img:'worn',title:'과로로 쓰러졌다…',text:'매점 알바를 쉬지 않고 이어서 하다가, 계산대 앞에서 그대로 쓰러지고 말았다.'},
     {img:'sad',title:'병원에서 눈을 떴다',who:v.n,text:v.t},
-    {img:'frustrated',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 부모님이 내주셨다. 잔소리 한 바가지…`:'')+` 이틀을 병원에서 보냈다.`+(weekend?' 그 사이 주말이 지나 용돈 1만 원이 들어왔다.':'')+' 알바는 쉬엄쉬엄 하자.'}
+    {img:'frustrated',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+` 이틀을 병원에서 보냈다.`+(weekend?' 그 사이 주말이 지나 새 주가 시작됐다.':'')+' 알바는 쉬엄쉬엄 하자.'}
   ];
   save();
-  showStory(pages,()=>{chatCur=randChat();renderHub();});
+  showStory(pages,()=>{chatCur=randChat();renderHub();maybeLoan();});
 }
 let STORY=null;
 function showStory(pages,done){STORY={pages,i:0,done};renderStory();$('#story').hidden=false;}
-function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;$('#stImg').src=IMGDATA[p.img||'base'];$('#stN').textContent=p.who?`${p.who}:`:'';$('#stX').textContent=p.text;$('#stBtn').textContent=STORY.i>=STORY.pages.length-1?'확인':'다음';}
+function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;$('#stImg').src=p.src||IMGDATA[p.img||'base'];
+  const sb=$('#stB');sb.hidden=!p.burp;sb.textContent=p.burp?pick(BURPS):'';if(p.burp)burp();
+ $('#stN').textContent=p.who?`${p.who}:`:'';$('#stX').textContent=p.text;$('#stBtn').textContent=STORY.i>=STORY.pages.length-1?'확인':'다음';}
 $('#stBtn').addEventListener('click',()=>{if(!STORY)return;STORY.i++;if(STORY.i>=STORY.pages.length){$('#story').hidden=true;const d=STORY.done;STORY=null;d&&d();}else renderStory();});
+/* ---------- 라털 선생님: 소지금이 0원 이하가 되면 1만 원을 빌려줘요 ----------
+   대머리에 짧은 턱수염이 구레나룻까지 이어진 모습이에요. 돈을 빌려줄 때 말끝마다 "바우!" 하고 트림을 해요. */
+const LOAN=10000;
+const RATAL_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><clipPath id="hd"><ellipse cx="100" cy="88" rx="52" ry="60"/></clipPath></defs><rect width="200" height="200" fill="#f4f1ee"/><path d="M14 200Q20 150 100 146Q180 150 186 200Z" fill="#2f3a56"/><path d="M78 148L100 176L122 148Z" fill="#fff"/><path d="M94 152L106 152L110 196L100 202L90 196Z" fill="#c4372f"/><rect x="82" y="128" width="36" height="28" rx="6" fill="#e4b995"/><ellipse cx="47" cy="92" rx="8" ry="13" fill="#f1c9a5" stroke="#232a45" stroke-width="3"/><ellipse cx="153" cy="92" rx="8" ry="13" fill="#f1c9a5" stroke="#232a45" stroke-width="3"/><ellipse cx="100" cy="88" rx="52" ry="60" fill="#f1c9a5"/><ellipse cx="80" cy="44" rx="15" ry="7" fill="#fff" opacity=".55" transform="rotate(-25 80 44)"/><circle cx="72" cy="104" r="8" fill="#f2a7a0" opacity=".55"/><circle cx="128" cy="104" r="8" fill="#f2a7a0" opacity=".55"/><path d="M66 68Q78 61 90 68" stroke="#3b2f2a" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M110 68Q122 61 134 68" stroke="#3b2f2a" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="78" cy="82" rx="4.5" ry="5.5" fill="#232a45"/><ellipse cx="122" cy="82" rx="4.5" ry="5.5" fill="#232a45"/><circle cx="79.5" cy="80" r="1.6" fill="#fff"/><circle cx="123.5" cy="80" r="1.6" fill="#fff"/><path d="M100 84Q93 98 99 101Q104 102 107 100" stroke="#c99b7a" stroke-width="3" stroke-linecap="round" fill="none"/><g clip-path="url(#hd)"><path d="M40 80L58 60Q64 92 80 104Q100 98 120 104Q136 92 142 60L160 80L160 170L40 170Z" fill="#3b2f2a"/></g><path d="M74 108Q87 98 100 105Q113 98 126 108Q114 118 100 111Q86 118 74 108Z" fill="#2a201c"/><ellipse cx="100" cy="126" rx="11" ry="7" fill="#6b2a2a"/><path d="M92 128Q100 134 108 128Q100 124 92 128Z" fill="#d9667a"/><ellipse cx="100" cy="88" rx="52" ry="60" fill="none" stroke="#232a45" stroke-width="3"/></svg>');
+const RATAL_LINES=[
+  '돈이 바닥났다고? 쯧쯧… 선생님이 1만 원 빌려주마. 다음엔 아껴 쓰거라. 바우!',
+  '허허, 또 빈털터리가 됐구나. 자, 1만 원이다. 이자는 열심히 공부하는 걸로 받으마. 바우!',
+  '선생님도 월급날 전이라 빠듯하다만… 제자가 굶을 순 없지. 1만 원 가져가거라. 바우!'
+];
+const BURPS=['(꺼억~)','(끄으윽~)','(꺼어어억…)'];
+function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtooth',.1),120);setTimeout(()=>beep(70,.25,'square',.06),380);}
+/* 허브에 있을 때 소지금이 0원 이하면 라털 선생님이 나타나요. 대결 화면·로그인·업데이트 팝업이 열려 있을 땐 기다려요. */
+function maybeLoan(){
+  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden)return;
+  const before=Math.max(0,S.money);
+  S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
+  showStory([
+    {img:'sad',title:'소지금이 바닥났다…',text:'지갑이 텅 비었다. 주머니를 뒤집어 봐도 먼지뿐… 그때 복도 끝에서 라털 선생님이 다가왔다.'},
+    {src:RATAL_IMG,title:'라털 선생님',who:'라털',text:pick(RATAL_LINES),burp:true},
+    {img:'happy',title:'1만 원을 빌렸다',text:`소지금 ${fmt(before)}원 → ${fmt(LOAN)}원. 다음엔 아껴 쓰자!`}
+  ],()=>{chatCur=randChat();renderHub();});
+}
 $('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHub();});
 $('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
 $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
@@ -1203,7 +1232,7 @@ $('#jobBtn').addEventListener('click',()=>dayAction('머호가 소개해 준 매
 $('#ups').addEventListener('click',e=>{
   const b=e.target.closest('[data-up]');if(!b||b.disabled)return;
   const u=UPS.find(x=>x.id===b.dataset.up),lv=S.up[u.id],p=u.cost[lv];
-  if(lv>=UPMAX[u.id]||S.money<p)return;S.money-=p;S.up[u.id]++;save();renderHub();
+  if(lv>=UPMAX[u.id]||S.money<p)return;S.money-=p;S.up[u.id]++;save();renderHub();maybeLoan();
 });
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
@@ -1374,8 +1403,9 @@ function duErr(e){
 function duClose(leave){
   const code=DU.code,st=DU.st;
   DU.open=false;clearTimeout(DU.poll);cancelAnimationFrame(DU.raf);$('#duel').hidden=true;
-  if(leave&&code&&st&&st.status!=='done')api('duel_leave',{id:USER.id,pin:USER.pin,code}).then(r=>{duMoney(r.money);renderHub();if(st.bet>0&&st.status==='waiting')toast('판돈을 돌려받았어요.');}).catch(()=>{});
-  DU.code=null;DU.st=null;DU.anim=null;renderHub();
+  const pendingLeave=!!(leave&&code&&st&&st.status!=='done');
+  if(pendingLeave)api('duel_leave',{id:USER.id,pin:USER.pin,code}).then(r=>{duMoney(r.money);renderHub();if(st.bet>0&&st.status==='waiting')toast('판돈을 돌려받았어요.');maybeLoan();}).catch(()=>{});
+  DU.code=null;DU.st=null;DU.anim=null;renderHub();if(!pendingLeave)maybeLoan();
 }
 $('#duLeave').addEventListener('click',()=>{
   const st=DU.st;if(!st)return;
@@ -1557,5 +1587,5 @@ $('#verTip').textContent='(v'+APP_VERSION+')';
 renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
 showLogin();showSplash();requestAnimationFrame(frame);
-window.__dbg={du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
+window.__dbg={maybeLoan,du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
 })();
