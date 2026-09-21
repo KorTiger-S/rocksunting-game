@@ -68,6 +68,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .ovfix{position:fixed!important;z-index:40;display:flex!important;overflow:auto;padding:16px}.ovfix .dialog{margin:auto}
 .ovfix[hidden]{display:none!important}
 #login{z-index:60;background:rgba(10,13,27,.94)}
+#splash{z-index:70;background:#12162a;padding:0;align-items:center;justify-content:center;cursor:pointer}
+#splash canvas{width:min(100%,calc(100vh*5/3));margin:auto}
 .lgin{width:100%;padding:12px 14px;font:inherit;font-size:18px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);text-align:center;margin:6px 0}
 .lgin:focus-visible{outline:3px solid var(--ring);outline-offset:1px}
 .linkbtn{background:none;border:0;padding:4px;color:var(--muted);text-decoration:underline;font-size:13px}

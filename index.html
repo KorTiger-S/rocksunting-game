@@ -93,16 +93,25 @@
   </div>
   <p class="tip">조작: 마우스 또는 방향키 + 클릭/Space. 프리킥은 조준 → 공 맞히는 위치 → 파워 게이지 순서로 진행해요. <span style="opacity:.6">(v1.7)</span></p>
 </div>
+<div class="ov ovfix" id="splash" aria-label="시작 화면: 롹순팅이 학교에 등교한다. Enter를 누르면 계속돼요.">
+  <canvas id="spCv" width="800" height="480"></canvas>
+</div>
 <div class="ov ovfix" id="login">
   <div class="card dialog" style="max-width:400px">
     <div class="logo" style="margin:0 auto 6px;border-color:var(--ring)"></div>
     <h2>롹순팅 키우기</h2>
-    <p>머대부속 고등학교 · ID로 이어하기</p>
-    <div id="lgMain">
+    <p>머대부속 고등학교 · 시즌1 프리킥</p>
+    <div id="lgChoice">
+      <button class="go" id="lgToLogin" style="width:100%;margin:6px 0">🔑 로그인 (ID + 비밀번호)</button>
+      <button class="go alt" id="lgGuest" style="width:100%;margin:6px 0">👤 Guest로 시작</button>
+      <p class="tip">Guest는 기록이 저장되지 않고 랭킹에도 오르지 않아요. 기록을 남기려면 로그인하세요.</p>
+    </div>
+    <div id="lgMain" hidden>
       <button class="go" id="lgResume" style="width:100%;margin:6px 0" hidden></button>
       <input class="lgin" id="lgId" maxlength="12" placeholder="ID를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="ID">
       <input class="lgin" id="lgPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="비밀번호 (숫자 4자리)" autocomplete="off" aria-label="비밀번호 4자리">
       <button class="go" id="lgGo" style="width:100%">시작하기</button>
+      <button class="linkbtn" id="lgBackChoice">← 뒤로 (로그인 / Guest 선택)</button>
       <p class="lgmsg" id="lgMsg"></p>
       <p class="tip" style="margin-top:0">ID: 2~12자 · 한글/영문/숫자/_ 가능<br>비밀번호: 숫자 4자리. 새 ID는 처음 입력한 비밀번호로 만들어지고, 같은 ID와 비밀번호로 다시 들어오면 이어서 할 수 있어요.</p>
     </div>

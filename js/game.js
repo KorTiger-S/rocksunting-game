@@ -50,7 +50,7 @@ function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서�
 }
 function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,updatedAt:S.updatedAt,data:S}));}
 function save(){
-  if(!USER)return;
+  if(!USER||USER.guest)return;   /* Guest는 저장하지 않아요 */
   S.updatedAt=Date.now();
   putLocal();
   lsSet('rk:last',USER.id);
@@ -67,6 +67,7 @@ function cloudCfg(){
 function cloudUrl(){const c=cloudCfg();return c.url&&c.key?c.url:'';}
 const SYNC={state:'idle'};
 function syncText(){
+  if(USER&&USER.guest)return '👤 Guest — 기록이 저장되지 않아요';
   if(!cloudUrl())return '💾 이 기기(브라우저)에만 저장돼요';
   return {busy:'☁ 저장 중…',ok:'☁ 클라우드에 저장됨',err:'⚠ 오프라인 — 나중에 다시 저장해요',idle:'☁ 클라우드 연결됨'}[SYNC.state]||'☁ 클라우드 연결됨';
 }
@@ -89,7 +90,7 @@ function adoptCloud(r){
   S=d;putLocal();renderHub();
 }
 async function cloudPush(){
-  if(!USER||!cloudUrl()||pushBusy||!dirty)return;
+  if(!USER||USER.guest||!cloudUrl()||pushBusy||!dirty)return;
   pushBusy=true;dirty=false;setSync('busy');
   try{
     if(OFFLINE_BASE!==null){
@@ -108,24 +109,36 @@ async function cloudPush(){
 }
 setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
-function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
+function cloudScore(r){if(!cloudUrl()||!USER||USER.guest)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
 
 /* ---------- 로그인 ---------- */
 let LG={id:'',pin:'',ph:'',local:null,offline:false};
 function lgStep(s){
-  [['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
+  [['choice','lgChoice'],['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
 }
 function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 클라우드(Supabase) + 이 기기':'저장 방식: 이 기기(브라우저)';}
 function showLogin(){
-  $('#login').hidden=false;lgStep('main');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
+  $('#login').hidden=false;lgStep('choice');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
   const last=lsGet('rk:last');const b=$('#lgResume');
   if(last&&ID_RE.test(last)){b.hidden=false;b.textContent=`${last} (으)로 계속하기`;b.dataset.id=last;}else b.hidden=true;
-  setTimeout(()=>{try{$('#lgId').focus();}catch(e){}},50);
+  if(!SP.on)setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},50);   /* 스플래시가 떠 있을 땐 스플래시가 끝날 때 포커스 */
+}
+function goLoginForm(){
+  lgStep('main');
+  setTimeout(()=>{try{($('#lgId').value?$('#lgPin'):$('#lgId')).focus();}catch(e){}},30);
+}
+function enterGuest(){
+  USER={id:'Guest',guest:true};S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;
+  S.news='게스트로 시작했다. 이번 기록은 저장되지 않고 랭킹에도 오르지 않는다.';
+  $('#login').hidden=true;mode='hub';
+  renderHub();updateUserChip();setSync('idle');
+  toast('Guest로 시작해요. 기록은 저장되지 않아요.');
 }
 async function startLogin(raw,rawPin){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
   const pin=String(rawPin||'').trim();
   if(!ID_RE.test(id)){$('#lgMsg').textContent='ID는 2~12자, 한글·영문·숫자·_ 만 쓸 수 있어요.';return;}
+  if(/^(guest|게스트)$/i.test(id)){$('#lgMsg').textContent='이 ID는 쓸 수 없어요. (Guest는 따로 시작할 수 있어요)';return;}
   if(!PIN_RE.test(pin)){$('#lgMsg').textContent='비밀번호는 숫자 4자리로 입력해 주세요.';return;}
   LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false};
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
@@ -170,7 +183,7 @@ function enter(name,data,at,news,isNew){
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
 }
-function updateUserChip(){$('#hUser').textContent=USER?`👤 ${USER.id}`:'';}
+function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
@@ -182,6 +195,9 @@ $('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault()
 $('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
 $('#lgPin').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
 $('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dataset.id;$('#lgPin').focus();});
+$('#lgToLogin').addEventListener('click',goLoginForm);
+$('#lgGuest').addEventListener('click',enterGuest);
+$('#lgBackChoice').addEventListener('click',()=>{$('#lgMsg').textContent='';lgStep('choice');setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);});
 $('#lgCreate').addEventListener('click',()=>createUser(false));
 $('#lgImport').addEventListener('click',()=>createUser(true));
 $('#lgBack1').addEventListener('click',()=>lgStep('main'));
@@ -1131,6 +1147,55 @@ const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 
 $('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];});
 window.addEventListener('pagehide',()=>{save();});
 
+/* ---------- 스플래시: 롹순팅 등교 애니메이션 + Press Enter ---------- */
+const SP={on:false,t:0,raf:0,last:0,ctx:$('#spCv').getContext('2d')};
+const SP_WALK=4.6,SP_END=5.2;   /* 걷기 끝(초), 문으로 들어간 뒤 Press Enter가 나오는 시점(초) */
+function spDraw(c,t){
+  skyField(c);
+  c.fillStyle='#6bb56f';c.fillRect(0,HOR,W,46);
+  c.fillStyle='#d8d0bd';c.fillRect(0,HOR+46,W,H-HOR-46);
+  c.fillStyle='rgba(0,0,0,.08)';c.fillRect(0,HOR+46,W,4);
+  c.fillStyle='#e6dfcd';c.beginPath();c.moveTo(372,HOR);c.lineTo(428,HOR);c.lineTo(600,H);c.lineTo(200,H);c.closePath();c.fill();
+  c.fillStyle='#6d1f31';rr(c,372,HOR-58,56,58,4);c.fill();
+  c.fillStyle='#e8a91c';c.beginPath();c.arc(418,HOR-28,3,0,7);c.fill();
+  c.fillStyle='#b5a891';c.fillRect(366,HOR,68,6);
+  TX(c,'롹순팅 키우기',W/2,38,50,'#fff','center','#6d1f31');
+  const p1=clamp(t/2.4,0,1),p2=clamp((t-2.4)/(SP_WALK-2.4),0,1);
+  let x,y,s,face;
+  if(t<2.4){x=-40+440*p1;y=H-46;s=2.6;face='tired';}
+  else{x=400;y=(H-46)+(HOR+4-(H-46))*p2;s=2.6-1.2*p2;face='resolve';}
+  if(t<SP_END){
+    c.save();c.globalAlpha=t<SP_WALK?1:clamp(1-(t-SP_WALK)/(SP_END-SP_WALK),0,1);
+    kid(c,x,y,s,{face,run:t<SP_WALK,ph:t*11});
+    c.restore();
+  }
+  if(t>=SP_END){
+    const a=.7+.3*Math.sin((t-SP_END)*4.5);
+    c.save();c.globalAlpha=clamp((t-SP_END)*3,0,1)*a;
+    TX(c,'Press ENTER',W/2,H-90,44,'#fff','center','#232a45');c.restore();
+    c.save();c.globalAlpha=clamp((t-SP_END)*3,0,1);TX(c,'(화면을 눌러도 돼요)',W/2,H-48,18,'#fff','center','rgba(35,42,69,.8)');c.restore();
+  }
+}
+function spFrame(now){
+  if(!SP.on)return;
+  SP.raf=requestAnimationFrame(spFrame);
+  const dt=Math.min(.05,(now-SP.last)/1000);SP.last=now;SP.t+=dt;
+  try{spDraw(SP.ctx,SP.t);}catch(e){console.error(e);}
+}
+function showSplash(){
+  SP.on=true;SP.t=0;SP.last=performance.now();$('#splash').hidden=false;
+  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)SP.t=SP_END;}catch(e){}
+  SP.raf=requestAnimationFrame(spFrame);
+}
+function spNext(){
+  if(!SP.on)return;
+  if(SP.t<SP_END){SP.t=SP_END;return;}   /* 걷는 중에 누르면 바로 Press ENTER 화면으로 */
+  SP.on=false;cancelAnimationFrame(SP.raf);$('#splash').hidden=true;
+  setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);
+}
+window.addEventListener('keydown',e=>{if(SP.on&&(e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();spNext();}},true);
+$('#splash').addEventListener('pointerdown',spNext);
+
 /* ---------- 메인 루프 ---------- */
 let last=performance.now(),errN=0;
 function recover(){
@@ -1152,6 +1217,6 @@ function frame(now){
   pressed={};mouse.click=false;mouse.mv=false;
 }
 $('#bigface').src=IMGDATA.base;
-renderHub();setSync('idle');showLogin();requestAnimationFrame(frame);
-window.__dbg={getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
+renderHub();setSync('idle');showLogin();showSplash();requestAnimationFrame(frame);
+window.__dbg={sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
 })();

@@ -65,7 +65,7 @@ create or replace function public.rk_norm_id(t text) returns text
 language plpgsql immutable as $$
 declare s text := normalize(btrim(coalesce(t, '')), NFC);
 begin
-  if s ~ '^[0-9A-Za-z_가-힣ㄱ-ㅎㅏ-ㅣ]{2,12}$' then return s; end if;
+  if s ~ '^[0-9A-Za-z_가-힣ㄱ-ㅎㅏ-ㅣ]{2,12}$' and lower(s) not in ('guest', '게스트') then return s; end if;   -- guest는 예약어
   return null;
 end $$;
 

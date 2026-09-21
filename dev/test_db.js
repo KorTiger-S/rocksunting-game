@@ -21,6 +21,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   ok((await rpc('ping')).ok, 'ping');
   ok((await load('a')).error === 'bad_id', '짧은 ID 거부');
   ok((await load('홍 길동')).error === 'bad_id', '공백 ID 거부');
+  ok((await load('Guest')).error === 'bad_id' && (await save('게스트', 1, { money: 1 })).error === 'bad_id', 'Guest/게스트는 예약어라 거부');
   ok((await load('히포우')).exists === false, '없는 ID는 exists=false');
   ok((await load('히포우', '12')).error === 'bad_pin', '4자리 아닌 비밀번호 거부');
   ok((await load('히포우', 'abcd')).error === 'bad_pin', '숫자 아닌 비밀번호 거부');
