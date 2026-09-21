@@ -1,6 +1,7 @@
 (function(){
 'use strict';
 const W=800,H=480,F=900,HOR=205;
+const APP_VERSION='1.7.0';   /* 화면에 보이는 게임 버전. package.json의 version과 같게 맞춰 주세요 (build.js가 다르면 알려 줘요) */
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -1183,6 +1184,7 @@ function spDraw(c,t){
   c.fillStyle='#e8a91c';c.beginPath();c.arc(418,HOR-28,3,0,7);c.fill();
   c.fillStyle='#b5a891';c.fillRect(366,HOR,68,6);
   TX(c,'롹순팅 키우기',W/2,38,50,'#fff','center','#6d1f31');
+  TX(c,'v'+APP_VERSION,W/2,H-16,16,'#fff','center','rgba(35,42,69,.85)');
   const p1=clamp(t/2.4,0,1),p2=clamp((t-2.4)/(SP_WALK-2.4),0,1);
   let x,y,s,face;
   if(t<2.4){x=-40+440*p1;y=H-46;s=2.6;face='tired';}
@@ -1240,6 +1242,7 @@ function frame(now){
   pressed={};mouse.click=false;mouse.mv=false;
 }
 $('#bigface').src=IMGDATA.base;
+$('#verTip').textContent='(v'+APP_VERSION+')';
 renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
 showLogin();showSplash();requestAnimationFrame(frame);
