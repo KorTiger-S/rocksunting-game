@@ -37,6 +37,22 @@ function lsKeys(){const a=[];try{for(let i=0;i<localStorage.length;i++)a.push(lo
 const ID_RE=/^[0-9A-Za-z_가-힣ㄱ-ㅎㅏ-ㅣ]{2,12}$/;
 const ukey=id=>'rk:u:'+id.toLowerCase();
 let USER=null,S=DEF(),OFFLINE_BASE=null,pendingCloud=null;
+/* ---------- 시즌 (매달 1시즌 · 마감하면 서버가 랭킹 보고서를 남기고 모든 기록을 초기화해요) ---------- */
+const LEGACY_SEASON='2026-09';   /* 시즌 기능이 생기기 전에 저장된 기록은 시즌1(2026-09)로 봐요 */
+let SEASON=null;                  /* {key,number,game,gameName,startedAt,endsAt} */
+try{SEASON=JSON.parse(lsGet('rk:season')||'null');}catch(e){}
+const KST_MS=9*3600e3,DAY_MS=864e5;
+function setSeason(s){if(!s||!s.key)return;SEASON=s;lsSet('rk:season',JSON.stringify(s));renderSeason();}
+function renderSeason(){
+  const chip=$('#hSeason'),rk=$('#rkSeason');
+  if(!SEASON||!cloudUrl()){chip.hidden=true;rk.textContent='';return;}
+  const end=Date.parse(SEASON.endsAt),lastDay=new Date(end-1000+KST_MS);
+  const left=Math.floor((end-1000+KST_MS)/DAY_MS)-Math.floor((Date.now()+KST_MS)/DAY_MS);
+  const until=`${lastDay.getUTCMonth()+1}/${lastDay.getUTCDate()}까지`;
+  const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
+  chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
+  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 (마감 시 기록 초기화)`;
+}
 function mergeData(d){const b=DEF();const o=Object.assign(b,d||{});o.up=Object.assign(DEF().up,(d&&d.up)||{});return o;}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
 function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,up:S.up};}
@@ -48,7 +64,7 @@ function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서�
   h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
   return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);
 }
-function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,updatedAt:S.updatedAt,data:S}));}
+function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,season:USER.season,updatedAt:S.updatedAt,data:S}));}
 function save(){
   if(!USER||USER.guest)return;   /* Guest는 저장하지 않아요 */
   S.updatedAt=Date.now();
@@ -86,7 +102,9 @@ let pushT=null,pushBusy=false,dirty=false;
 function cloudSoon(){if(!cloudUrl()||!USER)return;dirty=true;clearTimeout(pushT);pushT=setTimeout(cloudPush,900);}
 function adoptCloud(r){
   if(mode!=='hub'){pendingCloud=r;return;}
-  const d=mergeData(r.data);d.news='다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
+  const d=mergeData(r.data),newSeason=!!(r.season&&r.season!==USER.season);
+  d.news=newSeason?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':'다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
+  if(r.season)USER.season=r.season;
   S=d;putLocal();renderHub();
 }
 async function cloudPush(){
@@ -96,10 +114,11 @@ async function cloudPush(){
     if(OFFLINE_BASE!==null){
       const r0=await api('load',{id:USER.id,pin:USER.pin});
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
-      if(r0.exists&&(r0.updatedAt||0)>base&&r0.data){adoptCloud(r0);toast('오프라인 동안 다른 기기에 저장된 기록이 있어 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
+      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0);toast('오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const r=await api('save',{id:USER.id,pin:USER.pin,updatedAt:S.updatedAt,data:cloudData()});
-    if(r.conflict&&r.data){adoptCloud(r);toast('다른 기기의 더 최신 기록을 불러왔어요.');}
+    const was=USER.season;
+    const r=await api('save',{id:USER.id,pin:USER.pin,season:USER.season||LEGACY_SEASON,updatedAt:S.updatedAt,data:cloudData()});
+    if(r.conflict&&r.data){adoptCloud(r);toast(r.season&&r.season!==was?'새 시즌이 시작되어 기록이 초기화됐어요.':'다른 기기의 더 최신 기록을 불러왔어요.');}
     setSync('ok');
   }catch(e){
     if(e.message==='bad_pin'||e.message==='locked'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
@@ -144,7 +163,7 @@ async function startLogin(raw,rawPin){
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
   let cloud=null;
   if(cloudUrl()){
-    try{cloud=await api('load',{id,pin});}
+    try{cloud=await api('load',{id,pin});setSeason(cloud.current);LG.admin=!!cloud.admin;LG.season=cloud.exists?cloud.season:(cloud.current&&cloud.current.key);}
     catch(e){
       if(e.message==='bad_pin'){pinFail();return;}
       if(e.message==='locked'){pinFail('비밀번호를 여러 번 틀려서 5분 동안 잠겼어요. 잠시 후 다시 시도해 주세요.');return;}
@@ -155,12 +174,15 @@ async function startLogin(raw,rawPin){
 }
 function pinFail(msg){lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
-  const id=LG.id,local=LG.local,cEx=cloud&&cloud.exists&&cloud.data;
+  const id=LG.id,cEx=cloud&&cloud.exists&&cloud.data;
+  let local=LG.local,stale=false;
   if(local&&local.pin&&!cloud&&local.pin!==LG.ph){pinFail();return;}   /* 클라우드 확인을 못 했을 때는 이 기기의 저장값으로 확인 */
+  if(local&&cEx&&(local.season||LEGACY_SEASON)!==cloud.season){local=null;stale=true;}   /* 이 기기의 기록이 지난 시즌 것이면 버려요 */
+  if(!LG.season)LG.season=(local&&local.season)||(SEASON&&SEASON.key)||LEGACY_SEASON;
   if(!local&&!cEx){showNew(id);return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
-  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
+  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=stale?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
   else{data=mergeData(local.data);name=local.name||id;at=lAt;}
   enter(name,data,at,news);
 }
@@ -177,13 +199,13 @@ function createUser(useLegacy){
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name,pin:LG.pin,ph:LG.ph};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON,admin:!!LG.admin};S=data;if(news)S.news=news;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
 }
-function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
+function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';$('#admBtn').hidden=!(USER&&USER.admin);}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
@@ -238,7 +260,28 @@ async function renderRank(){
   $('#rkTab').innerHTML=list.length?list.map((x,i)=>`<tr class="${String(x.id).toLowerCase()===me?'me':''}"><td>${i+1}위 ${String(x.id).replace(/[<>&]/g,'')}${x.cleared?' 👑':''}</td><td>${RVAL[rankMetric](x.v)}</td></tr>`).join(''):'<tr><td>아직 기록이 없어요.</td></tr>';
   $('#rkNote').textContent=note;
 }
-$('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderRank();});
+$('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason();renderRank();});
+
+/* ---------- 운영자: 시즌 마감일 변경 (서버가 운영자 계정인지 다시 확인해요) ---------- */
+$('#admBtn').addEventListener('click',()=>{
+  const s=SEASON;
+  $('#admInfo').textContent=s?`현재: 시즌${s.number} · ${s.gameName} (${s.key})`:'시즌 정보를 불러오지 못했어요.';
+  if(s)$('#admDate').value=new Date(Date.parse(s.endsAt)-1000+KST_MS).toISOString().slice(0,10);
+  $('#admMsg').textContent='';$('#adm').hidden=false;
+});
+$('#admClose').addEventListener('click',()=>{$('#adm').hidden=true;});
+$('#admSave').addEventListener('click',async()=>{
+  const date=$('#admDate').value,m=$('#admMsg');
+  if(!date){m.textContent='날짜를 골라 주세요.';return;}
+  m.textContent='저장 중…';
+  try{
+    const r=await api('season_set',{id:USER.id,pin:USER.pin,date});
+    setSeason(r.season);$('#admInfo').textContent=`현재: 시즌${r.season.number} · ${r.season.gameName} (${r.season.key})`;
+    m.textContent=`저장했어요. ${date} 밤 12시까지 진행하고, 다음 날 0시에 마감돼요.`;
+  }catch(e){
+    m.textContent={not_admin:'운영자 계정이 아니에요.',past_date:'오늘보다 이전 날짜는 고를 수 없어요.',bad_date:'날짜 형식이 맞지 않아요.',bad_pin:'비밀번호 확인에 실패했어요.',locked:'비밀번호를 여러 번 틀려서 잠시 잠겼어요.'}[e.message]||'저장하지 못했어요. 인터넷 연결을 확인해 주세요.';
+  }
+});
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
@@ -1217,6 +1260,8 @@ function frame(now){
   pressed={};mouse.click=false;mouse.mv=false;
 }
 $('#bigface').src=IMGDATA.base;
-renderHub();setSync('idle');showLogin();showSplash();requestAnimationFrame(frame);
+renderHub();setSync('idle');renderSeason();
+if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
+showLogin();showSplash();requestAnimationFrame(frame);
 window.__dbg={sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
 })();

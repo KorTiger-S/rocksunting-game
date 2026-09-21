@@ -8,14 +8,15 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   const { pgcrypto } = await import('@electric-sql/pglite/contrib/pgcrypto');
   const db = new PGlite({ extensions: { pgcrypto } });
   // Supabase에는 기본으로 있는 것들
-  await db.exec('create schema extensions; create role anon; create role authenticated;');
+  await db.exec('create schema extensions; create role anon; create role authenticated; create role service_role;');
   await db.exec(fs.readFileSync(path.join(__dirname, '../backend/schema.sql'), 'utf8'));
   await db.exec(fs.readFileSync(path.join(__dirname, '../backend/schema.sql'), 'utf8'));   // 다시 실행해도 안전한지
   ok(true, 'schema.sql 두 번 실행해도 오류 없음');
 
   const rpc = async (fn, p) => (await db.query(`select public.rk_${fn}($1::jsonb) as r`, [JSON.stringify(p || {})])).rows[0].r;
   const P = '1234';
-  const save = (id, at, data, pin = P) => rpc('save', { id, pin, updatedAt: at, data });
+  const SEASON = '2026-09';
+  const save = (id, at, data, pin = P, season = SEASON) => rpc('save', { id, pin, season, updatedAt: at, data });
   const load = (id, pin = P) => rpc('load', { id, pin });
 
   ok((await rpc('ping')).ok, 'ping');
@@ -79,6 +80,103 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   t = await rpc('top', { metric: 'money', limit: 3 });
   ok(t.list.every((x, i, a) => !i || a[i - 1].money >= x.money), '랭킹이 내림차순으로 정렬됨');
   ok(!JSON.stringify(t).includes('pin'), '랭킹 응답에 비밀번호 정보 없음');
+
+  // ----- 시즌 -----
+  const kst = (addDays) => new Date(Date.now() + 9 * 3600e3 + addDays * 864e5).toISOString().slice(0, 10);
+  let s = await rpc('season_get');
+  ok(s.ok && s.season.key === SEASON && s.season.number === 1 && s.season.game === 'football', '시즌1(2026-09, 축구)이 기본 시즌');
+  ok(s.season.endsAt === '2026-09-30T15:00:00Z', '기본 마감은 2026-10-01 00:00 KST');
+  r = await load('히포우');
+  ok(r.season === SEASON && r.current.key === SEASON && r.admin === false, '불러오기 응답에 시즌 정보 + 운영자 여부');
+  ok((await load('새사람')).current.key === SEASON, '없는 ID도 현재 시즌 정보를 받음');
+
+  const setEnd = (id, pin, date) => rpc('season_set', { id, pin, date });
+  ok((await setEnd('히포우', P, kst(3))).error === 'not_admin', '운영자가 아니면 마감일 변경 거부');
+  await db.exec(`update public.rk_users set is_admin = true where id = '히포우'`);
+  ok((await load('히포우')).admin === true, '운영자 계정은 admin=true');
+  ok((await setEnd('히포우', '9999', kst(3))).error === 'bad_pin', '운영자라도 비밀번호가 틀리면 거부');
+  ok((await setEnd('히포우', P, '2000-01-01')).error === 'past_date', '지난 날짜로는 변경 불가');
+  ok((await setEnd('히포우', P, '2026-13-45')).error === 'bad_date' && (await setEnd('히포우', P, 'abc')).error === 'bad_date', '잘못된 날짜 거부');
+  r = await setEnd('히포우', P, kst(3));
+  const want = new Date(Date.parse(kst(3) + 'T00:00:00Z') + 864e5 - 9 * 3600e3).toISOString().slice(0, 19) + 'Z';
+  ok(r.ok && r.season.endsAt === want, '운영자가 마감일을 바꾸면 그 날 다음 0시(KST)에 마감');
+  ok((await rpc('season_get')).season.endsAt === want, '바뀐 마감일이 모두에게 보임');
+
+  r = await db.query('select public.rk_close_season($1::jsonb) as r', ['{}']);
+  ok(r.rows[0].r.closed === false, '마감일 전에는 마감하지 않음');
+
+  // 마감: 마감 시각을 과거로 돌린 뒤 service_role로 실행
+  await db.exec(`update public.rk_users set money = 500 where id = '짱구'`);
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  let denied2 = false;
+  await db.exec('set role anon'); try { await db.query(`select public.rk_close_season('{}'::jsonb)`); } catch (e) { denied2 = true; } await db.exec('reset role');
+  ok(denied2, 'anon은 시즌 마감 함수를 호출할 수 없음');
+  await db.exec('set role service_role');
+  const cl = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  await db.exec('reset role');
+  ok(cl.ok && cl.closed && cl.season.key === SEASON && cl.season.number === 1, '마감일이 지나면 시즌1이 마감됨');
+  ok(cl.players.length >= 4 && cl.players.every((x, i, a) => !i || a[i - 1].money >= x.money), '스냅샷에 전체 플레이어가 소지금 순으로 들어감');
+  ok(cl.matchCount === 1, '스냅샷에 시즌 경기 수가 들어감');
+  ok(cl.next.number === 2 && cl.next.key !== SEASON, '다음 시즌(시즌2)이 시작됨');
+  r = await load('철수');
+  ok(r.data.money === 10000 && r.data.wins === 0 && r.data.week === 1 && r.data.up.shoes === 0 && r.season === cl.next.key, '마감 뒤 모든 플레이어 기록이 초기화됨');
+  ok((await rpc('top', { metric: 'money' })).list.every(x => x.money === 10000 && x.wins === 0), '랭킹도 초기화됨');
+  ok((await load('철수')).data.plays === 0 && (await load('짱구')).name === '짱구', '계정(ID)은 유지됨');
+  r = await save('철수', Date.now() + 1000, { money: 99999, wins: 9 });   // 예전 시즌 기록을 들고 온 오래된 화면
+  ok(r.conflict && r.data.money === 10000 && r.season === cl.next.key, '예전 시즌 기록으로 저장하면 거부되고 초기화된 기록을 돌려줌');
+  ok((await load('철수')).data.money === 10000, '거부된 저장이 초기화된 기록을 덮어쓰지 않음');
+  r = await save('철수', Date.now() + 2000, { money: 12000, wins: 1 }, P, cl.next.key);
+  ok(r.ok && !r.conflict && (await load('철수')).data.money === 12000, '새 시즌 키로는 정상 저장');
+  await db.exec('set role service_role');
+  const rep = (await db.query(`select public.rk_season_report($1::jsonb) as r`, [JSON.stringify({ key: SEASON })])).rows[0].r;
+  await db.exec('reset role');
+  ok(rep.ok && rep.season.gameName === '프리킥 축구' && rep.players.length === cl.players.length, '마감된 시즌 보고서를 다시 가져올 수 있음');
+  ok((await rpc('score', { id: '철수', pin: P, bet: 1, goals: 1, pts: 1, result: '승' })).ok, '새 시즌에도 점수 기록 가능');
+  ok((await db.query(`select season_key from public.rk_matches order by id desc limit 1`)).rows[0].season_key === cl.next.key, '경기 기록에 시즌 키가 붙음');
+  // 한 번 더 마감해도 시즌 이름이 겹치지 않음
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  await db.exec('set role service_role');
+  const cl2 = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  await db.exec('reset role');
+  const keys = (await db.query('select season_key from public.rk_seasons')).rows.map(x => x.season_key);
+  ok(cl2.closed && cl2.next.number === 3 && new Set(keys).size === 2 && ![...keys].includes(cl2.next.key), '연속 마감해도 시즌 이름이 겹치지 않음');
+
+  // ----- 보고서 생성 (scripts/) -----
+  const { renderReport } = require('../scripts/season_report');
+  const rp = renderReport(cl);
+  ok(rp.title.includes('시즌1') && rp.md.includes('소지금 TOP 10') && rp.md.includes(cl.players[0].id), '보고서 Markdown에 제목·순위표가 들어감');
+  ok(rp.csv.trim().split('\n').length === cl.players.length + 1 && rp.name === `${SEASON}_season1_football`, '보고서 CSV에 전체 명단이 들어감');
+  {
+    const http = require('http'), cp = require('child_process'), os = require('os');
+    const srv = http.createServer((req, res) => {
+      let b = ''; req.on('data', c => b += c); req.on('end', async () => {
+        try {
+          const fn = req.url.split('/').pop();
+          await db.exec('set role service_role');
+          const out = (await db.query(`select public.${fn}($1::jsonb) as r`, [JSON.stringify(JSON.parse(b).p)])).rows[0].r;
+          await db.exec('reset role');
+          res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(out));
+        } catch (e) { await db.exec('reset role').catch(() => {}); res.statusCode = 400; res.end(JSON.stringify({ message: String(e) })); }
+      });
+    });
+    await new Promise(r => srv.listen(0, '127.0.0.1', r));
+    const env = Object.assign({}, process.env, { SUPABASE_URL: `http://127.0.0.1:${srv.address().port}`, SUPABASE_SERVICE_KEY: 'test-key' });
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rk-report-'));
+    const run = (extra = {}) => new Promise(resolve => cp.execFile('node', [path.join(__dirname, '../scripts/close_season.js'), '--out', outDir], { env: Object.assign({}, env, extra) }, (err, so, se) => resolve({ err, so, se })));
+    let x = await run();
+    ok(!x.err && x.so.includes('아직 시즌이 끝나지 않았어요') && fs.readdirSync(outDir).length === 0, '마감일 전에는 스크립트가 아무 파일도 만들지 않음');
+    await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+    x = await run();
+    const files = fs.readdirSync(outDir);
+    ok(!x.err && files.some(f => f.endsWith('.md')) && files.some(f => f.endsWith('.csv')) && files.includes('issue.md'), '마감일이 지나면 스크립트가 보고서 파일을 만듦');
+    const md = fs.readFileSync(path.join(outDir, files.find(f => f.endsWith('.md') && f !== 'issue.md')), 'utf8');
+    ok(md.includes('시즌3'), '스크립트가 만든 보고서가 3번째 시즌 마감 결과');
+    x = await run({ REPORT_KEY: SEASON });
+    ok(!x.err && x.so.includes(`${SEASON}_season1_football`), '이미 마감된 시즌의 보고서를 다시 만들 수 있음');
+    x = await run({ SUPABASE_SERVICE_KEY: '' });
+    ok(x.err && x.se.includes('SUPABASE_SERVICE_KEY'), '키가 없으면 스크립트가 실패');
+    srv.close(); fs.rmSync(outDir, { recursive: true, force: true });
+  }
 
   // ----- 권한: anon은 테이블에 직접 접근 불가, rk_ 함수만 실행 가능 -----
   await db.exec('set role anon');
