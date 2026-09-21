@@ -216,13 +216,14 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
     </div>
     <div id="lgOff" hidden>
       <p class="ctl" style="color:var(--ink);font-weight:700">클라우드에 연결할 수 없어요.</p>
-      <p class="tip">이 주소(예: claude.ai 안)에서는 외부 연결이 막혀 있을 수 있어요. 인터넷 상태나 웹앱 URL도 확인해 주세요.</p>
+      <p class="tip">이 주소(예: claude.ai 안)에서는 외부 연결이 막혀 있을 수 있어요. 인터넷 상태나 클라우드 연결 설정(URL, key)도 확인해 주세요.</p>
       <div class="btns"><button class="go" id="lgRetry">다시 시도</button><button class="go alt" id="lgOffline">이 기기로 시작</button><button class="go ghost" id="lgBack2">뒤로</button></div>
     </div>
     <p class="tip" id="lgMode"></p>
-    <button class="linkbtn" id="lgSetBtn">⚙ 클라우드(스프레드시트) 연결 설정</button>
+    <button class="linkbtn" id="lgSetBtn">⚙ 클라우드(Supabase) 연결 설정</button>
     <div id="lgSet" hidden style="margin-top:6px">
-      <input class="lgin" id="lgUrl" placeholder="Apps Script 웹앱 URL (…/exec)" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="웹앱 URL">
+      <input class="lgin" id="lgUrl" placeholder="Supabase Project URL (https://….supabase.co)" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="Supabase Project URL">
+      <input class="lgin" id="lgKey" placeholder="anon(public) key" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="Supabase anon key">
       <div class="btns" style="margin-top:4px"><button class="go alt" id="lgUrlSave">저장 + 연결 테스트</button><button class="go ghost" id="lgUrlClear">연결 해제</button></div>
       <p class="tip" id="lgUrlMsg"></p>
     </div>
@@ -312,27 +313,27 @@ function save(){
   cloudSoon();
 }
 
-/* ---------- 클라우드 (구글 스프레드시트 / Apps Script) ---------- */
-const CLOUD_DEFAULT='';   /* 배포한 Apps Script 웹앱 URL(…/exec)을 여기에 넣으면 모든 플레이어가 자동으로 연결돼요 */
-function cloudUrl(){
-  try{const q=new URLSearchParams(location.search).get('api');if(q)return q;}catch(e){}
-  return (lsGet('rk:cloud')||CLOUD_DEFAULT||'').trim();
+/* ---------- 클라우드 (Supabase) ---------- */
+const CLOUD_DEFAULT={url:'https://arvoervppgbcihzguncs.supabase.co',key:'sb_publishable_v-7w6idb5W_3Yn2DBt3Q7A_p4dYAFv7'};   /* Supabase Project URL과 공개용(publishable/anon) key. 이 값이 있으면 모든 플레이어가 자동으로 연결돼요 */
+function cloudCfg(){
+  try{const q=new URLSearchParams(location.search),u=q.get('api'),k=q.get('key');if(u&&k)return{url:u.trim(),key:k.trim()};}catch(e){}
+  try{const s=JSON.parse(lsGet('rk:cloud')||'null');if(s&&s.url&&s.key)return{url:String(s.url).trim(),key:String(s.key).trim()};}catch(e){}
+  return{url:String(CLOUD_DEFAULT.url||'').trim(),key:String(CLOUD_DEFAULT.key||'').trim()};
 }
+function cloudUrl(){const c=cloudCfg();return c.url&&c.key?c.url:'';}
 const SYNC={state:'idle'};
 function syncText(){
   if(!cloudUrl())return '💾 이 기기(브라우저)에만 저장돼요';
   return {busy:'☁ 저장 중…',ok:'☁ 클라우드에 저장됨',err:'⚠ 오프라인 — 나중에 다시 저장해요',idle:'☁ 클라우드 연결됨'}[SYNC.state]||'☁ 클라우드 연결됨';
 }
 function setSync(s){SYNC.state=s;const el=document.getElementById('syncInfo');if(el)el.textContent=syncText();}
-async function api(action,params,post){
-  const url=cloudUrl();if(!url)throw new Error('nocloud');
+async function api(action,params){   /* backend/schema.sql 의 rk_<action> 함수를 호출 */
+  const c=cloudCfg();if(!c.url||!c.key)throw new Error('nocloud');
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),9000);
   try{
-    let res;
-    if(post)res=await fetch(url,{method:'POST',body:JSON.stringify(Object.assign({action},params)),headers:{'Content-Type':'text/plain;charset=utf-8'},signal:ctl.signal,redirect:'follow'});
-    else{const q=new URLSearchParams(Object.assign({action},params));res=await fetch(url+(url.includes('?')?'&':'?')+q.toString(),{signal:ctl.signal,redirect:'follow'});}
+    const res=await fetch(c.url.replace(/\/+$/,'')+'/rest/v1/rpc/rk_'+action,{method:'POST',body:JSON.stringify({p:params||{}}),headers:{'Content-Type':'application/json',apikey:c.key},signal:ctl.signal});
     const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'bad_response');
+    if(!j||!j.ok)throw new Error((j&&(j.error||j.message))||'bad_response');
     return j;
   }finally{clearTimeout(to);}
 }
@@ -348,29 +349,29 @@ async function cloudPush(){
   pushBusy=true;dirty=false;setSync('busy');
   try{
     if(OFFLINE_BASE!==null){
-      const r0=await api('load',{id:USER.id,pin:USER.pin},true);
+      const r0=await api('load',{id:USER.id,pin:USER.pin});
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
       if(r0.exists&&(r0.updatedAt||0)>base&&r0.data){adoptCloud(r0);toast('오프라인 동안 다른 기기에 저장된 기록이 있어 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const r=await api('save',{id:USER.id,pin:USER.pin,updatedAt:S.updatedAt,data:cloudData()},true);
+    const r=await api('save',{id:USER.id,pin:USER.pin,updatedAt:S.updatedAt,data:cloudData()});
     if(r.conflict&&r.data){adoptCloud(r);toast('다른 기기의 더 최신 기록을 불러왔어요.');}
     setSync('ok');
   }catch(e){
-    if(e.message==='bad_pin'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
+    if(e.message==='bad_pin'||e.message==='locked'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
     else{dirty=true;setSync('err');}
   }
   pushBusy=false;
 }
 setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
-function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r),true).catch(()=>{});}
+function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
 
 /* ---------- 로그인 ---------- */
 let LG={id:'',pin:'',ph:'',local:null,offline:false};
 function lgStep(s){
   [['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
 }
-function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 구글 스프레드시트(클라우드) + 이 기기':'저장 방식: 이 기기(브라우저)';}
+function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 클라우드(Supabase) + 이 기기':'저장 방식: 이 기기(브라우저)';}
 function showLogin(){
   $('#login').hidden=false;lgStep('main');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
   const last=lsGet('rk:last');const b=$('#lgResume');
@@ -386,12 +387,16 @@ async function startLogin(raw,rawPin){
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
   let cloud=null;
   if(cloudUrl()){
-    try{cloud=await api('load',{id,pin},true);}
-    catch(e){if(e.message==='bad_pin'){pinFail();return;}lgStep('off');return;}
+    try{cloud=await api('load',{id,pin});}
+    catch(e){
+      if(e.message==='bad_pin'){pinFail();return;}
+      if(e.message==='locked'){pinFail('비밀번호를 여러 번 틀려서 5분 동안 잠겼어요. 잠시 후 다시 시도해 주세요.');return;}
+      lgStep('off');return;
+    }
   }
   finishLogin(cloud);
 }
-function pinFail(){lgStep('main');$('#lgMsg').textContent='ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
+function pinFail(msg){lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
   const id=LG.id,local=LG.local,cEx=cloud&&cloud.exists&&cloud.data;
   if(local&&local.pin&&!cloud&&local.pin!==LG.ph){pinFail();return;}   /* 클라우드 확인을 못 했을 때는 이 기기의 저장값으로 확인 */
@@ -439,15 +444,20 @@ $('#lgBack1').addEventListener('click',()=>lgStep('main'));
 $('#lgBack2').addEventListener('click',()=>lgStep('main'));
 $('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin));
 $('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.local)finishLogin(null);else showNew(LG.id);});
-$('#lgSetBtn').addEventListener('click',()=>{const s=$('#lgSet');s.hidden=!s.hidden;$('#lgUrl').value=lsGet('rk:cloud')||'';});
-$('#lgUrlSave').addEventListener('click',async()=>{
-  const u=$('#lgUrl').value.trim(),m=$('#lgUrlMsg');
-  if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(u)){m.textContent='https://script.google.com/…/exec 형태의 주소를 넣어 주세요.';return;}
-  lsSet('rk:cloud',u);lgModeText();m.textContent='연결 테스트 중…';
-  try{const r=await api('ping',{});m.textContent=`연결 성공! (백엔드 v${r.version})`;}
-  catch(e){m.textContent='연결에 실패했어요. 주소를 확인하거나, claude.ai 안이 아닌 별도 주소에서 열어 보세요.';}
+$('#lgSetBtn').addEventListener('click',()=>{
+  const s=$('#lgSet');s.hidden=!s.hidden;
+  let c={};try{c=JSON.parse(lsGet('rk:cloud')||'{}')||{};}catch(e){}
+  $('#lgUrl').value=c.url||'';$('#lgKey').value=c.key||'';
 });
-$('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
+$('#lgUrlSave').addEventListener('click',async()=>{
+  const u=$('#lgUrl').value.trim().replace(/\/+$/,''),k=$('#lgKey').value.trim(),m=$('#lgUrlMsg');
+  if(!/^https:\/\/[A-Za-z0-9-]+\.supabase\.co$/.test(u)){m.textContent='https://프로젝트ID.supabase.co 형태의 주소를 넣어 주세요.';return;}
+  if(k.length<20){m.textContent='anon(public) key를 넣어 주세요.';return;}
+  lsSet('rk:cloud',JSON.stringify({url:u,key:k}));lgModeText();m.textContent='연결 테스트 중…';
+  try{const r=await api('ping',{});m.textContent=`연결 성공! (백엔드 v${r.version})`;}
+  catch(e){m.textContent='연결에 실패했어요. URL과 key를 확인하고, backend/schema.sql을 실행했는지 확인해 주세요.';}
+});
+$('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
 
 /* ---------- 랭킹 ---------- */
@@ -462,7 +472,7 @@ async function renderRank(){
   document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===rankMetric));
   $('#rkTab').innerHTML='<tr><td>불러오는 중…</td></tr>';
   let list=null,note='';
-  if(cloudUrl()){try{const r=await api('top',{metric:rankMetric,limit:10});list=r.list.map(x=>Object.assign(x,{v:x[rankMetric]}));note='구글 스프레드시트에 저장된 모든 플레이어 기준 상위 10명이에요.';}catch(e){note='클라우드에 연결할 수 없어 이 기기 기준으로 보여줘요.';}}
+  if(cloudUrl()){try{const r=await api('top',{metric:rankMetric,limit:10});list=r.list.map(x=>Object.assign(x,{v:x[rankMetric]}));note='클라우드에 저장된 모든 플레이어 기준 상위 10명이에요.';}catch(e){note='클라우드에 연결할 수 없어 이 기기 기준으로 보여줘요.';}}
   if(!list){list=localTop(rankMetric);if(!note)note='이 기기에 저장된 ID 기준이에요. (클라우드에 연결하면 모든 플레이어가 함께 보여요)';}
   const me=USER?USER.id.toLowerCase():'';
   $('#rkTab').innerHTML=list.length?list.map((x,i)=>`<tr class="${String(x.id).toLowerCase()===me?'me':''}"><td>${i+1}위 ${String(x.id).replace(/[<>&]/g,'')}${x.cleared?' 👑':''}</td><td>${RVAL[rankMetric](x.v)}</td></tr>`).join(''):'<tr><td>아직 기록이 없어요.</td></tr>';

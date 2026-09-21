@@ -16,8 +16,8 @@ index.html            화면 뼈대 (허브, 로그인, 랭킹, 게임 캔버스
 css/style.css         스타일
 js/game.js            게임 전체 로직 (한 파일)
 assets/faces/*.jpg    캐릭터 표정 12종
-backend/Code.gs       구글 스프레드시트 연동용 Apps Script
-dev/                  개발 도구 (빌드, 백엔드 모의 서버/테스트)
+backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
+dev/                  개발 도구 (빌드, 백엔드 테스트)
 dist/                 빌드 결과 (단일 HTML 파일)
 ```
 
@@ -34,7 +34,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) |
 | 강화 항목/가격 | `UPS`, `UPMAX` |
 | 판돈 한도(3,000원) | `betMax()` |
-| 클라우드(스프레드시트) 주소 | `CLOUD_DEFAULT` |
+| 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` |
 | 캐릭터 이미지 추가 | `IMGDATA`에 경로 등록 후 `assets/faces/`에 파일 추가 |
 
 `window.__dbg`는 테스트용 후크예요. 배포할 때는 지워도 돼요.
@@ -47,37 +47,40 @@ node dev/build.js
 
 클라우드 주소를 넣어서 만들려면:
 ```
-node dev/build.js "https://script.google.com/macros/s/…/exec"
+node dev/build.js "https://프로젝트ID.supabase.co" "anon-public-key"
 ```
 
-## 스프레드시트 연동 (선택)
-1. 새 구글 스프레드시트 → 확장 프로그램 → Apps Script → `backend/Code.gs` 붙여넣기
-2. 배포 → 새 배포 → 웹 앱 (실행: 나 / 액세스: 모든 사용자) → `…/exec` 주소 복사
-3. `js/game.js`의 `const CLOUD_DEFAULT='';`에 주소를 넣거나, 위처럼 `build.js`에 주소를 넘겨서 빌드
-4. 임시로 테스트할 때는 `index.html?api=웹앱주소` 로 열거나, 로그인 화면의 ⚙ 설정에 붙여넣기
+## 클라우드 연동 — Supabase (선택)
+로그인(ID + 숫자 4자리 비밀번호), 저장, 랭킹을 모든 플레이어가 함께 쓰려면 필요해요. 없으면 이 브라우저에만 저장돼요.
+1. https://supabase.com 에서 새 프로젝트 만들기
+2. SQL Editor에 `backend/schema.sql` 전체를 붙여넣고 Run (여러 번 실행해도 안전해요)
+3. Project Settings → API 에서 **Project URL**과 **anon(public) key** 복사
+4. 게임 로그인 화면의 ⚙ 클라우드 연결 설정에 두 값을 넣고 "저장 + 연결 테스트". 모든 플레이어가 자동으로 연결되게 하려면 위처럼 `build.js`에 두 값을 넘겨서 빌드하거나 `js/game.js`의 `CLOUD_DEFAULT`에 넣기
+   - 임시 테스트: `index.html?api=프로젝트URL&key=anon키`
 
-코드를 고친 뒤에는 Apps Script에서 **새 버전으로 다시 배포**해야 반영돼요.
-시트에는 `Users`(ID별 데이터), `Matches`(경기 기록)가 자동으로 만들어져요. `data` 열은 직접 고치지 마세요.
+`service_role`(비밀) 키는 절대 넣지 마세요. 브라우저에는 anon 키만 공개돼요.
+
+보안 구조: 테이블은 RLS로 잠겨 있어서 브라우저가 직접 읽거나 쓸 수 없고, `rk_load`/`rk_save`/`rk_score`/`rk_top` 함수로만 접근해요. 비밀번호는 bcrypt 해시로 저장하고, 같은 ID로 5번 틀리면 5분간 잠겨요.
+랭킹 확인: 게임의 🏆 랭킹 버튼, 또는 Supabase의 Table Editor에서 `rk_users`(ID별 데이터), `rk_matches`(경기 기록).
+무료 플랜은 1주일 정도 아무도 접속하지 않으면 프로젝트가 일시정지돼요. 대시보드에서 Restore하면 돼요.
 
 > claude.ai 안에 게시된 페이지에서는 외부 연결이 막혀 있어서 클라우드 저장이 안 돼요.
 > 별도 주소(GitHub Pages 등)에 올린 뒤에 사용하세요.
 
-## 백엔드 로컬 테스트 (구글 계정 없이)
+## 백엔드 로컬 테스트 (계정 없이)
 ```
-npm run test:backend     Code.gs 로직 테스트 (17개 항목)
-npm run mock             http://localhost:8787/exec 에 모의 Apps Script 서버 실행
+npm install
+npm run test:backend     schema.sql 로직 테스트 (PGlite: Node 안에서 도는 PostgreSQL)
 ```
-모의 서버를 켠 뒤 `index.html?api=http://localhost:8787/exec` 로 열면 클라우드 저장/불러오기/랭킹을 로컬에서 시험해 볼 수 있어요.
-(모의 서버는 메모리에만 저장하므로 끄면 데이터가 사라져요.)
-
+비밀번호 검증, 5회 실패 잠금, 값 범위 보정, 랭킹 정렬, anon 권한 제한까지 확인해요.
 ## 저장 데이터 구조
 브라우저 localStorage
 - `rk:u:<id소문자>` : 해당 ID의 전체 저장 데이터
 - `rk:last` : 마지막으로 로그인한 ID
-- `rk:cloud` : 설정 화면에서 넣은 웹앱 URL
+- `rk:cloud` : 설정 화면에서 넣은 Supabase URL/key (JSON)
 
 ## 알려진 한계
-- 비밀번호가 없는 ID 로그인이라, 다른 사람의 ID를 입력하면 그 기록으로 들어갈 수 있어요.
+- 비밀번호는 숫자 4자리라 약해요. 5회 실패 잠금이 있지만, 남이 일부러 틀려서 특정 ID를 5분간 잠글 수는 있어요.
 - 값 조작 방지는 서버의 범위 보정 정도만 있어요. 진짜 경쟁용 랭킹이라면 서버에서 경기를 검증해야 해요.
 - 아직 만들지 않은 것: 식당 달리기 등 나머지 퀘스트 5종, 100만 원 달성 엔딩(비트코인 애니메이션과 60년 뒤 쿠키 영상)
 
