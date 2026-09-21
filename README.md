@@ -33,6 +33,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 킥 결과별 말풍선 대사 | `REACT`, `KEEPER` |
 | 허브의 교실 수다 | `CHAT` |
 | 병문안 대사 / 병원비 | `VISIT`, `hospitalize()` |
+| 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` |
 | 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) |
 | 강화 항목/가격 | `UPS`, `UPMAX` |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (js/game.js 아래쪽) |
