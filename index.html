@@ -60,12 +60,19 @@
     </div>
     <div class="card chall" id="duelCard">
       <h2>친구와 1:1 페널티킥 대결</h2>
-      <p>로그인한 친구와 실시간으로 승부해요. 판돈 없이 승패만 겨뤄요.</p>
+      <p>로그인한 친구와 실시간으로 승부하고, 판돈을 걸 수도 있어요.</p>
       <ul class="rules">
         <li>방을 만들면 <b>4자리 코드</b>가 나와요. 친구가 그 코드를 입력하면 시작!</li>
         <li>번갈아 <b>5번씩</b> 차고 막아요. 슈터는 골대 안을 <b>조준 → 파워 게이지</b>, 골키퍼는 <b>다이브 방향</b>을 동시에 정해요.</li>
+        <li>판돈은 방장이 정해요. 방을 만들고 참가하는 순간 소지금에서 빠지고, <b>이긴 사람이 판돈 2배</b>를 가져가요. 대결 중에 나가면 <b>몰수패</b>예요!</li>
         <li>게이지가 <b>초록 구간</b>일 때 차야 정확해요. 세게 차거나 약하게 차면 빗나가거나 골포스트를 맞힐 수 있어요. 동점이면 서든데스!</li>
       </ul>
+      <div class="stepper">
+        <button class="go ghost" id="duBm">-100</button>
+        <span class="amt" id="duBetV">판돈 없음</span>
+        <button class="go ghost" id="duBp">+100</button>
+        <button class="go ghost" id="duBb">+500</button>
+      </div>
       <div class="acts">
         <button class="go" id="duMake">방 만들기</button>
         <input class="lgin" id="duCode" maxlength="4" placeholder="코드" style="width:110px;margin:0;padding:8px;text-transform:uppercase" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="방 코드 4자리">
@@ -181,6 +188,7 @@
 <div class="ov ovfix" id="duel" hidden role="dialog" aria-labelledby="duT">
   <div class="card dialog duelbox">
     <h2 id="duT">1:1 페널티킥 대결</h2>
+    <p class="dupot" id="duPot"></p>
     <div id="duWait" hidden>
       <p>친구에게 이 코드를 알려 주세요.</p>
       <div class="ducode" id="duCodeBig"></div>

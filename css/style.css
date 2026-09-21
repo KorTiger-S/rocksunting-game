@@ -121,3 +121,5 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .duzones button.sel,.duzones button.sel:disabled{background:rgba(226,51,77,.5);border:2px solid #fff}
 .ducode{font-family:var(--display);font-size:56px;letter-spacing:10px;margin:8px 0;color:var(--ring)}
 .dialog .dumsg{min-height:24px;font-weight:700;color:var(--ink);margin:4px 0}
+.dialog .dupot{margin:2px 0 6px;font-size:14px;font-weight:700;color:var(--ring)}
+.dialog .dupot:empty{display:none}
