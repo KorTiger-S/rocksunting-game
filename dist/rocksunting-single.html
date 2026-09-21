@@ -314,7 +314,7 @@ function save(){
 }
 
 /* ---------- 클라우드 (Supabase) ---------- */
-const CLOUD_DEFAULT={url:'',key:''};   /* Supabase Project URL과 anon(public) key를 넣으면 모든 플레이어가 자동으로 연결돼요 */
+const CLOUD_DEFAULT={url:'https://arvoervppgbcihzguncs.supabase.co',key:'sb_publishable_v-7w6idb5W_3Yn2DBt3Q7A_p4dYAFv7'};   /* Supabase Project URL과 공개용(publishable/anon) key. 이 값이 있으면 모든 플레이어가 자동으로 연결돼요 */
 function cloudCfg(){
   try{const q=new URLSearchParams(location.search),u=q.get('api'),k=q.get('key');if(u&&k)return{url:u.trim(),key:k.trim()};}catch(e){}
   try{const s=JSON.parse(lsGet('rk:cloud')||'null');if(s&&s.url&&s.key)return{url:String(s.url).trim(),key:String(s.key).trim()};}catch(e){}
