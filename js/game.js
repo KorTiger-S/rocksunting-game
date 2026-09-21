@@ -6,7 +6,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.2.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -222,6 +222,12 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '1.2.0':{sub:'1:1 대결에 판돈이 생겼어요!',items:[
+    '🪙 1:1 페널티킥 대결에 판돈을 걸 수 있어요. 방장이 0~5,000원 사이로 정하고, 방을 만들고 참가하는 순간 소지금에서 빠져요.',
+    '💰 이긴 사람이 판돈 2배를 가져가요. 대결 중에 나가거나 자리를 비우면 몰수패예요!',
+    '↩ 아무도 안 들어온 방을 닫거나 방이 만료되면 판돈은 돌려받아요.',
+    '👀 참가하기 전에 방장과 판돈을 먼저 보여 줘요.'
+  ]},
   '1.1.0':{sub:'친구와 1:1로 붙어요!',items:[
     '⚽ 1:1 페널티킥 대결이 생겼어요. 방을 만들고 4자리 코드를 친구에게 알려 주면 바로 승부!',
     '🎯 피파 온라인처럼! 슈터는 골대 안을 조준하고 파워 게이지를 맞춰 차고, 골키퍼는 다이브 방향을 골라요. 번갈아 5번씩, 동점이면 서든데스!',
@@ -1284,14 +1290,21 @@ function frame(now){
 const DU={code:null,st:null,shown:0,anim:null,open:false,poll:0,raf:0,last:0,left:0,leftAt:0,pickedRound:-1,pickIdx:-1,fail:0,ctx:null,lastMsg:'',msgBase:'',
   aim:{x:0,y:.55},ph:'aim',gt:0,gv:0,sent:null,round:-1};
 const duOk=()=>!!(USER&&!USER.guest&&cloudUrl());
-const DU_ERR={bad_pin:'비밀번호가 맞지 않아요.',locked:'비밀번호를 여러 번 틀려서 잠겼어요. 잠시 후 다시 시도해 주세요.',no_room:'그런 코드의 방이 없어요.',full:'이미 시작한 방이에요.',closed:'이미 끝난 방이에요.',busy:'이미 참여 중인 대결이 있어요. "방 만들기"를 누르면 그 방으로 돌아가요.',no_user:'클라우드에 등록된 ID가 아니에요. 잠시 후 다시 시도해 주세요.',not_member:'이 방의 참가자가 아니에요.'};
+let duBet=0;   /* 새 방을 만들 때 걸 판돈 (0~5,000원) */
+const DU_BETMAX=5000;
+const duBetMax=()=>Math.floor(Math.min(DU_BETMAX,Math.max(0,S.money))/100)*100;
+const DU_ERR={bad_pin:'비밀번호가 맞지 않아요.',locked:'비밀번호를 여러 번 틀려서 잠겼어요. 잠시 후 다시 시도해 주세요.',no_room:'그런 코드의 방이 없어요.',full:'이미 시작한 방이에요.',closed:'이미 끝난 방이에요.',busy:'이미 참여 중인 대결이 있어요. "방 만들기"를 누르면 그 방으로 돌아가요.',no_user:'클라우드에 등록된 ID가 아니에요. 잠시 후 다시 시도해 주세요.',not_member:'이 방의 참가자가 아니에요.',no_money:'소지금이 모자라요.'};
 const DU_ZN=['위 왼쪽','위 가운데','위 오른쪽','아래 왼쪽','아래 가운데','아래 오른쪽'];
 const DU_SWEET=[.72,.88];   /* 게이지 초록 구간 (서버는 파워 0.8에서 오차가 가장 작아요) */
 const DU_RES={goal:'GOAL!',saved:'SAVE!',post:'POST!',miss:'빗나갔다!'};
 const duEsc=s=>String(s==null?'':s).replace(/[<>&"]/g,'');
 const duX=n=>240+180*n,duY=n=>200-150*n,duNx=x=>(x-240)/180,duNy=y=>(200-y)/150;
 function renderDuelCard(){
-  const ok=duOk();$('#duMake').disabled=!ok;$('#duJoin').disabled=!ok;$('#duCode').disabled=!ok;
+  const ok=duOk(),mx=duBetMax();
+  duBet=clamp(duBet,0,mx);
+  $('#duBetV').textContent=duBet?`판돈 ${fmt(duBet)}원`:'판돈 없음';
+  $('#duBm').disabled=!ok||duBet<=0;$('#duBp').disabled=!ok||duBet+100>mx;$('#duBb').disabled=!ok||duBet+500>mx;
+  $('#duMake').disabled=!ok;$('#duJoin').disabled=!ok;$('#duCode').disabled=!ok;
   $('#duNote').textContent=ok?'':(USER&&USER.guest?'Guest는 대결할 수 없어요. 로그인해 주세요.':'클라우드에 연결되어 있어야 대결할 수 있어요.');
 }
 const duCall=(a,x)=>api('duel_'+a,Object.assign({id:USER.id,pin:USER.pin,code:DU.code},x));
@@ -1300,11 +1313,27 @@ async function duEnter(action,code){
   $('#duMake').disabled=true;$('#duJoin').disabled=true;$('#duNote').textContent='';
   DU.code=code||null;
   let err='';
-  try{duStart(await duCall(action));}
+  try{
+    if(dirty){try{await cloudPush();}catch(e){}}   /* 판돈은 서버의 소지금에서 빠지니, 내 최신 소지금을 먼저 올려 둬요 */
+    if(action==='join'){
+      const pk=await duCall('peek');
+      if(!pk.mine){
+        if(pk.bet>S.money)throw new Error('no_money');
+        const q=pk.bet>0?`${pk.host} 님의 방이에요.
+판돈 ${fmt(pk.bet)}원 (이기면 ${fmt(pk.bet*2)}원)이 걸려 있어요.
+참가하면 바로 ${fmt(pk.bet)}원이 빠져요. 참가할까요?`:`${pk.host} 님의 방이에요. (판돈 없음) 참가할까요?`;
+        if(!confirm(q)){DU.code=null;renderDuelCard();return;}
+      }
+    }
+    duStart(await duCall(action,action==='create'?{bet:duBet}:{}));
+  }
   catch(e){DU.code=null;err=DU_ERR[e.message]||'연결에 실패했어요. 잠시 후 다시 시도해 주세요.';}
   renderDuelCard();
   if(err)$('#duNote').textContent=err;
 }
+$('#duBm').addEventListener('click',()=>{duBet-=100;renderDuelCard();});
+$('#duBp').addEventListener('click',()=>{duBet+=100;renderDuelCard();});
+$('#duBb').addEventListener('click',()=>{duBet+=500;renderDuelCard();});
 $('#duMake').addEventListener('click',()=>duEnter('create'));
 $('#duJoin').addEventListener('click',()=>{
   const c=$('#duCode').value.trim().toUpperCase();
@@ -1312,7 +1341,10 @@ $('#duJoin').addEventListener('click',()=>{
   duEnter('join',c);
 });
 $('#duCode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#duJoin').click();}});
+/* 판돈은 서버가 소지금을 직접 바꿔요. 응답에 들어 있는 내 소지금을 그대로 받아 와요. */
+function duMoney(m){if(typeof m==='number'&&m!==S.money){S.money=m;save();}}
 function duStart(st){
+  duMoney(st.money);
   DU.code=st.code;DU.st=st;DU.shown=st.hist.length;DU.anim=null;DU.pickedRound=-1;DU.pickIdx=-1;DU.fail=0;DU.open=true;
   DU.round=-1;DU.sent=null;
   DU.left=st.left;DU.leftAt=performance.now();
@@ -1332,7 +1364,7 @@ function duPoll(){
 function duGot(st){
   if(!DU.open)return;
   if(DU.st&&st.hist.length<DU.st.hist.length)return;   /* 늦게 도착한 옛 응답은 무시 */
-  DU.st=st;DU.left=st.left;DU.leftAt=performance.now();duRender();
+  DU.st=st;DU.left=st.left;DU.leftAt=performance.now();duMoney(st.money);duRender();
 }
 function duErr(e){
   const m=e&&e.message;
@@ -1342,12 +1374,12 @@ function duErr(e){
 function duClose(leave){
   const code=DU.code,st=DU.st;
   DU.open=false;clearTimeout(DU.poll);cancelAnimationFrame(DU.raf);$('#duel').hidden=true;
-  if(leave&&code&&st&&st.status!=='done')api('duel_leave',{id:USER.id,pin:USER.pin,code}).catch(()=>{});
-  DU.code=null;DU.st=null;DU.anim=null;
+  if(leave&&code&&st&&st.status!=='done')api('duel_leave',{id:USER.id,pin:USER.pin,code}).then(r=>{duMoney(r.money);renderHub();if(st.bet>0&&st.status==='waiting')toast('판돈을 돌려받았어요.');}).catch(()=>{});
+  DU.code=null;DU.st=null;DU.anim=null;renderHub();
 }
 $('#duLeave').addEventListener('click',()=>{
   const st=DU.st;if(!st)return;
-  if(st.status==='playing'&&!confirm('지금 나가면 몰수패예요. 나갈까요?'))return;
+  if(st.status==='playing'&&!confirm(st.bet>0?`지금 나가면 몰수패예요. 판돈 ${fmt(st.bet)}원을 잃어요. 나갈까요?`:'지금 나가면 몰수패예요. 나갈까요?'))return;
   duClose(true);
 });
 $('#duCopy').addEventListener('click',()=>{
@@ -1401,6 +1433,7 @@ function duRender(){
   $('#duWait').hidden=!wait;$('#duPlay').hidden=wait;
   $('#duCodeBig').textContent=st.code;
   $('#duT').textContent=wait?'상대를 기다리는 중':'1:1 페널티킥 대결';
+  $('#duPot').textContent=st.bet>0?(wait?`🪙 판돈 ${fmt(st.bet)}원을 걸었어요. 친구가 들어오면 승자가 ${fmt(st.bet*2)}원을 가져가요. (방을 닫으면 돌려받아요)`:`🪙 판돈 ${fmt(st.bet)}원씩 · 승자가 ${fmt(st.bet*2)}원을 가져가요`):'';
   if(wait){$('#duLeave').textContent='방 닫기';return;}
   if(DU.round!==st.round){DU.round=st.round;DU.ph='aim';DU.gt=0;DU.gv=0;DU.sent=null;}   /* 새 킥이 시작되면 조준부터 */
   if(!DU.anim&&DU.shown<st.hist.length){DU.anim={h:st.hist[DU.shown],t:0};DU.shown++;}
@@ -1425,6 +1458,7 @@ function duRender(){
     else if(w===mine)msg=st.reason==='left'?'🏆 상대가 나가서 승리했어요!':'🏆 승리! 축하해요!';
     else msg=st.reason==='left'?'😢 자리를 비워서 패배했어요.':'😢 아쉽게 패배했어요.';
     msg+=`  (${hg} : ${gg})`;
+    if(st.bet>0)msg+=w==='draw'?`  🪙 판돈 ${fmt(st.bet)}원을 돌려받았어요.`:w===mine?`  💰 +${fmt(st.bet)}원`:`  💸 -${fmt(st.bet)}원`;
   }else if(live){
     if(duCanShoot())msg=DU.ph==='aim'?'🎯 슛할 곳을 조준하세요!':'⚡ 초록 구간에서 클릭!';
     else if(canK)msg='🧤 다이브할 곳을 고르세요!';

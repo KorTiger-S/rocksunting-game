@@ -342,6 +342,8 @@ end $$;
 -- ---------- 1:1 페널티킥 대결 ----------
 -- 피파 온라인 방식: 슈터는 골대 안에서 조준(ax, ay) + 파워 게이지(pw), 골키퍼는 다이브 칸(0~5)을 고른다.
 -- 방 코드(4자리)로 친구를 초대하고, 번갈아 5번씩 차고 막는다. 선택은 서버가 둘 다 받은 뒤에 판정한다.
+-- 판돈: 방장이 0~5,000원을 정한다. 방을 만들 때/참가할 때 각자의 소지금에서 미리 빠지고, 이긴 사람이 2배를 받는다.
+--       무승부(둘 다 사라짐)와 대기방 만료/닫기는 판돈을 돌려주고, 나가거나 자리를 비우면 몰수패다. 정산은 딱 한 번만 한다(settled).
 --   골대 좌표: ax = -1(왼쪽 골포스트) ~ 1(오른쪽 골포스트), ay = 0(바닥) ~ 1(크로스바). 밖으로 나가면 빗나감.
 create table if not exists public.rk_duels (
   code       text primary key,
@@ -361,6 +363,9 @@ create table if not exists public.rk_duels (
   round_at   timestamptz not null default now(),
   host_seen  timestamptz not null default now(),
   guest_seen timestamptz,
+  bet        int  not null default 0,             -- 판돈(한 사람당)
+  season_key text,                                -- 방을 만든 시즌 (시즌이 바뀌면 소지금이 초기화되므로 정산하지 않는다)
+  settled    boolean not null default false,      -- 판돈 정산을 마쳤는지
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -368,6 +373,9 @@ create table if not exists public.rk_duels (
 alter table public.rk_duels add column if not exists k_ax double precision;
 alter table public.rk_duels add column if not exists k_ay double precision;
 alter table public.rk_duels add column if not exists k_pw double precision;
+alter table public.rk_duels add column if not exists bet int not null default 0;
+alter table public.rk_duels add column if not exists season_key text;
+alter table public.rk_duels add column if not exists settled boolean not null default false;
 alter table public.rk_duels drop column if exists k_pick;
 drop function if exists public.rk_duel_shot(int, int);
 alter table public.rk_duels enable row level security;
@@ -412,6 +420,20 @@ begin
   return jsonb_build_object('r', r, 'fx', round(fx::numeric, 3), 'fy', round(fy::numeric, 3));
 end $$;
 
+-- 판돈 입출금(내부용). 시즌이 바뀌어 소지금이 초기화된 사람에게는 적용하지 않는다.
+-- updated_at_ms를 올려서, 예전 소지금을 들고 있는 다른 기기가 덮어쓰지 못하고 이 값을 받아 가게 한다.
+create or replace function public.rk_duel_pay(k text, delta int, sk text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if k is null or delta = 0 then return; end if;
+  update public.rk_users set
+    money = greatest(0, least(100000000, money + delta)),
+    data = jsonb_set(data, '{money}', to_jsonb(greatest(0, least(100000000, money + delta)))),
+    updated_at_ms = greatest(updated_at_ms + 1, (extract(epoch from now()) * 1000)::bigint),
+    updated_at = now()
+  where id = k and season_key is not distinct from sk;
+end $$;
+
 create or replace function public.rk_duel_json(d public.rk_duels, k text) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare me text := case when d.host = k then 'host' else 'guest' end;
@@ -423,6 +445,7 @@ begin
     'mine', case when kicker = me then d.k_ax is not null else d.g_pick is not null end,
     'theirs', case when kicker = me then d.g_pick is not null else d.k_ax is not null end,
     'hist', d.hist, 'winner', d.winner, 'reason', d.reason,
+    'bet', d.bet, 'money', (select money from public.rk_users where id = k),
     'left', greatest(0, ceil(extract(epoch from (d.round_at + interval '25 seconds' - now()))))::int);
 end $$;
 
@@ -437,7 +460,9 @@ begin
   if d.status = 'waiting' and d.created_at < now() - interval '15 minutes' then
     d.status := 'done'; d.winner := 'draw'; d.reason := 'expired';
   elsif d.status = 'playing' then
-    if d.host_seen < now() - interval '90 seconds' then
+    if d.host_seen < now() - interval '90 seconds' and d.guest_seen < now() - interval '90 seconds' then
+      d.status := 'done'; d.winner := 'draw'; d.reason := 'left';       -- 둘 다 사라졌으면 판돈은 돌려준다
+    elsif d.host_seen < now() - interval '90 seconds' then
       d.status := 'done'; d.winner := 'guest'; d.reason := 'left';
     elsif d.guest_seen < now() - interval '90 seconds' then
       d.status := 'done'; d.winner := 'host'; d.reason := 'left';
@@ -469,10 +494,20 @@ begin
       d.winner := case when d.hg > d.gg then 'host' when d.gg > d.hg then 'guest' else 'draw' end;
     end if;
   end if;
+  -- 판돈 정산(딱 한 번): 이긴 사람이 2배, 무승부/만료는 각자 돌려받는다
+  if d.status = 'done' and not d.settled then
+    d.settled := true;
+    if d.bet > 0 then
+      if d.winner = 'host' then perform public.rk_duel_pay(d.host, 2 * d.bet, d.season_key);
+      elsif d.winner = 'guest' then perform public.rk_duel_pay(d.guest, 2 * d.bet, d.season_key);
+      else perform public.rk_duel_pay(d.host, d.bet, d.season_key); perform public.rk_duel_pay(d.guest, d.bet, d.season_key);
+      end if;
+    end if;
+  end if;
   update public.rk_duels set status = d.status, round = d.round, hg = d.hg, gg = d.gg,
     k_ax = d.k_ax, k_ay = d.k_ay, k_pw = d.k_pw, g_pick = d.g_pick,
     hist = d.hist, winner = d.winner, reason = d.reason, round_at = d.round_at,
-    host_seen = d.host_seen, guest_seen = d.guest_seen, updated_at = now()
+    host_seen = d.host_seen, guest_seen = d.guest_seen, settled = d.settled, updated_at = now()
   where code = d.code;
   return d;
 end $$;
@@ -491,38 +526,61 @@ end $$;
 
 create or replace function public.rk_duel_create(p jsonb) returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
-declare u jsonb := public.rk_duel_user(p); k text; nm text; d public.rk_duels; c text; i int := 0; n int := 0; act text;
+declare u jsonb := public.rk_duel_user(p); k text; nm text; m int; d public.rk_duels; c text; i int := 0; n int := 0; act text;
+  bet int := 0; sk text := public.rk_season_json()->>'key';
   alpha text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 begin
   if not (u->>'ok')::boolean then return u; end if;
   k := u->>'id';
-  select name into nm from public.rk_users where id = k;
-  delete from public.rk_duels where updated_at < now() - interval '2 days';
+  if coalesce(p->>'bet', '') ~ '^[0-9]{1,6}$' then bet := least(5000, (p->>'bet')::int / 100 * 100); end if;   -- 판돈: 0~5,000원 (100원 단위)
+  -- 오래된 방 정리: 아직 정산하지 않은 방은 먼저 정산(환불/몰수)한 뒤에 지운다
+  for d in select * from public.rk_duels where updated_at < now() - interval '2 days' and not settled and status in ('waiting', 'playing') for update loop
+    perform public.rk_duel_settle(d, null);
+  end loop;
+  delete from public.rk_duels where updated_at < now() - interval '2 days' and status = 'done';
   act := public.rk_duel_active(k);
   if act is not null then                                -- 이미 참여 중인 방으로 돌아간다
     select * into d from public.rk_duels where code = act for update;
     d := public.rk_duel_settle(d, k);
     return public.rk_duel_json(d, k);
   end if;
+  select name, money into nm, m from public.rk_users where id = k for update;
+  if bet > m then return jsonb_build_object('ok', false, 'error', 'no_money'); end if;
   loop
     i := i + 1; c := '';
     for j in 1..4 loop c := c || substr(alpha, 1 + floor(random() * 32)::int, 1); end loop;
-    insert into public.rk_duels (code, host, host_name) values (c, k, nm) on conflict (code) do nothing;
+    insert into public.rk_duels (code, host, host_name, bet, season_key) values (c, k, nm, bet, sk) on conflict (code) do nothing;
     get diagnostics n = row_count;
     exit when n = 1 or i >= 10;
   end loop;
   if n = 0 then return jsonb_build_object('ok', false, 'error', 'busy'); end if;
+  if bet > 0 then perform public.rk_duel_pay(k, -bet, sk); end if;     -- 판돈은 방을 만드는 순간 소지금에서 빠진다
   select * into d from public.rk_duels where code = c;
   return public.rk_duel_json(d, k);
 end $$;
 
-create or replace function public.rk_duel_join(p jsonb) returns jsonb
+-- 참가하기 전에 방 정보(방장, 판돈)를 미리 본다
+create or replace function public.rk_duel_peek(p jsonb) returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
-declare u jsonb := public.rk_duel_user(p); k text; nm text; d public.rk_duels; c text := upper(btrim(coalesce(p->>'code', ''))); act text;
+declare u jsonb := public.rk_duel_user(p); k text; d public.rk_duels;
 begin
   if not (u->>'ok')::boolean then return u; end if;
   k := u->>'id';
-  select name into nm from public.rk_users where id = k;
+  select * into d from public.rk_duels where code = upper(btrim(coalesce(p->>'code', '')));
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_room'); end if;
+  if d.host = k or d.guest = k then
+    return jsonb_build_object('ok', true, 'host', d.host_name, 'bet', d.bet, 'mine', true);
+  end if;
+  if d.status <> 'waiting' then return jsonb_build_object('ok', false, 'error', case when d.status = 'playing' then 'full' else 'closed' end); end if;
+  return jsonb_build_object('ok', true, 'host', d.host_name, 'bet', d.bet, 'mine', false);
+end $$;
+
+create or replace function public.rk_duel_join(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare u jsonb := public.rk_duel_user(p); k text; nm text; m int; d public.rk_duels; c text := upper(btrim(coalesce(p->>'code', ''))); act text;
+begin
+  if not (u->>'ok')::boolean then return u; end if;
+  k := u->>'id';
   act := public.rk_duel_active(k);
   if act is not null and act <> c then return jsonb_build_object('ok', false, 'error', 'busy', 'code', act); end if;
   select * into d from public.rk_duels where code = c for update;
@@ -533,8 +591,14 @@ begin
     return public.rk_duel_json(d, k);
   end if;
   if d.status <> 'waiting' then return jsonb_build_object('ok', false, 'error', case when d.status = 'playing' then 'full' else 'closed' end); end if;
+  if d.bet > 0 and d.season_key is distinct from public.rk_season_json()->>'key' then    -- 시즌이 바뀐 방은 판돈을 정산할 수 없다
+    return jsonb_build_object('ok', false, 'error', 'closed');
+  end if;
+  select name, money into nm, m from public.rk_users where id = k for update;
+  if m < d.bet then return jsonb_build_object('ok', false, 'error', 'no_money', 'bet', d.bet); end if;
   update public.rk_duels set guest = k, guest_name = nm, guest_seen = now(), status = 'playing', round_at = now(), updated_at = now()
   where code = c returning * into d;
+  if d.bet > 0 then perform public.rk_duel_pay(k, -d.bet, d.season_key); end if;   -- 참가자의 판돈도 이 순간 빠진다
   return public.rk_duel_json(d, k);
 end $$;
 
@@ -592,35 +656,37 @@ end $$;
 
 create or replace function public.rk_duel_leave(p jsonb) returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
-declare u jsonb := public.rk_duel_user(p); k text; d public.rk_duels;
+declare u jsonb := public.rk_duel_user(p); k text; d public.rk_duels; m int;
 begin
   if not (u->>'ok')::boolean then return u; end if;
   k := u->>'id';
   select * into d from public.rk_duels where code = upper(btrim(coalesce(p->>'code', ''))) for update;
   if not found then return jsonb_build_object('ok', true); end if;
   if d.host <> k and d.guest is distinct from k then return jsonb_build_object('ok', false, 'error', 'not_member'); end if;
-  if d.status = 'waiting' then
+  if d.status = 'waiting' then                            -- 아무도 안 들어온 방을 닫으면 판돈을 돌려받는다
+    if d.bet > 0 then perform public.rk_duel_pay(d.host, d.bet, d.season_key); end if;
     delete from public.rk_duels where code = d.code;
-  elsif d.status = 'playing' then
-    update public.rk_duels set status = 'done', winner = case when d.host = k then 'guest' else 'host' end, reason = 'left', updated_at = now()
-    where code = d.code;
+  elsif d.status = 'playing' then                         -- 대결 중에 나가면 몰수패: 상대가 판돈을 모두 가져간다
+    d.status := 'done'; d.winner := case when d.host = k then 'guest' else 'host' end; d.reason := 'left';
+    d := public.rk_duel_settle(d, null);
   end if;
-  return jsonb_build_object('ok', true);
+  select money into m from public.rk_users where id = k;
+  return jsonb_build_object('ok', true, 'money', m);
 end $$;
 
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
 revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
-                       public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text) from public, anon, authenticated;
+                       public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                        public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
                        public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
-                       public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb) from public;
+                       public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb) from public;
 revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                           public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
                           public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
-                          public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb)
+                          public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb)
   to anon, authenticated;
 grant execute on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) to service_role;
