@@ -302,6 +302,105 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     ok(r.status === 'done' && r.reason === 'expired', '대결: 15분 넘게 기다린 방은 만료');
   }
 
+  // ----- 1:1 대결 판돈: 미리 빼 두고(에스크로), 이긴 사람이 2배, 무승부/만료/닫기는 환불, 나가면 몰수 -----
+  {
+    const A = { id: '판돈갑', pin: P }, B = { id: '판돈을', pin: P };
+    await save(A.id, 1, { money: 5000 }); await save(B.id, 1, { money: 5000 });
+    const row = async id => (await db.query(`select money, (data->>'money')::int as dm, updated_at_ms from public.rk_users where id = $1`, [id])).rows[0];
+    const bal = async id => (await row(id)).money;
+    const setMoney = (id, m) => db.query(`update public.rk_users set money = $2, data = jsonb_set(data, '{money}', to_jsonb($2::int)) where id = $1`, [id, m]);
+    const st = (u, code) => rpc('duel_state', { ...u, code });
+    const play = async (code, round, goal) => {
+      const sh = round % 2 === 0 ? A : B, kp = round % 2 === 0 ? B : A;
+      await rpc('duel_pick', { ...sh, code, round, ax: goal ? -0.6 : -0.667, ay: 0.25, pw: 0.8 });
+      return rpc('duel_pick', { ...kp, code, round, pick: goal ? 2 : 3 });
+    };
+    const drow = async code => (await db.query('select * from public.rk_duels where code = $1', [code])).rows[0];
+    const t0 = (await row(A.id)).updated_at_ms;
+
+    // 판돈 범위: 5,000원 상한, 100원 단위, 숫자가 아니면 0
+    let r = await rpc('duel_create', { ...A, bet: 99999 });
+    ok(r.ok && r.bet === 5000 && r.money === 0 && (await bal(A.id)) === 0, '판돈: 최대 5,000원으로 보정되고 방을 만드는 순간 소지금에서 빠짐');
+    ok((await row(A.id)).dm === 0 && (await row(A.id)).updated_at_ms > t0, '판돈: 저장 데이터(data.money)도 같이 바뀌고 갱신 시각이 올라감');
+    ok((await save(A.id, 5, { money: 99999 })).conflict === true, '판돈: 예전 소지금을 들고 있는 기기는 덮어쓰지 못하고 서버 값을 받아 감');
+    ok((await rpc('duel_leave', { ...A, code: r.code })).money === 5000 && (await bal(A.id)) === 5000 && !(await drow(r.code)), '판돈: 아무도 안 들어온 방을 닫으면 판돈을 돌려받고 방이 사라짐');
+    r = await rpc('duel_create', { ...A, bet: 'abc' });
+    ok(r.bet === 0 && (await bal(A.id)) === 5000, '판돈: 숫자가 아니면 판돈 없음(0원)');
+    await rpc('duel_leave', { ...A, code: r.code });
+    await setMoney(A.id, 200);
+    ok((await rpc('duel_create', { ...A, bet: 5000 })).error === 'no_money' && (await db.query(`select 1 from public.rk_duels where host = $1 and status <> 'done'`, [A.id])).rows.length === 0, '판돈: 가진 돈보다 많이 걸면 방을 만들 수 없음');
+    await setMoney(A.id, 5000);
+
+    // 방 정보 미리보기 + 참가자 소지금 확인
+    r = await rpc('duel_create', { ...A, bet: 1234 });
+    const code = r.code;
+    ok(r.bet === 1200 && (await bal(A.id)) === 3800, '판돈: 100원 단위로 내림(1,234 → 1,200)');
+    let pk = await rpc('duel_peek', { ...B, code: code.toLowerCase() });
+    ok(pk.ok && pk.host === '판돈갑' && pk.bet === 1200 && pk.mine === false, '판돈: 참가하기 전에 방장과 판돈을 미리 볼 수 있음');
+    ok((await rpc('duel_peek', { ...A, code })).mine === true && (await rpc('duel_peek', { ...B, code: 'ZZZZ' })).error === 'no_room', '판돈: 내 방이면 mine, 없는 코드는 no_room');
+    await setMoney(B.id, 500);
+    r = await rpc('duel_join', { ...B, code });
+    ok(r.error === 'no_money' && r.bet === 1200 && (await bal(B.id)) === 500 && (await drow(code)).status === 'waiting', '판돈: 소지금이 모자라면 참가할 수 없고 방은 그대로');
+    await setMoney(B.id, 5000);
+    r = await rpc('duel_join', { ...B, code });
+    ok(r.ok && r.status === 'playing' && r.bet === 1200 && r.money === 3800 && (await bal(B.id)) === 3800, '판돈: 참가하는 순간 참가자의 판돈도 빠짐');
+    ok((await rpc('duel_peek', { id: '판돈병', pin: P, code })).error === 'no_user', '판돈: 미리보기도 로그인 필요');
+
+    // 방장 3:0 승리 → 방장이 판돈의 2배(2,400원)
+    for (let i = 0; i < 10; i++) { r = await st(A, code); if (r.status === 'done') break; r = await play(code, i, i % 2 === 0); }
+    ok(r.status === 'done' && r.winner === 'host', '판돈: 대결이 끝남(방장 승)');
+    ok((await bal(A.id)) === 6200 && (await bal(B.id)) === 3800, '판돈: 이긴 방장은 2,400원을 받음(+1,200), 진 참가자는 판돈을 잃음(-1,200)');
+    await st(A, code); await st(B, code); await rpc('duel_leave', { ...A, code }); await rpc('duel_create', { ...A });
+    ok((await bal(A.id)) === 6200 && (await bal(B.id)) === 3800 && (await drow(code)).settled === true, '판돈: 정산은 딱 한 번만(상태 조회/나가기를 반복해도 돈이 다시 오가지 않음)');
+    r = await st(A, code);
+    ok(r.money === 6200 && r.bet === 1200, '판돈: 상태 응답에 내 소지금과 판돈이 들어 있음');
+    await rpc('duel_leave', { ...A, code: (await rpc('duel_create', { ...A })).code });
+
+    // 대결 중에 나가면 몰수패: 상대가 판돈을 모두 가져감
+    r = await rpc('duel_create', { ...A, bet: 1000 }); const c2 = r.code;
+    await rpc('duel_join', { ...B, code: c2 });
+    ok((await bal(A.id)) === 5200 && (await bal(B.id)) === 2800, '판돈: 둘 다 1,000원씩 빠짐');
+    r = await rpc('duel_leave', { ...B, code: c2 });
+    ok(r.money === 2800 && (await bal(A.id)) === 7200 && (await bal(B.id)) === 2800, '판돈: 나간 사람은 몰수패, 남은 사람이 2,000원을 가져감');
+    ok((await st(A, c2)).winner === 'host' && (await st(A, c2)).money === 7200, '판돈: 몰수 정산 뒤에도 값이 그대로');
+
+    // 자리 비움(한 명): 남은 사람 승
+    r = await rpc('duel_create', { ...A, bet: 500 }); const c3 = r.code;
+    await rpc('duel_join', { ...B, code: c3 });
+    await db.query(`update public.rk_duels set guest_seen = now() - interval '100 seconds' where code = $1`, [c3]);
+    r = await st(A, c3);
+    ok(r.winner === 'host' && (await bal(A.id)) === 7700 && (await bal(B.id)) === 2300, '판돈: 상대가 자리를 비우면 몰수승으로 판돈을 가져감');
+
+    // 대기방 만료: 방장에게 환불
+    r = await rpc('duel_create', { ...B, bet: 500 }); const c4 = r.code;
+    ok((await bal(B.id)) === 1800, '판돈: 대기방을 만들면 판돈이 빠짐');
+    await db.query(`update public.rk_duels set created_at = now() - interval '20 minutes' where code = $1`, [c4]);
+    r = await st(B, c4);
+    ok(r.status === 'done' && r.reason === 'expired' && (await bal(B.id)) === 2300, '판돈: 15분 넘게 기다려 만료된 방은 판돈을 돌려줌');
+    await st(B, c4);
+    ok((await bal(B.id)) === 2300, '판돈: 만료 환불도 한 번만');
+
+    // 둘 다 사라짐 → 무승부, 각자 환불 (다음에 방을 만들 때 정리됨)
+    r = await rpc('duel_create', { ...A, bet: 1000 }); const c5 = r.code;
+    await rpc('duel_join', { ...B, code: c5 });
+    ok((await bal(A.id)) === 6700 && (await bal(B.id)) === 1300, '판돈: 다시 1,000원씩 빠짐');
+    await db.query(`update public.rk_duels set host_seen = now() - interval '200 seconds', guest_seen = now() - interval '200 seconds' where code = $1`, [c5]);
+    r = await rpc('duel_create', { ...A });          // 지난 방부터 정리하고 새 방을 만든다
+    ok((await drow(c5)).winner === 'draw' && (await bal(A.id)) === 7700 && (await bal(B.id)) === 2300, '판돈: 둘 다 사라진 방은 무승부로 각자 판돈을 돌려받음');
+    await rpc('duel_leave', { ...A, code: r.code });
+
+    // 정산은 돈이 새지 않는다: 두 사람의 합계는 처음 그대로(10,000원)
+    ok((await bal(A.id)) + (await bal(B.id)) === 10000, '판돈: 정산이 끝나면 두 사람 소지금의 합계는 그대로(돈이 생기거나 사라지지 않음)');
+    // 시즌이 바뀌어 소지금이 초기화된 뒤에는 옛 방을 정산하지 않는다
+    r = await rpc('duel_create', { ...A, bet: 1000 }); const c6 = r.code;
+    await rpc('duel_join', { ...B, code: c6 });
+    await db.query(`update public.rk_users set season_key = '2099-01' where id in ($1, $2)`, [A.id, B.id]);
+    const a0 = await bal(A.id), b0 = await bal(B.id);
+    await rpc('duel_leave', { ...B, code: c6 });
+    ok((await bal(A.id)) === a0 && (await bal(B.id)) === b0, '판돈: 시즌이 바뀐 뒤에는 옛 시즌 판돈을 정산하지 않음(새 시즌 소지금에 영향 없음)');
+    await db.query(`update public.rk_users set season_key = $1 where id in ($2, $3)`, [SEASON, A.id, B.id]);
+  }
+
   // ----- 권한: anon은 테이블에 직접 접근 불가, rk_ 함수만 실행 가능 -----
   await db.exec('set role anon');
   let denied = false; try { await db.query('select * from public.rk_users'); } catch (e) { denied = true; }
