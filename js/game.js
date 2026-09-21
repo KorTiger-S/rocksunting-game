@@ -40,10 +40,19 @@ let USER=null,S=DEF(),OFFLINE_BASE=null,pendingCloud=null;
 function mergeData(d){const b=DEF();const o=Object.assign(b,d||{});o.up=Object.assign(DEF().up,(d&&d.up)||{});return o;}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
 function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,up:S.up};}
+const PIN_RE=/^\d{4}$/;
+function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
+  const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);
+}
+function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,updatedAt:S.updatedAt,data:S}));}
 function save(){
   if(!USER)return;
   S.updatedAt=Date.now();
-  lsSet(ukey(USER.id),JSON.stringify({name:USER.id,updatedAt:S.updatedAt,data:S}));
+  putLocal();
   lsSet('rk:last',USER.id);
   cloudSoon();
 }
@@ -77,50 +86,60 @@ function cloudSoon(){if(!cloudUrl()||!USER)return;dirty=true;clearTimeout(pushT)
 function adoptCloud(r){
   if(mode!=='hub'){pendingCloud=r;return;}
   const d=mergeData(r.data);d.news='다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
-  S=d;lsSet(ukey(USER.id),JSON.stringify({name:USER.id,updatedAt:S.updatedAt,data:S}));renderHub();
+  S=d;putLocal();renderHub();
 }
 async function cloudPush(){
   if(!USER||!cloudUrl()||pushBusy||!dirty)return;
   pushBusy=true;dirty=false;setSync('busy');
   try{
     if(OFFLINE_BASE!==null){
-      const r0=await api('load',{id:USER.id});
+      const r0=await api('load',{id:USER.id,pin:USER.pin},true);
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
       if(r0.exists&&(r0.updatedAt||0)>base&&r0.data){adoptCloud(r0);toast('오프라인 동안 다른 기기에 저장된 기록이 있어 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const r=await api('save',{id:USER.id,updatedAt:S.updatedAt,data:cloudData()},true);
+    const r=await api('save',{id:USER.id,pin:USER.pin,updatedAt:S.updatedAt,data:cloudData()},true);
     if(r.conflict&&r.data){adoptCloud(r);toast('다른 기기의 더 최신 기록을 불러왔어요.');}
     setSync('ok');
-  }catch(e){dirty=true;setSync('err');}
+  }catch(e){
+    if(e.message==='bad_pin'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
+    else{dirty=true;setSync('err');}
+  }
   pushBusy=false;
 }
 setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
-function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id},r),true).catch(()=>{});}
+function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r),true).catch(()=>{});}
 
 /* ---------- 로그인 ---------- */
-let LG={id:'',local:null,offline:false};
+let LG={id:'',pin:'',ph:'',local:null,offline:false};
 function lgStep(s){
   [['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
 }
 function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 구글 스프레드시트(클라우드) + 이 기기':'저장 방식: 이 기기(브라우저)';}
 function showLogin(){
-  $('#login').hidden=false;lgStep('main');lgModeText();$('#lgMsg').textContent='';
+  $('#login').hidden=false;lgStep('main');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
   const last=lsGet('rk:last');const b=$('#lgResume');
   if(last&&ID_RE.test(last)){b.hidden=false;b.textContent=`${last} (으)로 계속하기`;b.dataset.id=last;}else b.hidden=true;
   setTimeout(()=>{try{$('#lgId').focus();}catch(e){}},50);
 }
-async function startLogin(raw){
+async function startLogin(raw,rawPin){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
+  const pin=String(rawPin||'').trim();
   if(!ID_RE.test(id)){$('#lgMsg').textContent='ID는 2~12자, 한글·영문·숫자·_ 만 쓸 수 있어요.';return;}
-  LG={id,local:readLocal(id),offline:false};
+  if(!PIN_RE.test(pin)){$('#lgMsg').textContent='비밀번호는 숫자 4자리로 입력해 주세요.';return;}
+  LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false};
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
   let cloud=null;
-  if(cloudUrl()){try{cloud=await api('load',{id});}catch(e){lgStep('off');return;}}
+  if(cloudUrl()){
+    try{cloud=await api('load',{id,pin},true);}
+    catch(e){if(e.message==='bad_pin'){pinFail();return;}lgStep('off');return;}
+  }
   finishLogin(cloud);
 }
+function pinFail(){lgStep('main');$('#lgMsg').textContent='ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
   const id=LG.id,local=LG.local,cEx=cloud&&cloud.exists&&cloud.data;
+  if(local&&local.pin&&!cloud&&local.pin!==LG.ph){pinFail();return;}   /* 클라우드 확인을 못 했을 때는 이 기기의 저장값으로 확인 */
   if(!local&&!cEx){showNew(id);return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
@@ -141,7 +160,7 @@ function createUser(useLegacy){
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph};S=data;if(news)S.news=news;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
@@ -153,14 +172,17 @@ async function logout(){
   try{if(dirty)await cloudPush();}catch(e){}
   USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;updateUserChip();showLogin();
 }
-$('#lgGo').addEventListener('click',()=>startLogin($('#lgId').value));
-$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();startLogin($('#lgId').value);}});
-$('#lgResume').addEventListener('click',e=>startLogin(e.currentTarget.dataset.id));
+const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value);
+$('#lgGo').addEventListener('click',lgSubmit);
+$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#lgPin').focus();}});
+$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
+$('#lgPin').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+$('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dataset.id;$('#lgPin').focus();});
 $('#lgCreate').addEventListener('click',()=>createUser(false));
 $('#lgImport').addEventListener('click',()=>createUser(true));
 $('#lgBack1').addEventListener('click',()=>lgStep('main'));
 $('#lgBack2').addEventListener('click',()=>lgStep('main'));
-$('#lgRetry').addEventListener('click',()=>startLogin(LG.id));
+$('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin));
 $('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.local)finishLogin(null);else showNew(LG.id);});
 $('#lgSetBtn').addEventListener('click',()=>{const s=$('#lgSet');s.hidden=!s.hidden;$('#lgUrl').value=lsGet('rk:cloud')||'';});
 $('#lgUrlSave').addEventListener('click',async()=>{

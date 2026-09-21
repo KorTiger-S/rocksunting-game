@@ -101,9 +101,10 @@
     <div id="lgMain">
       <button class="go" id="lgResume" style="width:100%;margin:6px 0" hidden></button>
       <input class="lgin" id="lgId" maxlength="12" placeholder="ID를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="ID">
+      <input class="lgin" id="lgPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="비밀번호 (숫자 4자리)" autocomplete="off" aria-label="비밀번호 4자리">
       <button class="go" id="lgGo" style="width:100%">시작하기</button>
       <p class="lgmsg" id="lgMsg"></p>
-      <p class="tip" style="margin-top:0">2~12자 · 한글/영문/숫자/_ 가능<br>비밀번호 없이 ID만으로 로그인돼요. 같은 ID로 다시 들어오면 이어서 할 수 있어요.</p>
+      <p class="tip" style="margin-top:0">ID: 2~12자 · 한글/영문/숫자/_ 가능<br>비밀번호: 숫자 4자리. 새 ID는 처음 입력한 비밀번호로 만들어지고, 같은 ID와 비밀번호로 다시 들어오면 이어서 할 수 있어요.</p>
     </div>
     <div id="lgBusy" hidden><p id="lgBusyTx" style="margin:24px 0">불러오는 중…</p></div>
     <div id="lgNew" hidden>
