@@ -13,7 +13,7 @@
   <div class="board-in">
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button></div>
   </div>
 </header>
 
@@ -98,7 +98,8 @@
     <h2>주스와 프리킥 5킥 내기</h2>
     <span class="ctrl" id="gCtrl"></span>
     <button class="go ghost" id="skip" hidden>대화 건너뛰기 (S)</button>
-    <button class="go ghost" id="mute">소리 끄기</button>
+    <button class="go ghost" id="mute">효과음 끄기</button>
+    <button class="go ghost" id="bgmMute">음악 끄기</button>
     <button class="go ghost" id="quit">포기하기</button>
   </div>
   <div class="stagewrap">
@@ -149,6 +150,7 @@
       <div class="btns"><button class="go" id="lgRetry">다시 시도</button><button class="go alt" id="lgOffline">이 기기로 시작</button><button class="go ghost" id="lgBack2">뒤로</button></div>
     </div>
     <p class="tip" id="lgMode"></p>
+    <button class="linkbtn" id="lgSnd">🔊 효과음 끄기</button> <button class="linkbtn" id="lgBgm">🎵 음악 끄기</button>
     <button class="linkbtn" id="lgSetBtn">⚙ 클라우드(Supabase) 연결 설정</button>
     <div id="lgSet" hidden style="margin-top:6px">
       <input class="lgin" id="lgUrl" placeholder="Supabase Project URL (https://….supabase.co)" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="Supabase Project URL">
