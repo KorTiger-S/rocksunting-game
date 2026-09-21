@@ -2,7 +2,7 @@ name: Season close
 
 # 매일 00:10(한국 시간)에 시즌 마감일이 지났는지 확인한다.
 # 지났으면: 랭킹 스냅샷 저장 → 모든 플레이어 기록 초기화 → 보고서를 reports 브랜치에 저장 + Issue로 알림
-# (마감일 전에는 아무 것도 하지 않는다. 마감일은 게임에서 운영자 계정으로 바꿀 수 있다.)
+# (마감일 전에는 아무 것도 하지 않는다. 마감일은 Supabase SQL Editor에서 select public.rk_set_season_end('YYYY-MM-DD'); 로 바꾼다.)
 on:
   schedule:
     - cron: '10 15 * * *'   # UTC 15:10 = KST 00:10

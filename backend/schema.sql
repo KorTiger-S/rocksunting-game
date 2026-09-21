@@ -71,8 +71,10 @@ create table if not exists public.rk_seasons (
 );
 
 alter table public.rk_users   add column if not exists season_key text;                       -- 이 기록이 속한 시즌
-alter table public.rk_users   add column if not exists is_admin boolean not null default false;  -- 운영자 계정
 alter table public.rk_matches add column if not exists season_key text;
+-- 게임 안의 운영자 기능은 없다. (이전 버전에서 만든 흔적이 있으면 정리)
+alter table public.rk_users drop column if exists is_admin;
+drop function if exists public.rk_season_set(jsonb);
 
 insert into public.rk_config (key, value) values ('season', jsonb_build_object(
   'key', '2026-09', 'number', 1, 'game', 'football', 'game_name', '프리킥 축구',
@@ -187,7 +189,7 @@ begin
   if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
   select * into u from public.rk_users where id = k;
   return jsonb_build_object('ok', true, 'exists', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data,
-                            'season', u.season_key, 'current', public.rk_season_json(), 'admin', u.is_admin);
+                            'season', u.season_key, 'current', public.rk_season_json());
 end $$;
 
 create or replace function public.rk_save(p jsonb) returns jsonb
@@ -263,24 +265,20 @@ language sql stable security definer set search_path = public as $$
   select jsonb_build_object('ok', true, 'season', public.rk_season_json())
 $$;
 
--- 운영자 전용: 시즌 마감일 변경. p = {id, pin, date:'YYYY-MM-DD'} — 그 날 자정(한국 시간)까지 진행하고 다음 날 0시에 마감된다.
-create or replace function public.rk_season_set(p jsonb) returns jsonb
-language plpgsql security definer set search_path = public, extensions as $$
-declare k text := lower(public.rk_norm_id(p->>'id')); a text; adm boolean; d date; ends timestamptz;
+-- 운영자용: 시즌 마감일 변경. Supabase 대시보드 SQL Editor(또는 service_role)에서만 실행할 수 있다.
+--   select public.rk_set_season_end('2026-09-30');
+-- → 그 날 밤 12시(한국 시간)까지 진행하고 다음 날 0시에 마감된다. 오늘보다 이전 날짜는 거부한다.
+create or replace function public.rk_set_season_end(d date) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare ends timestamptz;
 begin
-  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
-  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
-  a := public.rk_auth(k, p->>'pin');
-  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', case when a = 'none' then 'bad_pin' else a end); end if;
-  select is_admin into adm from public.rk_users where id = k;
-  if not adm then return jsonb_build_object('ok', false, 'error', 'not_admin'); end if;
-  if coalesce(p->>'date', '') !~ '^\d{4}-\d{2}-\d{2}$' then return jsonb_build_object('ok', false, 'error', 'bad_date'); end if;
-  begin d := (p->>'date')::date; exception when others then return jsonb_build_object('ok', false, 'error', 'bad_date'); end;
-  if d < (now() at time zone 'Asia/Seoul')::date then return jsonb_build_object('ok', false, 'error', 'past_date'); end if;
+  if d is null or d < (now() at time zone 'Asia/Seoul')::date then
+    raise exception '오늘(한국 시간)보다 이전 날짜로는 바꿀 수 없어요: %', d;
+  end if;
   ends := ((d + 1)::timestamp at time zone 'Asia/Seoul');
   update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')))
   where key = 'season';
-  return jsonb_build_object('ok', true, 'season', public.rk_season_json());
+  return public.rk_season_json();
 end $$;
 
 -- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
@@ -344,10 +342,10 @@ end $$;
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
 revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_season_set(jsonb),
-                       public.rk_close_season(jsonb), public.rk_season_report(jsonb) from public;
-revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) from anon, authenticated;
+                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
+                       public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from public;
+revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_season_set(jsonb)
+                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb)
   to anon, authenticated;
 grant execute on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) to service_role;

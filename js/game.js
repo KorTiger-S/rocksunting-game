@@ -163,7 +163,7 @@ async function startLogin(raw,rawPin){
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
   let cloud=null;
   if(cloudUrl()){
-    try{cloud=await api('load',{id,pin});setSeason(cloud.current);LG.admin=!!cloud.admin;LG.season=cloud.exists?cloud.season:(cloud.current&&cloud.current.key);}
+    try{cloud=await api('load',{id,pin});setSeason(cloud.current);LG.season=cloud.exists?cloud.season:(cloud.current&&cloud.current.key);}
     catch(e){
       if(e.message==='bad_pin'){pinFail();return;}
       if(e.message==='locked'){pinFail('비밀번호를 여러 번 틀려서 5분 동안 잠겼어요. 잠시 후 다시 시도해 주세요.');return;}
@@ -199,13 +199,13 @@ function createUser(useLegacy){
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON,admin:!!LG.admin};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;if(news)S.news=news;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
 }
-function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';$('#admBtn').hidden=!(USER&&USER.admin);}
+function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
@@ -262,26 +262,6 @@ async function renderRank(){
 }
 $('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason();renderRank();});
 
-/* ---------- 운영자: 시즌 마감일 변경 (서버가 운영자 계정인지 다시 확인해요) ---------- */
-$('#admBtn').addEventListener('click',()=>{
-  const s=SEASON;
-  $('#admInfo').textContent=s?`현재: 시즌${s.number} · ${s.gameName} (${s.key})`:'시즌 정보를 불러오지 못했어요.';
-  if(s)$('#admDate').value=new Date(Date.parse(s.endsAt)-1000+KST_MS).toISOString().slice(0,10);
-  $('#admMsg').textContent='';$('#adm').hidden=false;
-});
-$('#admClose').addEventListener('click',()=>{$('#adm').hidden=true;});
-$('#admSave').addEventListener('click',async()=>{
-  const date=$('#admDate').value,m=$('#admMsg');
-  if(!date){m.textContent='날짜를 골라 주세요.';return;}
-  m.textContent='저장 중…';
-  try{
-    const r=await api('season_set',{id:USER.id,pin:USER.pin,date});
-    setSeason(r.season);$('#admInfo').textContent=`현재: 시즌${r.season.number} · ${r.season.gameName} (${r.season.key})`;
-    m.textContent=`저장했어요. ${date} 밤 12시까지 진행하고, 다음 날 0시에 마감돼요.`;
-  }catch(e){
-    m.textContent={not_admin:'운영자 계정이 아니에요.',past_date:'오늘보다 이전 날짜는 고를 수 없어요.',bad_date:'날짜 형식이 맞지 않아요.',bad_pin:'비밀번호 확인에 실패했어요.',locked:'비밀번호를 여러 번 틀려서 잠시 잠겼어요.'}[e.message]||'저장하지 못했어요. 인터넷 연결을 확인해 주세요.';
-  }
-});
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
