@@ -6,7 +6,9 @@
   "scripts": {
     "serve": "npx --yes serve .",
     "build": "node dev/build.js",
-    "mock": "node dev/server.js",
-    "test:backend": "node dev/test_gas.js"
+    "test:backend": "node dev/test_db.js"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }
