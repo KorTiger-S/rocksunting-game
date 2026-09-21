@@ -1,7 +1,12 @@
 (function(){
 'use strict';
 const W=800,H=480,F=900,HOR=205;
-const APP_VERSION='1.7.0';   /* 화면에 보이는 게임 버전. package.json의 version과 같게 맞춰 주세요 (build.js가 다르면 알려 줘요) */
+/* 화면에 보이는 게임 버전. package.json의 version과 같게 맞춰 주세요 (build.js가 다르면 알려 줘요)
+   버전 규칙  v메이저.마이너.패치  (v1.0.0에서 시작)
+   - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
+   - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
+   - 패치  : 자잘한 버그 수정 */
+const APP_VERSION='1.0.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -153,6 +158,7 @@ function enterGuest(){
   $('#login').hidden=true;mode='hub';
   renderHub();updateUserChip();setSync('idle');
   toast('Guest로 시작해요. 기록은 저장되지 않아요.');
+  maybeShowNotes(false);
 }
 async function startLogin(raw,rawPin){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
@@ -205,6 +211,7 @@ function enter(name,data,at,news,isNew){
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
+  maybeShowNotes(isNew);
 }
 function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
 async function logout(){
@@ -212,6 +219,29 @@ async function logout(){
   try{if(dirty)await cloudPush();}catch(e){}
   USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;updateUserChip();showLogin();
 }
+/* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
+/* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
+const RELEASE_NOTES={
+  '1.0.0':{sub:'시즌1 시작! 이렇게 바뀌었어요.',items:[
+    '🔑 이제 ID와 숫자 4자리 비밀번호로 로그인해요. 처음 만든 비밀번호가 내 비밀번호예요.',
+    '👤 로그인 없이 Guest로도 시작할 수 있어요. (기록은 저장되지 않아요)',
+    '🏁 시즌제가 시작됐어요! 매달 1시즌, 시즌이 끝나면 랭킹이 기록되고 모두 처음부터 다시 시작해요. 시즌1은 9월 프리킥 축구!',
+    '☁ 기록이 클라우드에 저장돼서 다른 기기에서도 이어서 할 수 있어요.',
+    '🏫 시작 화면에 롹순팅이 등교하는 애니메이션이 생겼어요.'
+  ]}
+};
+const seenKey=()=>'rk:seen:'+(USER&&!USER.guest?USER.id.toLowerCase():'guest');
+function maybeShowNotes(isNew){
+  const n=RELEASE_NOTES[APP_VERSION];if(!n||!USER)return;
+  if(lsGet(seenKey())===APP_VERSION)return;
+  if(isNew){lsSet(seenKey(),APP_VERSION);return;}   /* 처음 가입한 사람에게는 "바뀐 점"이 없어요 */
+  $('#wnT').textContent='🎉 업데이트 v'+APP_VERSION;$('#wnSub').textContent=n.sub||'';
+  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+  $('#wn').hidden=false;setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+}
+function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);}
+$('#wnOk').addEventListener('click',closeNotes);
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value);
 $('#lgGo').addEventListener('click',lgSubmit);
 $('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#lgPin').focus();}});

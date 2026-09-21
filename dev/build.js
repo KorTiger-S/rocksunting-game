@@ -23,7 +23,10 @@ let js = read('js/game.js');
 {
   const m = js.match(/const APP_VERSION='([^']+)'/), pv = JSON.parse(read('package.json')).version;
   if (!m) { console.error('APP_VERSION 줄을 찾지 못했어요.'); process.exit(1); }
+  if (!/^\d+\.\d+\.\d+$/.test(m[1])) { console.error(`버전은 메이저.마이너.패치 형식이어야 해요: ${m[1]}`); process.exit(1); }
   if (m[1] !== pv) console.warn(`⚠ 버전이 달라요: game.js APP_VERSION=${m[1]}, package.json version=${pv}`);
+  if (!js.includes(`'${m[1]}':{sub:`) && !/\.0$/.test(m[1])) console.log(`ℹ 이 버전(${m[1]})의 업데이트 내역(RELEASE_NOTES)이 없어서 팝업은 뜨지 않아요.`);
+  else if (!js.includes(`'${m[1]}':{sub:`)) console.warn(`⚠ RELEASE_NOTES에 ${m[1]} 내역이 없어요. 팝업이 안 떠요.`);
 }
 // 이미지 → data URI
 js = js.replace(/assets\/faces\/([A-Za-z0-9_]+)\.jpg/g, (m, name) => {
