@@ -1,6 +1,12 @@
 (function(){
 'use strict';
 const W=800,H=480,F=900,HOR=205;
+/* 화면에 보이는 게임 버전. package.json의 version과 같게 맞춰 주세요 (build.js가 다르면 알려 줘요)
+   버전 규칙  v메이저.마이너.패치  (v1.0.0에서 시작)
+   - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
+   - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
+   - 패치  : 자잘한 버그 수정 */
+const APP_VERSION='1.1.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -37,38 +43,64 @@ function lsKeys(){const a=[];try{for(let i=0;i<localStorage.length;i++)a.push(lo
 const ID_RE=/^[0-9A-Za-z_가-힣ㄱ-ㅎㅏ-ㅣ]{2,12}$/;
 const ukey=id=>'rk:u:'+id.toLowerCase();
 let USER=null,S=DEF(),OFFLINE_BASE=null,pendingCloud=null;
+/* ---------- 시즌 (매달 1시즌 · 마감하면 서버가 랭킹 보고서를 남기고 모든 기록을 초기화해요) ---------- */
+const LEGACY_SEASON='2026-09';   /* 시즌 기능이 생기기 전에 저장된 기록은 시즌1(2026-09)로 봐요 */
+let SEASON=null;                  /* {key,number,game,gameName,startedAt,endsAt} */
+try{SEASON=JSON.parse(lsGet('rk:season')||'null');}catch(e){}
+const KST_MS=9*3600e3,DAY_MS=864e5;
+function setSeason(s){if(!s||!s.key)return;SEASON=s;lsSet('rk:season',JSON.stringify(s));renderSeason();}
+function renderSeason(){
+  const chip=$('#hSeason'),rk=$('#rkSeason');
+  if(!SEASON||!cloudUrl()){chip.hidden=true;rk.textContent='';return;}
+  const end=Date.parse(SEASON.endsAt),lastDay=new Date(end-1000+KST_MS);
+  const left=Math.floor((end-1000+KST_MS)/DAY_MS)-Math.floor((Date.now()+KST_MS)/DAY_MS);
+  const until=`${lastDay.getUTCMonth()+1}/${lastDay.getUTCDate()}까지`;
+  const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
+  chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
+  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 (마감 시 기록 초기화)`;
+}
 function mergeData(d){const b=DEF();const o=Object.assign(b,d||{});o.up=Object.assign(DEF().up,(d&&d.up)||{});return o;}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
 function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,up:S.up};}
+const PIN_RE=/^\d{4}$/;
+function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
+  const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);
+}
+function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,season:USER.season,updatedAt:S.updatedAt,data:S}));}
 function save(){
-  if(!USER)return;
+  if(!USER||USER.guest)return;   /* Guest는 저장하지 않아요 */
   S.updatedAt=Date.now();
-  lsSet(ukey(USER.id),JSON.stringify({name:USER.id,updatedAt:S.updatedAt,data:S}));
+  putLocal();
   lsSet('rk:last',USER.id);
   cloudSoon();
 }
 
-/* ---------- 클라우드 (구글 스프레드시트 / Apps Script) ---------- */
-const CLOUD_DEFAULT='';   /* 배포한 Apps Script 웹앱 URL(…/exec)을 여기에 넣으면 모든 플레이어가 자동으로 연결돼요 */
-function cloudUrl(){
-  try{const q=new URLSearchParams(location.search).get('api');if(q)return q;}catch(e){}
-  return (lsGet('rk:cloud')||CLOUD_DEFAULT||'').trim();
+/* ---------- 클라우드 (Supabase) ---------- */
+const CLOUD_DEFAULT={url:'https://arvoervppgbcihzguncs.supabase.co',key:'sb_publishable_v-7w6idb5W_3Yn2DBt3Q7A_p4dYAFv7'};   /* Supabase Project URL과 공개용(publishable/anon) key. 이 값이 있으면 모든 플레이어가 자동으로 연결돼요 */
+function cloudCfg(){
+  try{const q=new URLSearchParams(location.search),u=q.get('api'),k=q.get('key');if(u&&k)return{url:u.trim(),key:k.trim()};}catch(e){}
+  try{const s=JSON.parse(lsGet('rk:cloud')||'null');if(s&&s.url&&s.key)return{url:String(s.url).trim(),key:String(s.key).trim()};}catch(e){}
+  return{url:String(CLOUD_DEFAULT.url||'').trim(),key:String(CLOUD_DEFAULT.key||'').trim()};
 }
+function cloudUrl(){const c=cloudCfg();return c.url&&c.key?c.url:'';}
 const SYNC={state:'idle'};
 function syncText(){
+  if(USER&&USER.guest)return '👤 Guest — 기록이 저장되지 않아요';
   if(!cloudUrl())return '💾 이 기기(브라우저)에만 저장돼요';
   return {busy:'☁ 저장 중…',ok:'☁ 클라우드에 저장됨',err:'⚠ 오프라인 — 나중에 다시 저장해요',idle:'☁ 클라우드 연결됨'}[SYNC.state]||'☁ 클라우드 연결됨';
 }
 function setSync(s){SYNC.state=s;const el=document.getElementById('syncInfo');if(el)el.textContent=syncText();}
-async function api(action,params,post){
-  const url=cloudUrl();if(!url)throw new Error('nocloud');
+async function api(action,params){   /* backend/schema.sql 의 rk_<action> 함수를 호출 */
+  const c=cloudCfg();if(!c.url||!c.key)throw new Error('nocloud');
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),9000);
   try{
-    let res;
-    if(post)res=await fetch(url,{method:'POST',body:JSON.stringify(Object.assign({action},params)),headers:{'Content-Type':'text/plain;charset=utf-8'},signal:ctl.signal,redirect:'follow'});
-    else{const q=new URLSearchParams(Object.assign({action},params));res=await fetch(url+(url.includes('?')?'&':'?')+q.toString(),{signal:ctl.signal,redirect:'follow'});}
+    const res=await fetch(c.url.replace(/\/+$/,'')+'/rest/v1/rpc/rk_'+action,{method:'POST',body:JSON.stringify({p:params||{}}),headers:{'Content-Type':'application/json',apikey:c.key},signal:ctl.signal});
     const j=await res.json();
-    if(!j||!j.ok)throw new Error((j&&j.error)||'bad_response');
+    if(!j||!j.ok)throw new Error((j&&(j.error||j.message))||'bad_response');
     return j;
   }finally{clearTimeout(to);}
 }
@@ -76,55 +108,88 @@ let pushT=null,pushBusy=false,dirty=false;
 function cloudSoon(){if(!cloudUrl()||!USER)return;dirty=true;clearTimeout(pushT);pushT=setTimeout(cloudPush,900);}
 function adoptCloud(r){
   if(mode!=='hub'){pendingCloud=r;return;}
-  const d=mergeData(r.data);d.news='다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
-  S=d;lsSet(ukey(USER.id),JSON.stringify({name:USER.id,updatedAt:S.updatedAt,data:S}));renderHub();
+  const d=mergeData(r.data),newSeason=!!(r.season&&r.season!==USER.season);
+  d.news=newSeason?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':'다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
+  if(r.season)USER.season=r.season;
+  S=d;putLocal();renderHub();
 }
 async function cloudPush(){
-  if(!USER||!cloudUrl()||pushBusy||!dirty)return;
+  if(!USER||USER.guest||!cloudUrl()||pushBusy||!dirty)return;
   pushBusy=true;dirty=false;setSync('busy');
   try{
     if(OFFLINE_BASE!==null){
-      const r0=await api('load',{id:USER.id});
+      const r0=await api('load',{id:USER.id,pin:USER.pin});
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
-      if(r0.exists&&(r0.updatedAt||0)>base&&r0.data){adoptCloud(r0);toast('오프라인 동안 다른 기기에 저장된 기록이 있어 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
+      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0);toast('오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const r=await api('save',{id:USER.id,updatedAt:S.updatedAt,data:cloudData()},true);
-    if(r.conflict&&r.data){adoptCloud(r);toast('다른 기기의 더 최신 기록을 불러왔어요.');}
+    const was=USER.season;
+    const r=await api('save',{id:USER.id,pin:USER.pin,season:USER.season||LEGACY_SEASON,updatedAt:S.updatedAt,data:cloudData()});
+    if(r.conflict&&r.data){adoptCloud(r);toast(r.season&&r.season!==was?'새 시즌이 시작되어 기록이 초기화됐어요.':'다른 기기의 더 최신 기록을 불러왔어요.');}
     setSync('ok');
-  }catch(e){dirty=true;setSync('err');}
+  }catch(e){
+    if(e.message==='bad_pin'||e.message==='locked'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
+    else{dirty=true;setSync('err');}
+  }
   pushBusy=false;
 }
 setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
-function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id},r),true).catch(()=>{});}
+function cloudScore(r){if(!cloudUrl()||!USER||USER.guest)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
 
 /* ---------- 로그인 ---------- */
-let LG={id:'',local:null,offline:false};
+let LG={id:'',pin:'',ph:'',local:null,offline:false};
 function lgStep(s){
-  [['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
+  [['choice','lgChoice'],['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
 }
-function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 구글 스프레드시트(클라우드) + 이 기기':'저장 방식: 이 기기(브라우저)';}
+function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 클라우드(Supabase) + 이 기기':'저장 방식: 이 기기(브라우저)';}
 function showLogin(){
-  $('#login').hidden=false;lgStep('main');lgModeText();$('#lgMsg').textContent='';
+  $('#login').hidden=false;lgStep('choice');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
   const last=lsGet('rk:last');const b=$('#lgResume');
   if(last&&ID_RE.test(last)){b.hidden=false;b.textContent=`${last} (으)로 계속하기`;b.dataset.id=last;}else b.hidden=true;
-  setTimeout(()=>{try{$('#lgId').focus();}catch(e){}},50);
+  if(!SP.on)setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},50);   /* 스플래시가 떠 있을 땐 스플래시가 끝날 때 포커스 */
 }
-async function startLogin(raw){
+function goLoginForm(){
+  lgStep('main');
+  setTimeout(()=>{try{($('#lgId').value?$('#lgPin'):$('#lgId')).focus();}catch(e){}},30);
+}
+function enterGuest(){
+  USER={id:'Guest',guest:true};S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;
+  S.news='게스트로 시작했다. 이번 기록은 저장되지 않고 랭킹에도 오르지 않는다.';
+  $('#login').hidden=true;mode='hub';
+  renderHub();updateUserChip();setSync('idle');
+  toast('Guest로 시작해요. 기록은 저장되지 않아요.');
+  maybeShowNotes(false);
+}
+async function startLogin(raw,rawPin){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
+  const pin=String(rawPin||'').trim();
   if(!ID_RE.test(id)){$('#lgMsg').textContent='ID는 2~12자, 한글·영문·숫자·_ 만 쓸 수 있어요.';return;}
-  LG={id,local:readLocal(id),offline:false};
+  if(/^(guest|게스트)$/i.test(id)){$('#lgMsg').textContent='이 ID는 쓸 수 없어요. (Guest는 따로 시작할 수 있어요)';return;}
+  if(!PIN_RE.test(pin)){$('#lgMsg').textContent='비밀번호는 숫자 4자리로 입력해 주세요.';return;}
+  LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false};
   lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
   let cloud=null;
-  if(cloudUrl()){try{cloud=await api('load',{id});}catch(e){lgStep('off');return;}}
+  if(cloudUrl()){
+    try{cloud=await api('load',{id,pin});setSeason(cloud.current);LG.season=cloud.exists?cloud.season:(cloud.current&&cloud.current.key);}
+    catch(e){
+      if(e.message==='bad_pin'){pinFail();return;}
+      if(e.message==='locked'){pinFail('비밀번호를 여러 번 틀려서 5분 동안 잠겼어요. 잠시 후 다시 시도해 주세요.');return;}
+      lgStep('off');return;
+    }
+  }
   finishLogin(cloud);
 }
+function pinFail(msg){lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
-  const id=LG.id,local=LG.local,cEx=cloud&&cloud.exists&&cloud.data;
+  const id=LG.id,cEx=cloud&&cloud.exists&&cloud.data;
+  let local=LG.local,stale=false;
+  if(local&&local.pin&&!cloud&&local.pin!==LG.ph){pinFail();return;}   /* 클라우드 확인을 못 했을 때는 이 기기의 저장값으로 확인 */
+  if(local&&cEx&&(local.season||LEGACY_SEASON)!==cloud.season){local=null;stale=true;}   /* 이 기기의 기록이 지난 시즌 것이면 버려요 */
+  if(!LG.season)LG.season=(local&&local.season)||(SEASON&&SEASON.key)||LEGACY_SEASON;
   if(!local&&!cEx){showNew(id);return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
-  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
+  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=stale?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
   else{data=mergeData(local.data);name=local.name||id;at=lAt;}
   enter(name,data,at,news);
 }
@@ -141,36 +206,76 @@ function createUser(useLegacy){
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;if(news)S.news=news;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
+  maybeShowNotes(isNew);
 }
-function updateUserChip(){$('#hUser').textContent=USER?`👤 ${USER.id}`:'';}
+function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
   USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;updateUserChip();showLogin();
 }
-$('#lgGo').addEventListener('click',()=>startLogin($('#lgId').value));
-$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();startLogin($('#lgId').value);}});
-$('#lgResume').addEventListener('click',e=>startLogin(e.currentTarget.dataset.id));
+/* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
+/* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
+const RELEASE_NOTES={
+  '1.1.0':{sub:'친구와 1:1로 붙어요!',items:[
+    '⚽ 1:1 페널티킥 대결이 생겼어요. 방을 만들고 4자리 코드를 친구에게 알려 주면 바로 승부!',
+    '🎯 피파 온라인처럼! 슈터는 골대 안을 조준하고 파워 게이지를 맞춰 차고, 골키퍼는 다이브 방향을 골라요. 번갈아 5번씩, 동점이면 서든데스!',
+    '🚪 로그인한 사람끼리만 할 수 있고, 이번 대결은 판돈과 랭킹 기록이 없어요.'
+  ]},
+  '1.0.0':{sub:'시즌1 시작! 이렇게 바뀌었어요.',items:[
+    '🔑 이제 ID와 숫자 4자리 비밀번호로 로그인해요. 처음 만든 비밀번호가 내 비밀번호예요.',
+    '👤 로그인 없이 Guest로도 시작할 수 있어요. (기록은 저장되지 않아요)',
+    '🏁 시즌제가 시작됐어요! 매달 1시즌, 시즌이 끝나면 랭킹이 기록되고 모두 처음부터 다시 시작해요. 시즌1은 9월 프리킥 축구!',
+    '☁ 기록이 클라우드에 저장돼서 다른 기기에서도 이어서 할 수 있어요.',
+    '🏫 시작 화면에 롹순팅이 등교하는 애니메이션이 생겼어요.'
+  ]}
+};
+const seenKey=()=>'rk:seen:'+(USER&&!USER.guest?USER.id.toLowerCase():'guest');
+function maybeShowNotes(isNew){
+  const n=RELEASE_NOTES[APP_VERSION];if(!n||!USER)return;
+  if(lsGet(seenKey())===APP_VERSION)return;
+  if(isNew){lsSet(seenKey(),APP_VERSION);return;}   /* 처음 가입한 사람에게는 "바뀐 점"이 없어요 */
+  $('#wnT').textContent='🎉 업데이트 v'+APP_VERSION;$('#wnSub').textContent=n.sub||'';
+  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+  $('#wn').hidden=false;setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+}
+function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);}
+$('#wnOk').addEventListener('click',closeNotes);
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
+const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value);
+$('#lgGo').addEventListener('click',lgSubmit);
+$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#lgPin').focus();}});
+$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
+$('#lgPin').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+$('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dataset.id;$('#lgPin').focus();});
+$('#lgToLogin').addEventListener('click',goLoginForm);
+$('#lgGuest').addEventListener('click',enterGuest);
+$('#lgBackChoice').addEventListener('click',()=>{$('#lgMsg').textContent='';lgStep('choice');setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);});
 $('#lgCreate').addEventListener('click',()=>createUser(false));
 $('#lgImport').addEventListener('click',()=>createUser(true));
 $('#lgBack1').addEventListener('click',()=>lgStep('main'));
 $('#lgBack2').addEventListener('click',()=>lgStep('main'));
-$('#lgRetry').addEventListener('click',()=>startLogin(LG.id));
+$('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin));
 $('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.local)finishLogin(null);else showNew(LG.id);});
-$('#lgSetBtn').addEventListener('click',()=>{const s=$('#lgSet');s.hidden=!s.hidden;$('#lgUrl').value=lsGet('rk:cloud')||'';});
-$('#lgUrlSave').addEventListener('click',async()=>{
-  const u=$('#lgUrl').value.trim(),m=$('#lgUrlMsg');
-  if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(u)){m.textContent='https://script.google.com/…/exec 형태의 주소를 넣어 주세요.';return;}
-  lsSet('rk:cloud',u);lgModeText();m.textContent='연결 테스트 중…';
-  try{const r=await api('ping',{});m.textContent=`연결 성공! (백엔드 v${r.version})`;}
-  catch(e){m.textContent='연결에 실패했어요. 주소를 확인하거나, claude.ai 안이 아닌 별도 주소에서 열어 보세요.';}
+$('#lgSetBtn').addEventListener('click',()=>{
+  const s=$('#lgSet');s.hidden=!s.hidden;
+  let c={};try{c=JSON.parse(lsGet('rk:cloud')||'{}')||{};}catch(e){}
+  $('#lgUrl').value=c.url||'';$('#lgKey').value=c.key||'';
 });
-$('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
+$('#lgUrlSave').addEventListener('click',async()=>{
+  const u=$('#lgUrl').value.trim().replace(/\/+$/,''),k=$('#lgKey').value.trim(),m=$('#lgUrlMsg');
+  if(!/^https:\/\/[A-Za-z0-9-]+\.supabase\.co$/.test(u)){m.textContent='https://프로젝트ID.supabase.co 형태의 주소를 넣어 주세요.';return;}
+  if(k.length<20){m.textContent='anon(public) key를 넣어 주세요.';return;}
+  lsSet('rk:cloud',JSON.stringify({url:u,key:k}));lgModeText();m.textContent='연결 테스트 중…';
+  try{const r=await api('ping',{});m.textContent=`연결 성공! (백엔드 v${r.version})`;}
+  catch(e){m.textContent='연결에 실패했어요. URL과 key를 확인하고, backend/schema.sql을 실행했는지 확인해 주세요.';}
+});
+$('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
 
 /* ---------- 랭킹 ---------- */
@@ -185,13 +290,14 @@ async function renderRank(){
   document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===rankMetric));
   $('#rkTab').innerHTML='<tr><td>불러오는 중…</td></tr>';
   let list=null,note='';
-  if(cloudUrl()){try{const r=await api('top',{metric:rankMetric,limit:10});list=r.list.map(x=>Object.assign(x,{v:x[rankMetric]}));note='구글 스프레드시트에 저장된 모든 플레이어 기준 상위 10명이에요.';}catch(e){note='클라우드에 연결할 수 없어 이 기기 기준으로 보여줘요.';}}
+  if(cloudUrl()){try{const r=await api('top',{metric:rankMetric,limit:10});list=r.list.map(x=>Object.assign(x,{v:x[rankMetric]}));note='클라우드에 저장된 모든 플레이어 기준 상위 10명이에요.';}catch(e){note='클라우드에 연결할 수 없어 이 기기 기준으로 보여줘요.';}}
   if(!list){list=localTop(rankMetric);if(!note)note='이 기기에 저장된 ID 기준이에요. (클라우드에 연결하면 모든 플레이어가 함께 보여요)';}
   const me=USER?USER.id.toLowerCase():'';
   $('#rkTab').innerHTML=list.length?list.map((x,i)=>`<tr class="${String(x.id).toLowerCase()===me?'me':''}"><td>${i+1}위 ${String(x.id).replace(/[<>&]/g,'')}${x.cleared?' 👑':''}</td><td>${RVAL[rankMetric](x.v)}</td></tr>`).join(''):'<tr><td>아직 기록이 없어요.</td></tr>';
   $('#rkNote').textContent=note;
 }
-$('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderRank();});
+$('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason();renderRank();});
+
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
@@ -1030,6 +1136,7 @@ function drawKick(c){
 let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
 function renderHub(){
+  renderDuelCard();
   $('#hMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
@@ -1100,6 +1207,56 @@ const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 
 $('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];});
 window.addEventListener('pagehide',()=>{save();});
 
+/* ---------- 스플래시: 롹순팅 등교 애니메이션 + Press Enter ---------- */
+const SP={on:false,t:0,raf:0,last:0,ctx:$('#spCv').getContext('2d')};
+const SP_WALK=4.6,SP_END=5.2;   /* 걷기 끝(초), 문으로 들어간 뒤 Press Enter가 나오는 시점(초) */
+function spDraw(c,t){
+  skyField(c);
+  c.fillStyle='#6bb56f';c.fillRect(0,HOR,W,46);
+  c.fillStyle='#d8d0bd';c.fillRect(0,HOR+46,W,H-HOR-46);
+  c.fillStyle='rgba(0,0,0,.08)';c.fillRect(0,HOR+46,W,4);
+  c.fillStyle='#e6dfcd';c.beginPath();c.moveTo(372,HOR);c.lineTo(428,HOR);c.lineTo(600,H);c.lineTo(200,H);c.closePath();c.fill();
+  c.fillStyle='#6d1f31';rr(c,372,HOR-58,56,58,4);c.fill();
+  c.fillStyle='#e8a91c';c.beginPath();c.arc(418,HOR-28,3,0,7);c.fill();
+  c.fillStyle='#b5a891';c.fillRect(366,HOR,68,6);
+  TX(c,'롹순팅 키우기',W/2,38,50,'#fff','center','#6d1f31');
+  TX(c,'v'+APP_VERSION,W/2,H-16,16,'#fff','center','rgba(35,42,69,.85)');
+  const p1=clamp(t/2.4,0,1),p2=clamp((t-2.4)/(SP_WALK-2.4),0,1);
+  let x,y,s,face;
+  if(t<2.4){x=-40+440*p1;y=H-46;s=2.6;face='tired';}
+  else{x=400;y=(H-46)+(HOR+4-(H-46))*p2;s=2.6-1.2*p2;face='resolve';}
+  if(t<SP_END){
+    c.save();c.globalAlpha=t<SP_WALK?1:clamp(1-(t-SP_WALK)/(SP_END-SP_WALK),0,1);
+    kid(c,x,y,s,{face,run:t<SP_WALK,ph:t*11});
+    c.restore();
+  }
+  if(t>=SP_END){
+    const a=.7+.3*Math.sin((t-SP_END)*4.5);
+    c.save();c.globalAlpha=clamp((t-SP_END)*3,0,1)*a;
+    TX(c,'Press ENTER',W/2,H-90,44,'#fff','center','#232a45');c.restore();
+    c.save();c.globalAlpha=clamp((t-SP_END)*3,0,1);TX(c,'(화면을 눌러도 돼요)',W/2,H-48,18,'#fff','center','rgba(35,42,69,.8)');c.restore();
+  }
+}
+function spFrame(now){
+  if(!SP.on)return;
+  SP.raf=requestAnimationFrame(spFrame);
+  const dt=Math.min(.05,(now-SP.last)/1000);SP.last=now;SP.t+=dt;
+  try{spDraw(SP.ctx,SP.t);}catch(e){console.error(e);}
+}
+function showSplash(){
+  SP.on=true;SP.t=0;SP.last=performance.now();$('#splash').hidden=false;
+  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)SP.t=SP_END;}catch(e){}
+  SP.raf=requestAnimationFrame(spFrame);
+}
+function spNext(){
+  if(!SP.on)return;
+  if(SP.t<SP_END){SP.t=SP_END;return;}   /* 걷는 중에 누르면 바로 Press ENTER 화면으로 */
+  SP.on=false;cancelAnimationFrame(SP.raf);$('#splash').hidden=true;
+  setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);
+}
+window.addEventListener('keydown',e=>{if(SP.on&&(e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();spNext();}},true);
+$('#splash').addEventListener('pointerdown',spNext);
+
 /* ---------- 메인 루프 ---------- */
 let last=performance.now(),errN=0;
 function recover(){
@@ -1120,7 +1277,251 @@ function frame(now){
   }catch(e){console.error(e);if(++errN>=5){errN=0;recover();}}
   pressed={};mouse.click=false;mouse.mv=false;
 }
+/* ---------- 1:1 페널티킥 대결 (backend/schema.sql 의 rk_duel_*) ----------
+   피파 온라인 방식: 슈터는 골대 안을 자유롭게 조준하고 파워 게이지를 맞춰 차요. 골키퍼는 다이브 방향을 골라요.
+   판정은 전부 서버가 해요. 브라우저는 선택을 보내고, 결과를 받아 애니메이션만 보여줘요.
+   골대 좌표: x -1(왼쪽 골포스트)~1(오른쪽), y 0(바닥)~1(크로스바). 밖으로 나가면 빗나가요. */
+const DU={code:null,st:null,shown:0,anim:null,open:false,poll:0,raf:0,last:0,left:0,leftAt:0,pickedRound:-1,pickIdx:-1,fail:0,ctx:null,lastMsg:'',msgBase:'',
+  aim:{x:0,y:.55},ph:'aim',gt:0,gv:0,sent:null,round:-1};
+const duOk=()=>!!(USER&&!USER.guest&&cloudUrl());
+const DU_ERR={bad_pin:'비밀번호가 맞지 않아요.',locked:'비밀번호를 여러 번 틀려서 잠겼어요. 잠시 후 다시 시도해 주세요.',no_room:'그런 코드의 방이 없어요.',full:'이미 시작한 방이에요.',closed:'이미 끝난 방이에요.',busy:'이미 참여 중인 대결이 있어요. "방 만들기"를 누르면 그 방으로 돌아가요.',no_user:'클라우드에 등록된 ID가 아니에요. 잠시 후 다시 시도해 주세요.',not_member:'이 방의 참가자가 아니에요.'};
+const DU_ZN=['위 왼쪽','위 가운데','위 오른쪽','아래 왼쪽','아래 가운데','아래 오른쪽'];
+const DU_SWEET=[.72,.88];   /* 게이지 초록 구간 (서버는 파워 0.8에서 오차가 가장 작아요) */
+const DU_RES={goal:'GOAL!',saved:'SAVE!',post:'POST!',miss:'빗나갔다!'};
+const duEsc=s=>String(s==null?'':s).replace(/[<>&"]/g,'');
+const duX=n=>240+180*n,duY=n=>200-150*n,duNx=x=>(x-240)/180,duNy=y=>(200-y)/150;
+function renderDuelCard(){
+  const ok=duOk();$('#duMake').disabled=!ok;$('#duJoin').disabled=!ok;$('#duCode').disabled=!ok;
+  $('#duNote').textContent=ok?'':(USER&&USER.guest?'Guest는 대결할 수 없어요. 로그인해 주세요.':'클라우드에 연결되어 있어야 대결할 수 있어요.');
+}
+const duCall=(a,x)=>api('duel_'+a,Object.assign({id:USER.id,pin:USER.pin,code:DU.code},x));
+async function duEnter(action,code){
+  if(!duOk())return;
+  $('#duMake').disabled=true;$('#duJoin').disabled=true;$('#duNote').textContent='';
+  DU.code=code||null;
+  let err='';
+  try{duStart(await duCall(action));}
+  catch(e){DU.code=null;err=DU_ERR[e.message]||'연결에 실패했어요. 잠시 후 다시 시도해 주세요.';}
+  renderDuelCard();
+  if(err)$('#duNote').textContent=err;
+}
+$('#duMake').addEventListener('click',()=>duEnter('create'));
+$('#duJoin').addEventListener('click',()=>{
+  const c=$('#duCode').value.trim().toUpperCase();
+  if(!/^[A-Z2-9]{4}$/.test(c)){$('#duNote').textContent='코드는 영문/숫자 4자리예요.';return;}
+  duEnter('join',c);
+});
+$('#duCode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#duJoin').click();}});
+function duStart(st){
+  DU.code=st.code;DU.st=st;DU.shown=st.hist.length;DU.anim=null;DU.pickedRound=-1;DU.pickIdx=-1;DU.fail=0;DU.open=true;
+  DU.round=-1;DU.sent=null;
+  DU.left=st.left;DU.leftAt=performance.now();
+  $('#duel').hidden=false;
+  try{document.activeElement.blur();}catch(e){}   /* Space가 포커스된 버튼을 누르지 않게 */
+  if(!DU.ctx)DU.ctx=$('#duCv').getContext('2d');
+  cancelAnimationFrame(DU.raf);DU.last=performance.now();DU.raf=requestAnimationFrame(duFrame);
+  duRender();duPoll();
+}
+function duPoll(){
+  clearTimeout(DU.poll);if(!DU.open)return;
+  DU.poll=setTimeout(async()=>{
+    try{duGot(await duCall('state'));DU.fail=0;}catch(e){duErr(e);}
+    duPoll();
+  },1600);
+}
+function duGot(st){
+  if(!DU.open)return;
+  if(DU.st&&st.hist.length<DU.st.hist.length)return;   /* 늦게 도착한 옛 응답은 무시 */
+  DU.st=st;DU.left=st.left;DU.leftAt=performance.now();duRender();
+}
+function duErr(e){
+  const m=e&&e.message;
+  if(m==='no_room'||m==='not_member'||m==='closed'||m==='bad_pin'||m==='locked'||m==='no_user'){toast(DU_ERR[m]||'대결이 끝났어요.');duClose(false);return;}
+  if(++DU.fail>=2)$('#duMsg').textContent='연결이 불안정해요. 다시 시도하는 중…';
+}
+function duClose(leave){
+  const code=DU.code,st=DU.st;
+  DU.open=false;clearTimeout(DU.poll);cancelAnimationFrame(DU.raf);$('#duel').hidden=true;
+  if(leave&&code&&st&&st.status!=='done')api('duel_leave',{id:USER.id,pin:USER.pin,code}).catch(()=>{});
+  DU.code=null;DU.st=null;DU.anim=null;
+}
+$('#duLeave').addEventListener('click',()=>{
+  const st=DU.st;if(!st)return;
+  if(st.status==='playing'&&!confirm('지금 나가면 몰수패예요. 나갈까요?'))return;
+  duClose(true);
+});
+$('#duCopy').addEventListener('click',()=>{
+  const c=DU.code||'';
+  try{navigator.clipboard.writeText(c).then(()=>toast('코드를 복사했어요.'),()=>toast('코드: '+c));}catch(e){toast('코드: '+c);}
+});
+const duZ=$('#duZones'),duCv=$('#duCv');
+for(let i=0;i<6;i++){const b=document.createElement('button');b.type='button';b.textContent=String(i+1);b.setAttribute('aria-label','다이브: '+DU_ZN[i]);b.addEventListener('click',()=>duPick(i));duZ.appendChild(b);}
+/* 지금 내가 할 수 있는 행동: 슈터(kick) 또는 골키퍼(keep). 결과 애니메이션 중이거나 이미 제출했으면 없어요. */
+function duCan(role){const st=DU.st;return !!(DU.open&&st&&st.status==='playing'&&!DU.anim&&DU.shown===st.hist.length&&st.role===role&&!st.mine&&DU.pickedRound!==st.round);}
+const duCanShoot=()=>duCan('kick'),duCanPick=()=>duCan('keep');
+/* 슈터: 1) 조준(마우스/방향키) → 클릭/Space로 확정 2) 게이지가 초록 구간일 때 다시 클릭/Space → 발사 */
+function duAct(){
+  if(!duCanShoot())return;
+  if(DU.ph==='aim'){DU.ph='power';DU.gt=0;DU.gv=0;duRender();return;}
+  if(DU.ph==='power')duShoot(Math.round(DU.gv*1000)/1000);
+}
+async function duShoot(pw){
+  const st=DU.st,a={x:Math.round(DU.aim.x*1000)/1000,y:Math.round(DU.aim.y*1000)/1000};
+  DU.pickedRound=st.round;DU.sent={x:a.x,y:a.y,p:pw};duRender();
+  try{duGot(await duCall('pick',{round:st.round,ax:a.x,ay:a.y,pw}));DU.fail=0;}
+  catch(e){DU.pickedRound=-1;DU.sent=null;DU.ph='aim';duErr(e);duRender();}
+}
+/* 골키퍼: 다이브할 칸 고르기 */
+async function duPick(i){
+  if(!duCanPick())return;
+  const st=DU.st;DU.pickedRound=st.round;DU.pickIdx=i;duRender();
+  try{duGot(await duCall('pick',{round:st.round,pick:i}));DU.fail=0;}
+  catch(e){DU.pickedRound=-1;DU.pickIdx=-1;duErr(e);duRender();}
+}
+function duPos(e){const r=duCv.getBoundingClientRect();return{x:(e.clientX-r.left)*480/r.width,y:(e.clientY-r.top)*300/r.height};}
+function duSetAim(e){const p=duPos(e);DU.aim.x=clamp(duNx(p.x),-1.2,1.2);DU.aim.y=clamp(duNy(p.y),0,1.25);}
+duCv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&duCanShoot()&&DU.ph==='aim')duSetAim(e);});
+duCv.addEventListener('pointerdown',e=>{if(duCanShoot()&&DU.ph==='aim')duSetAim(e);});
+duCv.addEventListener('click',duAct);
+window.addEventListener('keydown',e=>{
+  if(!DU.open||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(/^[1-6]$/.test(e.key)){if(!e.repeat)duPick(+e.key-1);return;}
+  if(e.code==='Space'||e.key==='Enter'){if(duCanShoot()){e.preventDefault();if(!e.repeat)duAct();}}
+  else if(e.code.startsWith('Arrow')&&duCanShoot())e.preventDefault();
+});
+function duSide(el,name,me,hist,side,goals){
+  const ks=hist.filter(h=>h.k===side).map(h=>h.r==='goal'?'●':'✕');
+  while(ks.length<5)ks.push('○');
+  el.className='dside'+(me?' me':'');
+  el.innerHTML=`<b>${duEsc(name)}${me?' (나)':''}</b><span class="n">${goals}</span><div class="dots" aria-label="${ks.join(' ')}">${ks.join(' ')}</div>`;
+}
+function duRender(){
+  const st=DU.st;if(!st||!DU.open)return;
+  const wait=st.status==='waiting';
+  $('#duWait').hidden=!wait;$('#duPlay').hidden=wait;
+  $('#duCodeBig').textContent=st.code;
+  $('#duT').textContent=wait?'상대를 기다리는 중':'1:1 페널티킥 대결';
+  if(wait){$('#duLeave').textContent='방 닫기';return;}
+  if(DU.round!==st.round){DU.round=st.round;DU.ph='aim';DU.gt=0;DU.gv=0;DU.sent=null;}   /* 새 킥이 시작되면 조준부터 */
+  if(!DU.anim&&DU.shown<st.hist.length){DU.anim={h:st.hist[DU.shown],t:0};DU.shown++;}
+  const hs=st.hist.slice(0,DU.shown);
+  let hg=0,gg=0;hs.forEach(h=>{if(h.r==='goal'){if(h.k==='host')hg++;else gg++;}});
+  duSide($('#duS0'),st.host,st.me==='host',hs,'host',hg);
+  duSide($('#duS1'),st.guest,st.me==='guest',hs,'guest',gg);
+  const live=!DU.anim&&DU.shown===st.hist.length;
+  const done=live&&st.status==='done';
+  $('#duLeave').textContent=done?'닫기':'포기하고 나가기';
+  $('#duRound').textContent=done?'경기 종료':DU.shown<10?`${Math.floor(DU.shown/2)+1}번째 킥 / 5`:'서든데스';
+  const canK=duCanPick();
+  duZ.style.display=st.role==='keep'&&!done?'':'none';   /* 다이브 칸은 골키퍼일 때만. 슈터는 캔버스에서 직접 조준해요 */
+  [...duZ.children].forEach((b,i)=>{b.disabled=!canK;b.classList.toggle('sel',DU.pickedRound===st.round&&DU.pickIdx===i&&!DU.anim);});
+  duCv.style.cursor=duCanShoot()&&DU.ph==='aim'?'crosshair':'default';
+  $('#duTip').hidden=done;
+  $('#duTip').textContent=st.role==='kick'?'마우스(또는 방향키)로 조준 → 클릭/Space로 확정 → 게이지가 초록 구간일 때 다시 클릭! 골대 밖은 빗나가요.':'다이브할 방향을 고르세요. 칸을 누르거나 숫자키 1~6 (위쪽 1·2·3, 아래쪽 4·5·6)';
+  let msg='';
+  if(done){
+    const w=st.winner,mine=st.me;
+    if(w==='draw')msg='🤝 무승부예요.';
+    else if(w===mine)msg=st.reason==='left'?'🏆 상대가 나가서 승리했어요!':'🏆 승리! 축하해요!';
+    else msg=st.reason==='left'?'😢 자리를 비워서 패배했어요.':'😢 아쉽게 패배했어요.';
+    msg+=`  (${hg} : ${gg})`;
+  }else if(live){
+    if(duCanShoot())msg=DU.ph==='aim'?'🎯 슛할 곳을 조준하세요!':'⚡ 초록 구간에서 클릭!';
+    else if(canK)msg='🧤 다이브할 곳을 고르세요!';
+    else msg=st.mine||DU.pickedRound===st.round?(st.role==='kick'?'슛! 골키퍼를 기다리는 중…':'선택 완료! 상대를 기다리는 중…'):'잠시만요…';
+  }
+  DU.msgBase=msg;
+  DU.lastMsg=null;duTick();   /* null: 화면 문구를 반드시 다시 그리게 */
+}
+function duTick(){   /* 남은 시간 표시만 가볍게 갱신 */
+  const st=DU.st;if(!st||st.status!=='playing'||DU.anim||DU.shown!==st.hist.length){if(DU.lastMsg!==DU.msgBase){$('#duMsg').textContent=DU.msgBase||'';DU.lastMsg=DU.msgBase;}return;}
+  const s=Math.max(0,Math.ceil(DU.left-(performance.now()-DU.leftAt)/1000));
+  const t=(DU.msgBase||'')+(s>0?`  (${s}초)`:'');
+  if(t!==DU.lastMsg){$('#duMsg').textContent=t;DU.lastMsg=t;}
+}
+const duZone=i=>({x:duX(((i%3)-1)*.667),y:duY(i<3?.75:.25)});   /* 다이브 칸의 중심 (서버 판정과 같은 좌표) */
+const duEase=t=>t<=0?0:t>=1?1:t*t*(3-2*t);
+const DU_END=2.4;
+function duFrame(now){
+  if(!DU.open)return;
+  DU.raf=requestAnimationFrame(duFrame);
+  const dt=Math.min(.05,(now-DU.last)/1000);DU.last=now;
+  if(DU.anim){DU.anim.t+=dt;if(DU.anim.t>=DU_END){DU.anim=null;duRender();}}
+  else if(duCanShoot()){
+    if(DU.ph==='aim'){   /* 방향키 조준 */
+      const dx=(held.ArrowRight?1:0)-(held.ArrowLeft?1:0),dy=(held.ArrowUp?1:0)-(held.ArrowDown?1:0);
+      if(dx||dy){DU.aim.x=clamp(DU.aim.x+dx*dt*1.1,-1.2,1.2);DU.aim.y=clamp(DU.aim.y+dy*dt*.9,0,1.25);}
+    }else if(DU.ph==='power'){DU.gt+=dt;const x=(DU.gt*.9)%2;DU.gv=x<1?x:2-x;}   /* 0→1→0 왕복 */
+  }
+  try{duDraw(DU.ctx,DU.anim);}catch(e){console.error(e);}
+  duTick();
+}
+function duPlayer(c,x,y,swing){   /* 슈터 (발끝 기준 위치) */
+  c.save();c.translate(x,y);
+  c.fillStyle='#232a45';c.fillRect(-8,-14,7,14);
+  c.fillStyle='#e2334d';c.fillRect(-9,-38,18,25);
+  c.fillStyle='#f1c9a5';c.beginPath();c.arc(0,-46,9,0,7);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();
+  c.save();c.translate(3,-14);c.rotate(-.6+1.5*swing);c.fillStyle='#232a45';c.fillRect(-4,0,8,16);c.restore();
+  c.restore();
+}
+function duDraw(c,a){
+  const st=DU.st;
+  c.fillStyle='#5aa864';c.fillRect(0,0,480,300);
+  c.fillStyle='rgba(255,255,255,.07)';for(let i=0;i<8;i++)if(i%2)c.fillRect(0,i*38,480,38);
+  c.fillStyle='#2b4a3a';c.fillRect(60,50,360,150);   /* 골대 안쪽 */
+  c.strokeStyle='rgba(255,255,255,.3)';c.lineWidth=1;c.beginPath();
+  for(let x=60;x<=420;x+=20){c.moveTo(x,50);c.lineTo(x,200);}for(let y=50;y<=200;y+=20){c.moveTo(60,y);c.lineTo(420,y);}c.stroke();
+  c.strokeStyle='#fff';c.lineWidth=6;c.lineJoin='round';c.beginPath();c.moveTo(60,200);c.lineTo(60,50);c.lineTo(420,50);c.lineTo(420,200);c.stroke();
+  c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=3;c.beginPath();c.moveTo(0,200);c.lineTo(480,200);c.stroke();
+  let kx=240,ky=170,rot=0,bx=240,by=265,br=11,bal=1,txt='',col='#fff',swing=0,flash=0;
+  if(a){
+    const h=a.h,t=a.t,gx=duX(h.fx),gy=duY(h.fy);
+    const tz=h.r==='saved'?{x:gx,y:gy}:duZone(h.gp);   /* 막을 땐 공이 있는 곳까지 몸을 던지고, 아니면 고른 칸으로 */
+    swing=duEase(t/.3);
+    const kt=duEase((t-.3)/.45);kx=240+(tz.x-240)*kt;ky=170+(tz.y-170)*kt;rot=(tz.x-240)/120*.9*kt;
+    const bt=duEase((t-.35)/.5);bx=240+(gx-240)*bt;by=265+(gy-265)*bt;br=11-4*bt;
+    if(t>.85){
+      const d=t-.85;
+      if(h.r==='saved'){by+=d*d*90;bx+=d*(tz.x>240?-30:tz.x<240?30:0);bal=Math.max(0,1-d*.6);}
+      else if(h.r==='post'){bx+=(gx>=240?-1:1)*d*70;by+=d*d*60;flash=Math.max(0,1-d*3);}
+      else if(h.r==='miss'){if(Math.abs(h.fx)>1.06)bx+=Math.sign(h.fx)*d*140;else by-=d*120;br=Math.max(3,br-d*4);}
+    }
+    if(t>.95){txt=DU_RES[h.r]||'';col=h.r==='goal'?'#ffd84a':h.r==='saved'?'#7fd6ff':h.r==='post'?'#ffb35c':'#ff8a8a';}
+  }
+  duPlayer(c,212,292,a?swing:0);
+  /* 골키퍼 */
+  c.save();c.translate(kx,ky);c.rotate(rot);
+  c.fillStyle='#e8a91c';c.fillRect(-14,-18,28,44);c.fillStyle='#232a45';c.fillRect(-11,26,9,14);c.fillRect(2,26,9,14);
+  c.strokeStyle='#e8a91c';c.lineWidth=7;c.lineCap='round';c.beginPath();c.moveTo(-14,-12);c.lineTo(-28,-30);c.moveTo(14,-12);c.lineTo(28,-30);c.stroke();
+  c.fillStyle='#fff';c.beginPath();c.arc(-28,-32,6,0,7);c.arc(28,-32,6,0,7);c.fill();
+  c.fillStyle='#f1c9a5';c.beginPath();c.arc(0,-30,12,0,7);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();
+  c.restore();
+  if(flash>0){c.strokeStyle=`rgba(255,255,255,${flash})`;c.lineWidth=10;c.beginPath();c.moveTo(60,200);c.lineTo(60,50);c.lineTo(420,50);c.lineTo(420,200);c.stroke();}
+  /* 공 */
+  c.globalAlpha=bal;c.fillStyle='#fff';c.strokeStyle='#232a45';c.lineWidth=2;c.beginPath();c.arc(bx,by,br,0,7);c.fill();c.stroke();
+  c.fillStyle='#232a45';c.beginPath();c.arc(bx,by,br*.35,0,7);c.fill();c.globalAlpha=1;
+  /* 슈터 조준선 + 파워 게이지 */
+  const shoot=duCanShoot();
+  if(shoot||(!a&&st&&st.role==='kick'&&st.status==='playing'&&DU.sent)){
+    const p=shoot?DU.aim:DU.sent,rx=duX(p.x),ry=duY(p.y),out=Math.abs(p.x)>1||p.y>1;
+    c.strokeStyle=shoot?(out?'#ff6b6b':'#ffd84a'):'rgba(255,255,255,.75)';c.lineWidth=2.5;
+    c.beginPath();c.arc(rx,ry,13,0,7);c.moveTo(rx-20,ry);c.lineTo(rx-6,ry);c.moveTo(rx+6,ry);c.lineTo(rx+20,ry);c.moveTo(rx,ry-20);c.lineTo(rx,ry-6);c.moveTo(rx,ry+6);c.lineTo(rx,ry+20);c.stroke();
+    const gx0=452,gy0=60,gh=180,v=shoot?(DU.ph==='power'?DU.gv:0):DU.sent.p;
+    c.fillStyle='rgba(0,0,0,.5)';c.fillRect(gx0-3,gy0-3,20,gh+6);
+    c.fillStyle='rgba(60,200,110,.85)';c.fillRect(gx0,gy0+gh*(1-DU_SWEET[1]),14,gh*(DU_SWEET[1]-DU_SWEET[0]));
+    if(v>0){c.fillStyle=v>=DU_SWEET[0]&&v<=DU_SWEET[1]?'#ffd84a':'#e2334d';c.fillRect(gx0,gy0+gh*(1-v),14,gh*v);}
+    c.fillStyle='#fff';c.fillRect(gx0-6,gy0+gh*(1-v)-1.5,26,3);
+    c.font="12px 'Noto Sans KR',sans-serif";c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fff';c.fillText('POWER',gx0+7,gy0-8);
+  }
+  if(txt){
+    c.font="34px 'Black Han Sans','Noto Sans KR',sans-serif";c.textAlign='center';c.textBaseline='middle';
+    c.lineWidth=6;c.strokeStyle='#232a45';c.strokeText(txt,240,262);c.fillStyle=col;c.fillText(txt,240,262);
+  }
+}
 $('#bigface').src=IMGDATA.base;
-renderHub();setSync('idle');showLogin();requestAnimationFrame(frame);
-window.__dbg={getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
+$('#verTip').textContent='(v'+APP_VERSION+')';
+renderHub();setSync('idle');renderSeason();
+if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
+showLogin();showSplash();requestAnimationFrame(frame);
+window.__dbg={du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
 })();

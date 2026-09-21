@@ -1,12 +1,14 @@
 {
   "name": "rocksunting-game",
-  "version": "1.7.0",
+  "version": "1.1.0",
   "private": true,
   "description": "롹순팅 키우기 - 머대부속 고등학교 프리킥 내기",
   "scripts": {
     "serve": "npx --yes serve .",
     "build": "node dev/build.js",
-    "mock": "node dev/server.js",
-    "test:backend": "node dev/test_gas.js"
+    "test:backend": "node dev/test_db.js"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

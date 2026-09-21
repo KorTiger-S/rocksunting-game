@@ -13,7 +13,7 @@
   <div class="board-in">
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span></div>
   </div>
 </header>
 
@@ -58,6 +58,21 @@
       </div>
       <p>패스와 알바는 하루를 써요. 금요일이 지나면 주말에 부모님이 용돈 1만 원을 주세요.</p>
     </div>
+    <div class="card chall" id="duelCard">
+      <h2>친구와 1:1 페널티킥 대결</h2>
+      <p>로그인한 친구와 실시간으로 승부해요. 판돈 없이 승패만 겨뤄요.</p>
+      <ul class="rules">
+        <li>방을 만들면 <b>4자리 코드</b>가 나와요. 친구가 그 코드를 입력하면 시작!</li>
+        <li>번갈아 <b>5번씩</b> 차고 막아요. 슈터는 골대 안을 <b>조준 → 파워 게이지</b>, 골키퍼는 <b>다이브 방향</b>을 동시에 정해요.</li>
+        <li>게이지가 <b>초록 구간</b>일 때 차야 정확해요. 세게 차거나 약하게 차면 빗나가거나 골포스트를 맞힐 수 있어요. 동점이면 서든데스!</li>
+      </ul>
+      <div class="acts">
+        <button class="go" id="duMake">방 만들기</button>
+        <input class="lgin" id="duCode" maxlength="4" placeholder="코드" style="width:110px;margin:0;padding:8px;text-transform:uppercase" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="방 코드 4자리">
+        <button class="go alt" id="duJoin">참가하기</button>
+      </div>
+      <p id="duNote"></p>
+    </div>
     <div>
       <div class="sec" style="margin-top:0">다른 내기 (준비 중)</div>
       <div class="list">
@@ -91,19 +106,29 @@
       </div>
     </div>
   </div>
-  <p class="tip">조작: 마우스 또는 방향키 + 클릭/Space. 프리킥은 조준 → 공 맞히는 위치 → 파워 게이지 순서로 진행해요. <span style="opacity:.6">(v1.7)</span></p>
+  <p class="tip">조작: 마우스 또는 방향키 + 클릭/Space. 프리킥은 조준 → 공 맞히는 위치 → 파워 게이지 순서로 진행해요. <span style="opacity:.6" id="verTip"></span></p>
+</div>
+<div class="ov ovfix" id="splash" aria-label="시작 화면: 롹순팅이 학교에 등교한다. Enter를 누르면 계속돼요.">
+  <canvas id="spCv" width="800" height="480"></canvas>
 </div>
 <div class="ov ovfix" id="login">
   <div class="card dialog" style="max-width:400px">
     <div class="logo" style="margin:0 auto 6px;border-color:var(--ring)"></div>
     <h2>롹순팅 키우기</h2>
-    <p>머대부속 고등학교 · ID로 이어하기</p>
-    <div id="lgMain">
+    <p>머대부속 고등학교 · 시즌1 프리킥</p>
+    <div id="lgChoice">
+      <button class="go" id="lgToLogin" style="width:100%;margin:6px 0">🔑 로그인 (ID + 비밀번호)</button>
+      <button class="go alt" id="lgGuest" style="width:100%;margin:6px 0">👤 Guest로 시작</button>
+      <p class="tip">Guest는 기록이 저장되지 않고 랭킹에도 오르지 않아요. 기록을 남기려면 로그인하세요.</p>
+    </div>
+    <div id="lgMain" hidden>
       <button class="go" id="lgResume" style="width:100%;margin:6px 0" hidden></button>
       <input class="lgin" id="lgId" maxlength="12" placeholder="ID를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="ID">
+      <input class="lgin" id="lgPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="비밀번호 (숫자 4자리)" autocomplete="off" aria-label="비밀번호 4자리">
       <button class="go" id="lgGo" style="width:100%">시작하기</button>
+      <button class="linkbtn" id="lgBackChoice">← 뒤로 (로그인 / Guest 선택)</button>
       <p class="lgmsg" id="lgMsg"></p>
-      <p class="tip" style="margin-top:0">2~12자 · 한글/영문/숫자/_ 가능<br>비밀번호 없이 ID만으로 로그인돼요. 같은 ID로 다시 들어오면 이어서 할 수 있어요.</p>
+      <p class="tip" style="margin-top:0">ID: 2~12자 · 한글/영문/숫자/_ 가능<br>비밀번호: 숫자 4자리. 새 ID는 처음 입력한 비밀번호로 만들어지고, 같은 ID와 비밀번호로 다시 들어오면 이어서 할 수 있어요.</p>
     </div>
     <div id="lgBusy" hidden><p id="lgBusyTx" style="margin:24px 0">불러오는 중…</p></div>
     <div id="lgNew" hidden>
@@ -113,13 +138,14 @@
     </div>
     <div id="lgOff" hidden>
       <p class="ctl" style="color:var(--ink);font-weight:700">클라우드에 연결할 수 없어요.</p>
-      <p class="tip">이 주소(예: claude.ai 안)에서는 외부 연결이 막혀 있을 수 있어요. 인터넷 상태나 웹앱 URL도 확인해 주세요.</p>
+      <p class="tip">이 주소(예: claude.ai 안)에서는 외부 연결이 막혀 있을 수 있어요. 인터넷 상태나 클라우드 연결 설정(URL, key)도 확인해 주세요.</p>
       <div class="btns"><button class="go" id="lgRetry">다시 시도</button><button class="go alt" id="lgOffline">이 기기로 시작</button><button class="go ghost" id="lgBack2">뒤로</button></div>
     </div>
     <p class="tip" id="lgMode"></p>
-    <button class="linkbtn" id="lgSetBtn">⚙ 클라우드(스프레드시트) 연결 설정</button>
+    <button class="linkbtn" id="lgSetBtn">⚙ 클라우드(Supabase) 연결 설정</button>
     <div id="lgSet" hidden style="margin-top:6px">
-      <input class="lgin" id="lgUrl" placeholder="Apps Script 웹앱 URL (…/exec)" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="웹앱 URL">
+      <input class="lgin" id="lgUrl" placeholder="Supabase Project URL (https://….supabase.co)" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="Supabase Project URL">
+      <input class="lgin" id="lgKey" placeholder="anon(public) key" style="font-size:14px" autocomplete="off" spellcheck="false" aria-label="Supabase anon key">
       <div class="btns" style="margin-top:4px"><button class="go alt" id="lgUrlSave">저장 + 연결 테스트</button><button class="go ghost" id="lgUrlClear">연결 해제</button></div>
       <p class="tip" id="lgUrlMsg"></p>
     </div>
@@ -128,10 +154,19 @@
 <div class="ov ovfix" id="rank" hidden>
   <div class="card dialog">
     <h2>🏆 랭킹</h2>
+    <p class="tip" id="rkSeason" style="margin-top:0"></p>
     <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="wins">승리</button><button class="go ghost" data-m="bestPts">최고 점수</button></div>
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go" id="rkClose">닫기</button></div>
+  </div>
+</div>
+<div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">
+  <div class="card dialog">
+    <h2 id="wnT"></h2>
+    <p id="wnSub" style="margin-top:0"></p>
+    <ul class="rules" id="wnList" style="text-align:left"></ul>
+    <div class="btns" style="margin-top:12px"><button class="go" id="wnOk">확인</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="story" hidden>
@@ -141,6 +176,25 @@
     <p id="stN" style="font-weight:700;color:var(--ring);margin:2px 0"></p>
     <p id="stX" style="color:var(--ink)"></p>
     <div class="btns"><button class="go" id="stBtn">다음</button></div>
+  </div>
+</div>
+<div class="ov ovfix" id="duel" hidden role="dialog" aria-labelledby="duT">
+  <div class="card dialog duelbox">
+    <h2 id="duT">1:1 페널티킥 대결</h2>
+    <div id="duWait" hidden>
+      <p>친구에게 이 코드를 알려 주세요.</p>
+      <div class="ducode" id="duCodeBig"></div>
+      <div class="btns"><button class="go alt" id="duCopy">코드 복사</button></div>
+      <p class="tip">친구가 들어오면 바로 시작해요. 15분 안에 들어오지 않으면 방이 닫혀요.</p>
+    </div>
+    <div id="duPlay" hidden>
+      <div class="duscore"><div class="dside" id="duS0"></div><div class="dvs">:</div><div class="dside" id="duS1"></div></div>
+      <div class="duround" id="duRound"></div>
+      <div class="dustage"><canvas id="duCv" width="480" height="300" aria-label="골대 화면"></canvas><div class="duzones" id="duZones"></div></div>
+      <p class="dumsg" id="duMsg" aria-live="polite"></p>
+      <p class="tip" id="duTip">칸을 누르거나 숫자키 1~6 (위쪽 1·2·3, 아래쪽 4·5·6)</p>
+    </div>
+    <div class="btns"><button class="go ghost" id="duLeave">방 닫기</button></div>
   </div>
 </div>
 <div id="toast"></div>
