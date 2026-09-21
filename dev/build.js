@@ -19,6 +19,12 @@ if (/service_role|^sb_secret_/i.test(key) || (key.split('.').length === 3 && /"r
 let html = read('index.html');
 let css = read('css/style.css');
 let js = read('js/game.js');
+// 화면에 보이는 버전(APP_VERSION)이 package.json의 version과 같은지 확인
+{
+  const m = js.match(/const APP_VERSION='([^']+)'/), pv = JSON.parse(read('package.json')).version;
+  if (!m) { console.error('APP_VERSION 줄을 찾지 못했어요.'); process.exit(1); }
+  if (m[1] !== pv) console.warn(`⚠ 버전이 달라요: game.js APP_VERSION=${m[1]}, package.json version=${pv}`);
+}
 // 이미지 → data URI
 js = js.replace(/assets\/faces\/([A-Za-z0-9_]+)\.jpg/g, (m, name) => {
   const b = fs.readFileSync(path.join(root, 'assets/faces', name + '.jpg'));
