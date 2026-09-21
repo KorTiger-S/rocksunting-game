@@ -34,6 +34,8 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 허브의 교실 수다 | `CHAT` |
 | 병문안 대사 / 병원비 | `VISIT`, `hospitalize()` |
 | 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` |
+| 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (js/game.js 위쪽 "효과음"), 버튼별 소리는 `BTN_SFX` |
+| 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) |
 | 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) |
 | 강화 항목/가격 | `UPS`, `UPMAX` |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (js/game.js 아래쪽) |
