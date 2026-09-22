@@ -14,7 +14,7 @@ HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우�
 ```
 index.html            화면 뼈대 (허브, 로그인, 랭킹, 게임 캔버스)
 css/style.css         스타일
-js/game.js            게임 전체 로직 (한 파일)
+js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
 assets/faces/*.jpg    캐릭터 표정 12종
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성 (GitHub Actions가 실행)
@@ -23,29 +23,49 @@ dev/                  개발 도구 (빌드, 백엔드 테스트)
 dist/                 빌드 결과 (단일 HTML 파일)
 ```
 
-## 자주 고치는 곳 (js/game.js)
+## js/ 파일 구성
+전부 `<script src="js/...">`로 불러오는 **일반 스크립트**예요(ES 모듈 아님). 서로 전역 스코프를 공유해서 한 파일처럼 동작하지만, 그래서 **`index.html`의 `<!-- BUILD:JS:START -->`~`<!-- BUILD:JS:END -->` 사이에 적힌 순서를 반드시 지켜야 해요** (뒤 파일이 앞 파일에서 정의한 함수/변수를 그대로 써요). `dev/build.js`도 이 순서를 그대로 읽어서 `dist/rocksunting-single.html`을 만들어요.
+
+| 파일 | 내용 |
+|---|---|
+| `util.js` | 화면 크기 상수, `APP_VERSION`, 캐릭터 표정 이미지(`IMGDATA`), `$`/`clamp`/`rand`/`fmt` 같은 공용 헬퍼 |
+| `save.js` | localStorage 저장/불러오기, 시즌 정보 |
+| `cloud.js` | Supabase 클라우드 동기화 (`api()`, `cloudPush` 등) |
+| `login.js` | 로그인/게스트/로그아웃, 업데이트 내역(`RELEASE_NOTES`) 팝업 |
+| `rank.js` | 랭킹 화면, `toast()` |
+| `audio.js` | 효과음(`SFX`)·배경음악(`BGMT`) — Web Audio로 그때그때 합성 |
+| `input.js` | 키보드/마우스/터치패드 입력, `mode`(현재 화면 상태) |
+| `render.js` | 캔버스 그리기 공용 헬퍼, 캐릭터(`kid`, `bigHead`) |
+| `kick-data.js` | 프리킥 위치·난이도·강화 항목 데이터 (`SPOTS`, `DIFF`, `UPS` 등) |
+| `kick.js` | 프리킥 미니게임 전체 — 물리, 컷신, 매치 흐름, 필드 렌더링 |
+| `hub.js` | 허브 화면(내기/알바/강화), 병원, 라털 선생님 대출 |
+| `splash.js` | 시작 화면(등교 애니메이션) |
+| `duel.js` | 1:1 페널티킥 대결 |
+| `main.js` | 메인 루프(`frame()`)와 최초 실행(부트스트랩) — **항상 맨 마지막에 로드돼야 해요** |
+
+## 자주 고치는 곳
 | 무엇을 | 어디를 |
 |---|---|
-| 킥 위치 10곳, 페널티킥 | `SPOTS`, `PEN` |
-| 킥 순서별 난이도(골키퍼 속도/반응/예측) | `DIFF`, `buildKicks()` |
-| 파워 게이지 초록 구간 | `sweetHalf()` |
-| 친구 대사(컷신) | `INTRO_A`, `INTRO_B`, `WIN_CUTS`, `LOSE_CUTS` |
-| 킥 결과별 말풍선 대사 | `REACT`, `KEEPER` |
-| 허브의 교실 수다 | `CHAT` |
-| 병문안 대사 / 병원비 | `VISIT`, `hospitalize()` |
-| 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` |
-| 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (js/game.js 위쪽 "효과음"), 버튼별 소리는 `BTN_SFX` |
-| 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) |
-| 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) |
-| 강화 항목/가격 | `UPS`, `UPMAX` |
-| 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (js/game.js 아래쪽) |
+| 킥 위치 10곳, 페널티킥 | `SPOTS`, `PEN` (`js/kick-data.js`) |
+| 킥 순서별 난이도(골키퍼 속도/반응/예측) | `DIFF`, `buildKicks()` (`js/kick-data.js`) |
+| 파워 게이지 초록 구간 | `sweetHalf()` (`js/kick.js`) |
+| 친구 대사(컷신) | `INTRO_A`, `INTRO_B`, `WIN_CUTS`, `LOSE_CUTS` (`js/kick.js`) |
+| 킥 결과별 말풍선 대사 | `REACT`, `KEEPER` (`js/kick.js`) |
+| 허브의 교실 수다 | `CHAT` (`js/kick.js`) |
+| 병문안 대사 / 병원비 | `VISIT`, `hospitalize()` (`js/hub.js`) |
+| 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` (`js/hub.js`) |
+| 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (`js/audio.js`), 버튼별 소리는 `BTN_SFX` (`js/hub.js`) |
+| 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js` |
+| 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) (`js/hub.js`) |
+| 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
+| 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
 | 1:1 대결 판정(오차·골키퍼 반경)·시간 제한 | `rk_duel_shot`, `rk_duel_settle` (backend/schema.sql) |
-| 1:1 대결 판돈 상한(5,000원)·정산 | `DU_BETMAX` (js/game.js), `rk_duel_create`, `rk_duel_pay`, `rk_duel_settle` (backend/schema.sql) |
-| 판돈 한도(3,000원) | `betMax()` |
-| 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` |
-| 캐릭터 이미지 추가 | `IMGDATA`에 경로 등록 후 `assets/faces/`에 파일 추가 |
+| 1:1 대결 판돈 상한(5,000원)·정산 | `DU_BETMAX` (`js/duel.js`), `rk_duel_create`, `rk_duel_pay`, `rk_duel_settle` (backend/schema.sql) |
+| 판돈 한도(3,000원) | `betMax()` (`js/hub.js`) |
+| 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` (`js/cloud.js`) |
+| 캐릭터 이미지 추가 | `IMGDATA`(`js/util.js`)에 경로 등록 후 `assets/faces/`에 파일 추가 |
 
-`window.__dbg`는 테스트용 후크예요. 배포할 때는 지워도 돼요.
+`window.__dbg`(`js/main.js`)는 테스트용 후크예요. 배포할 때는 지워도 돼요.
 
 ## 1:1 페널티킥 대결 (v1.1.0~, 판돈은 v1.2.0~)
 로그인한 두 사람이 방 코드로 만나 번갈아 5번씩 차고 막는 대결이에요. 피파 온라인처럼 **슈터는 조준 + 파워 게이지, 골키퍼는 다이브 방향**을 골라요. 판돈을 걸고 할 수도 있어요. (승패는 랭킹의 "승리" 기록에 반영되지 않고, 판돈만 소지금에 반영돼요)
@@ -76,9 +96,9 @@ dist/                 빌드 결과 (단일 HTML 파일)
 - 메이저를 올리면 마이너·패치는 0으로, 마이너를 올리면 패치는 0으로 되돌려요.
 - 같은 게임이 다음 달 시즌으로 이어지기만 할 때(시즌 번호만 바뀔 때)는 메이저를 올리지 않아요. 새 게임이 들어올 때만 올려요.
 - **버전을 올릴 때 바꿀 곳** (셋을 같게 맞춰요. `node dev/build.js`가 다르면 경고해요)
-  1. `js/game.js`의 `APP_VERSION`
+  1. `js/util.js`의 `APP_VERSION`
   2. `package.json`의 `version` (그리고 `package-lock.json`의 version)
-  3. `js/game.js`의 `RELEASE_NOTES`에 그 버전의 업데이트 내역 추가 — 새 버전 첫 로그인 때 팝업으로 한 번 보여줘요. (마이너 이상은 꼭 적고, 패치는 안 적어도 돼요. 내역이 없으면 팝업이 안 떠요.)
+  3. `js/login.js`의 `RELEASE_NOTES`에 그 버전의 업데이트 내역 추가 — 새 버전 첫 로그인 때 팝업으로 한 번 보여줘요. (마이너 이상은 꼭 적고, 패치는 안 적어도 돼요. 내역이 없으면 팝업이 안 떠요.)
 ## 단일 HTML 파일로 만들기 (공유/배포용)
 ```
 node dev/build.js
@@ -95,7 +115,7 @@ node dev/build.js "https://프로젝트ID.supabase.co" "anon-public-key"
 1. https://supabase.com 에서 새 프로젝트 만들기
 2. SQL Editor에 `backend/schema.sql` 전체를 붙여넣고 Run (여러 번 실행해도 안전해요)
 3. Project Settings → API 에서 **Project URL**과 **anon(public) key** 복사
-4. 게임 로그인 화면의 ⚙ 클라우드 연결 설정에 두 값을 넣고 "저장 + 연결 테스트". 모든 플레이어가 자동으로 연결되게 하려면 위처럼 `build.js`에 두 값을 넘겨서 빌드하거나 `js/game.js`의 `CLOUD_DEFAULT`에 넣기
+4. 게임 로그인 화면의 ⚙ 클라우드 연결 설정에 두 값을 넣고 "저장 + 연결 테스트". 모든 플레이어가 자동으로 연결되게 하려면 위처럼 `build.js`에 두 값을 넘겨서 빌드하거나 `js/cloud.js`의 `CLOUD_DEFAULT`에 넣기
    - 임시 테스트: `index.html?api=프로젝트URL&key=anon키`
 
 `service_role`(비밀) 키는 절대 넣지 마세요. 브라우저에는 anon 키만 공개돼요.
