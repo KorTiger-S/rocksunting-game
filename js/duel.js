@@ -177,7 +177,7 @@ function duRender(){
     else msg=st.reason==='left'?'😢 자리를 비워서 패배했어요.':'😢 아쉽게 패배했어요.';
     msg+=`  (${hg} : ${gg})`;
     if(!DU.endPlayed){DU.endPlayed=true;sfx(w==='draw'?'chime':w===mine?'bigwin':'lose');if(st.bet>0&&w===mine)setTimeout(()=>sfx('coin'),800);
-      if(w!=='draw'&&w!==mine){S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);save();}}   /* 대결도 지면 기분이 나빠져요 */
+      if(w!=='draw'){S.mood=clamp((S.mood==null?50:S.mood)+(w===mine?6:-6),0,100);save();}}   /* 대결도 이기면 기분이 좋아지고 지면 나빠져요 */
     if(st.bet>0)msg+=w==='draw'?`  🪙 판돈 ${fmt(st.bet)}원을 돌려받았어요.`:w===mine?`  💰 +${fmt(st.bet)}원`:`  💸 -${fmt(st.bet)}원`;
   }else if(live){
     if(duCanShoot())msg=DU.ph==='aim'?'🎯 슛할 곳을 조준하세요!':'⚡ 초록 구간에서 클릭!';
