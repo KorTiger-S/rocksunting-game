@@ -75,7 +75,8 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await save('철수', 1, { money: 30000, wins: 1, bestPts: 100 });
   let t = await rpc('top', { metric: 'money', limit: 3 });
   ok(t.list[0].id === '철수' && t.list.length === 3, '소지금 랭킹 1위 + limit');
-  t = await rpc('top', { metric: 'wins' }); ok(t.list[0].id === '짱구', '승리 랭킹 1위');
+  t = await rpc('top', { metric: 'wins' });
+  ok(t.list.every(x => x.wins === 0), '승리 스코어는 save()로 보낸 전적을 반영하지 않음(1:1 대결에서만 올라감)');
   t = await rpc('top', { metric: 'bestPts' }); ok(t.list[0].id === '짱구' && t.list[0].bestPts === 900, '최고점 랭킹 1위');
   t = await rpc('top', { metric: 'money', limit: 3 });
   ok(t.list.every((x, i, a) => !i || a[i - 1].money >= x.money), '랭킹이 내림차순으로 정렬됨');
@@ -300,6 +301,12 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     await db.query(`update public.rk_duels set created_at = now() - interval '20 minutes' where code = $1`, [c6]);
     r = await st(B, c6);
     ok(r.status === 'done' && r.reason === 'expired', '대결: 15분 넘게 기다린 방은 만료');
+
+    // 랭킹의 승리 스코어(wins/losses)는 이 블록에서 방장이 이긴 1:1 대결 결과(몰수승·3:0·서든데스·상대 이탈)만큼만 올라감
+    const wl = async id => (await db.query(`select wins, losses from public.rk_users where id = $1`, [id])).rows[0];
+    ok((await wl(A.id)).wins === 4 && (await wl(A.id)).losses === 0, '대결: 방장의 승리 스코어는 이긴 1:1 대결 수만큼 올라감(무승부·만료는 제외)');
+    ok((await wl(B.id)).losses === 4 && (await wl(B.id)).wins === 0, '대결: 진 쪽은 패배 스코어가 올라감');
+    ok((await rpc('top', { metric: 'wins' })).list[0].id === A.id, '대결: 랭킹의 승리 스코어는 1:1 대결 결과를 따름');
   }
 
   // ----- 1:1 대결 판돈: 미리 빼 두고(에스크로), 이긴 사람이 2배, 무승부/만료/닫기는 환불, 나가면 몰수 -----
