@@ -2,10 +2,15 @@
 /* ---------- 물리 ---------- */
 let K=null,M=null;
 function integrate(st,dt,s,ys,wind){
-  const g=9.8*(1+.25*ys),vh=Math.hypot(st.vx,st.vz)||1;
-  /* 공의 왼쪽을 차면(s<0) 궤적이 먼저 왼쪽으로 부풀었다가 조준한 곳으로 오른쪽으로 휘어져 들어가요(반대도 마찬가지) */
-  const rx=-st.vz/vh,rz=st.vx/vh,al=s*13;
-  st.vx+=(rx*al+wind*K.right.x)*dt;st.vz+=(rz*al+wind*K.right.z)*dt;st.vy-=g*dt;
+  const g=9.8,vh=Math.hypot(st.vx,st.vz)||1;
+  /* 공의 왼쪽을 차면(s<0) 궤적이 먼저 왼쪽으로 부풀었다가 조준한 곳으로 오른쪽으로 휘어져 들어가요(반대도 마찬가지).
+     이것도 마그누스 힘이라 공 속도(vh)에 비례해요: 세게 찬 커브슛일수록 더 크게 휘고, 살짝 스친 슛은 덜 휘어요 */
+  const rx=-st.vz/vh,rz=st.vx/vh,al=s*.5*vh;
+  /* 마그누스 효과: 공 윗부분을 차면(ys>0, 톱스핀) 진행 방향으로 아래를 누르는 힘이 붙어 급강하하고,
+     아랫부분을 차면(ys<0, 백스핀) 반대로 띄우는 힘이 붙어 붕 떠서 날아가요. 실제 회전-속도 마그누스 힘처럼
+     공 속도(vh)에 비례해서, 세게 찰수록·회전을 많이 줄수록 이 효과가 더 뚜렷해져요 */
+  const magnus=-ys*.15*vh;
+  st.vx+=(rx*al+wind*K.right.x)*dt;st.vz+=(rz*al+wind*K.right.z)*dt;st.vy+=(magnus-g)*dt;
   st.x+=st.vx*dt;st.y+=st.vy*dt;st.z+=st.vz*dt;
   if(st.y<.11&&st.vy<0){st.y=.11;st.vy=-st.vy*.5;st.vx*=.8;st.vz*=.8;}
 }
@@ -32,7 +37,8 @@ function flight(ball,v,s,ys,wind,wall,full){
   return{path,c,wh,st,t};
 }
 function solve(ball,tx,ty,s,ys){
-  const g=9.8*(1+.25*ys);let gx=tx,gy=ty,v=null;
+  const g=9.8+ys*.15*26;   /* integrate()의 마그누스 항(vh≈26 기준)에 맞춘 초기 추정용 유효 중력이에요 */
+  let gx=tx,gy=ty,v=null;
   for(let i=0;i<8;i++){
     const dx=gx-ball.x,dz=-ball.z,L=Math.hypot(dx,dz),T=L/26;
     v={vx:dx/L*26,vz:dz/L*26,vy:(gy-ball.y)/T+.5*g*T};
