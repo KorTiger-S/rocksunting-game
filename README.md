@@ -157,6 +157,13 @@ select public.rk_season_json();                  -- 지금 시즌 정보 확인
 ```
 오늘보다 이전 날짜는 거부돼요. 바꾼 마감일은 게임 헤더의 `D-N`에도 바로 반영돼요.
 
+### 승리 스코어(wins/losses) 다시 계산하기
+랭킹의 승리 스코어는 1:1 대결(`rk_duels`) 결과로만 올라가요. Table Editor에서 `rk_users`의 `wins`/`losses` 값을 실수로 직접 고쳐서 꼬였다면, Supabase SQL Editor에서 아래를 실행해 실제 대결 기록 기준으로 되돌릴 수 있어요.
+```sql
+select public.rk_recompute_wins();
+```
+정산이 끝난 지 2일 지난 대결 기록은 새 방을 만들 때마다 자동으로 정리되니, 이미 지워진 오래된 대결의 승패는 이 방법으로도 되살릴 수 없어요.
+
 ### 보고서 다시 만들기
 이미 마감된 시즌의 보고서는 Actions → Season close → Run workflow의 `report_key`에 시즌 키(예: `2026-09`)를 넣어요.
 ## 백엔드 로컬 테스트 (계정 없이)

@@ -700,8 +700,29 @@ begin
   return jsonb_build_object('ok', true, 'money', m);
 end $$;
 
+-- 운영자용: 승리 스코어(wins/losses)를 rk_duels 기록에서 다시 계산해 맞춘다.
+-- Supabase Table Editor에서 wins/losses 값을 직접 고쳐서 꼬였을 때 복구용. anon/authenticated는 호출할 수 없고,
+-- 대시보드 SQL Editor(또는 service_role)에서만 실행한다: select public.rk_recompute_wins();
+-- 주의: 정산된 지 2일 지난 대결 기록은 새 방을 만들 때마다 자동으로 정리되므로, 이미 지워진 오래된 대결의 승패는 되살릴 수 없다.
+create or replace function public.rk_recompute_wins() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  update public.rk_users u set
+    wins = coalesce((select count(*) from public.rk_duels d where d.settled
+              and d.season_key is not distinct from u.season_key
+              and ((d.host = u.id and d.winner = 'host') or (d.guest = u.id and d.winner = 'guest'))), 0),
+    losses = coalesce((select count(*) from public.rk_duels d where d.settled
+              and d.season_key is not distinct from u.season_key
+              and ((d.host = u.id and d.winner = 'guest') or (d.guest = u.id and d.winner = 'host'))), 0);
+  get diagnostics n = row_count;
+  return jsonb_build_object('ok', true, 'updated', n);
+end $$;
+
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
 revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
+revoke all on function public.rk_recompute_wins() from public, anon, authenticated;
+grant execute on function public.rk_recompute_wins() to service_role;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),

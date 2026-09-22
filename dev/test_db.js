@@ -408,6 +408,24 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     await db.query(`update public.rk_users set season_key = $1 where id in ($2, $3)`, [SEASON, A.id, B.id]);
   }
 
+  // ----- 승리 스코어(wins/losses) 재계산: 대시보드에서 값을 직접 고쳐 꼬였을 때 복구용 -----
+  {
+    // '방장'/'손님'은 앞선 1:1 대결 블록에서 각각 4승 0패 / 0승 4패를 쌓아 뒀다
+    await db.query(`update public.rk_users set wins = 999, losses = 999 where id in ('방장', '손님')`);
+    await db.exec('set role anon');
+    let denied3 = false; try { await db.query(`select public.rk_recompute_wins()`); } catch (e) { denied3 = true; }
+    ok(denied3, '재계산: anon은 rk_recompute_wins를 호출할 수 없음');
+    await db.exec('reset role');
+    await db.exec('set role service_role');
+    const rw = (await db.query(`select public.rk_recompute_wins() as r`)).rows[0].r;
+    await db.exec('reset role');
+    ok(rw.ok, '재계산: rk_recompute_wins 실행 성공');
+    const host = (await db.query(`select wins, losses from public.rk_users where id = '방장'`)).rows[0];
+    const guest = (await db.query(`select wins, losses from public.rk_users where id = '손님'`)).rows[0];
+    ok(host.wins === 4 && host.losses === 0, '재계산: 임의로 고친 값이 실제 1:1 대결 기록(rk_duels) 기준으로 되돌아옴');
+    ok(guest.wins === 0 && guest.losses === 4, '재계산: 상대 쪽도 실제 기록대로 복구됨');
+  }
+
   // ----- 권한: anon은 테이블에 직접 접근 불가, rk_ 함수만 실행 가능 -----
   await db.exec('set role anon');
   let denied = false; try { await db.query('select * from public.rk_users'); } catch (e) { denied = true; }
