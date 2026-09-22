@@ -20,33 +20,44 @@ function renderHub(){
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
+const moodLabel=m=>CONDS[clamp(Math.floor(clamp(m,0,100)/20),0,4)];   /* 기분(0~100)을 컨디션과 같은 5단계 라벨로 */
 function renderStats(){
   const stam=clamp(S.stam==null?15:S.stam,0,100),str=clamp(S.str==null?15:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#statStam').textContent=Math.round(stam)+'%';$('#stamBar').style.width=stam+'%';
   $('#statStr').textContent=Math.round(str)+'%';$('#strBar').style.width=str+'%';
-  $('#statMood').textContent=CONDS[clamp(Math.floor(mood/20),0,4)];   /* 기분도 컨디션처럼 5단계 라벨로 보여줘요 */
+  $('#statMood').textContent=moodLabel(mood);
   $('#statCond').textContent=CONDS[cond];
   $('#gymBtn').disabled=S.money<GYM_COST;$('#bbqBtn').disabled=S.money<BBQ_COST;
   $('#drinkBtn').disabled=S.money<DRINK_COST||cond>=4;$('#tteokBtn').disabled=S.money<TTEOK_COST||mood>=100;
 }
+/* 돈을 쓰는 순간 무엇이 얼마나 바뀌었는지 바로 보이도록, 동전 소리 + 효과별 소리 + 토스트 알림을 함께 띄워요 */
+function spendToast(msg){sfx('coin');setTimeout(()=>sfx('coin'),110);toast(msg);}
 function gymAction(){
   if(S.money<GYM_COST)return;
+  const before=Math.round(clamp(S.str==null?15:S.str,0,100));
   S.str=clamp((S.str==null?15:S.str)+10,0,100);S.gymGap=-1;
+  spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
   dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
 }
 function bbqAction(){
   if(S.money<BBQ_COST)return;
+  const before=Math.round(clamp(S.stam==null?15:S.stam,0,100));
   S.stam=clamp((S.stam==null?15:S.stam)+12,0,100);S.bbqGap=-1;
+  spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
   dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
 }
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
+  const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
   S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='에너지드링크를 마셨다. 컨디션이 좋아졌다!';
+  spendToast(`⚡ 에너지드링크 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
+  const before=moodLabel(S.mood==null?50:S.mood);
   S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 떡볶이를 사 먹었다. 기분이 좋아졌다!';
+  spendToast(`🍢 디델리 떡볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
 $('#gymBtn').addEventListener('click',gymAction);
@@ -136,7 +147,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'clank',bbqBtn:'sizzle',drinkBtn:'chime',tteokBtn:'chime'};
+  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
