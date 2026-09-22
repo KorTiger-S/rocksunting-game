@@ -343,7 +343,6 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 </div>
 
 <script>
-(function(){
 'use strict';
 const W=800,H=480,F=900,HOR=205;
 /* 화면에 보이는 게임 버전. package.json의 version과 같게 맞춰 주세요 (build.js가 다르면 알려 줘요)
@@ -377,6 +376,8 @@ const FACES=['base','angry','surprise','panic','happy','sad','tired','doubt','re
 const DAYS=['월','화','수','목','금'];
 function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*v);}
 
+
+'use strict';
 /* ---------- save ---------- */
 const LEGACY_KEY='rocksunting-freekick-v1';
 const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,up:{shoes:0,snack:0,sneak:0},wins:0,losses:0,cleared:false,news:'월요일 아침, 오늘도 학교에서 살아남자.'});
@@ -424,6 +425,8 @@ function save(){
   cloudSoon();
 }
 
+
+'use strict';
 /* ---------- 클라우드 (Supabase) ---------- */
 const CLOUD_DEFAULT={url:'https://arvoervppgbcihzguncs.supabase.co',key:'sb_publishable_v-7w6idb5W_3Yn2DBt3Q7A_p4dYAFv7'};   /* Supabase Project URL과 공개용(publishable/anon) key. 이 값이 있으면 모든 플레이어가 자동으로 연결돼요 */
 function cloudCfg(){
@@ -481,6 +484,8 @@ setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
 function cloudScore(r){if(!cloudUrl()||!USER||USER.guest)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
 
+
+'use strict';
 /* ---------- 로그인 ---------- */
 let LG={id:'',pin:'',ph:'',local:null,offline:false};
 function lgStep(s){
@@ -640,6 +645,8 @@ $('#lgUrlSave').addEventListener('click',async()=>{
 $('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
 
+
+'use strict';
 /* ---------- 랭킹 ---------- */
 let rankMetric='money';
 const RVAL={money:v=>fmt(v)+'원',wins:v=>v+'승',bestPts:v=>v+'점'};
@@ -665,6 +672,8 @@ document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('clic
 
 function toast(m){const t=$('#toast');t.innerHTML='';const d=document.createElement('div');d.textContent=m;t.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove();},2600);}
 
+
+'use strict';
 /* ---------- 효과음 ----------
    Web Audio로 그때그때 합성해서 별도 소리 파일이 없어요. sfx('이름')으로 재생해요.
    소리 켜기/끄기는 헤더의 🔊, 로그인 화면, 게임 화면의 버튼이 모두 같은 설정을 쓰고 브라우저에 기억돼요.
@@ -873,6 +882,8 @@ document.addEventListener('visibilitychange',()=>{if(!AC)return;if(document.hidd
 /* 브라우저는 사용자가 처음 누르거나 두드리기 전에는 소리를 못 내게 해서, 첫 입력 때 소리를 깨워 둬요. */
 ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,()=>{BGM.unlocked=true;if(!muted||BGM.on){actx();bgmSync();}},true));
 
+
+'use strict';
 /* ---------- input ---------- */
 const held={};let pressed={};const mouse={x:W/2,y:H/2,click:false,down:false,mv:false};
 const KMAP={KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight'};
@@ -901,6 +912,8 @@ document.querySelectorAll('#pad [data-k]').forEach(b=>{
   ['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>{held[k]=false;}));
 });
 
+
+'use strict';
 /* ---------- draw helpers ---------- */
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function TX(c,s,x,y,size,col,al,stroke){
@@ -966,6 +979,8 @@ function bigHead(c,x,y,r,o){
   c.lineWidth=3;c.strokeStyle='#232a45';c.beginPath();c.arc(0,0,r,0,7);c.stroke();c.restore();
 }
 
+
+'use strict';
 /* ---------- 프리킥 설정 ---------- */
 const SPOTS=[
  {label:'정면 13m',bx:0,bz:-13,wall:3},
@@ -1010,6 +1025,8 @@ const UPS=[
 ];
 const UPMAX={shoes:3,snack:3,sneak:1};
 
+
+'use strict';
 /* ---------- 물리 ---------- */
 let K=null,M=null;
 function integrate(st,dt,s,ys,wind){
@@ -1696,6 +1713,8 @@ function drawKick(c){
   if(K.ph==='res'&&(isGoal?K.celeb>=2.0:K.t>1.8))TX(c,'Space: 다음',W-16,H-24,16,'#fff','right','rgba(0,0,0,.6)');
 }
 
+
+'use strict';
 /* ---------- 허브 ---------- */
 let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
@@ -1810,6 +1829,8 @@ const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 
 $('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];});
 window.addEventListener('pagehide',()=>{save();});
 
+
+'use strict';
 /* ---------- 스플래시: 롹순팅 등교 애니메이션 + Press Enter ---------- */
 const SP={on:false,t:0,raf:0,last:0,ctx:$('#spCv').getContext('2d')};
 const SP_WALK=4.6,SP_END=5.2;   /* 걷기 끝(초), 문으로 들어간 뒤 Press Enter가 나오는 시점(초) */
@@ -1860,26 +1881,8 @@ function spNext(){
 window.addEventListener('keydown',e=>{if(SP.on&&(e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();spNext();}},true);
 $('#splash').addEventListener('pointerdown',spNext);
 
-/* ---------- 메인 루프 ---------- */
-let last=performance.now(),errN=0;
-function recover(){
-  toast('오류가 나서 다음 장면으로 넘어갈게요.');
-  try{
-    if(mode==='cut'&&C){endCut();return;}
-    if(mode==='kick'&&K){if(!M.res[K.i])M.res[K.i]={type:'error',pts:0,title:'',sub:''};nextKick();return;}
-    if(mode==='settle'){toHub();}
-  }catch(e){console.error(e);toHub();}
-}
-function frame(now){
-  requestAnimationFrame(frame);
-  const dt=Math.min(.05,(now-last)/1000);last=now;
-  try{
-    if(mode==='cut'&&C){updateCut(dt);if(C)drawCut(ctx);}
-    else if(mode==='kick'||mode==='settle'){if(mode==='kick')updateKick(dt);if(K)drawKick(ctx);}
-    errN=0;
-  }catch(e){console.error(e);if(++errN>=5){errN=0;recover();}}
-  pressed={};mouse.click=false;mouse.mv=false;
-}
+
+'use strict';
 /* ---------- 1:1 페널티킥 대결 (backend/schema.sql 의 rk_duel_*) ----------
    피파 온라인 방식: 슈터는 골대 안을 자유롭게 조준하고 파워 게이지를 맞춰 차요. 골키퍼는 다이브 방향을 골라요.
    판정은 전부 서버가 해요. 브라우저는 선택을 보내고, 결과를 받아 애니메이션만 보여줘요.
@@ -2160,13 +2163,34 @@ function duDraw(c,a){
     c.lineWidth=6;c.strokeStyle='#232a45';c.strokeText(txt,240,262);c.fillStyle=col;c.fillText(txt,240,262);
   }
 }
+
+'use strict';
+/* ---------- 메인 루프 ---------- */
+let last=performance.now(),errN=0;
+function recover(){
+  toast('오류가 나서 다음 장면으로 넘어갈게요.');
+  try{
+    if(mode==='cut'&&C){endCut();return;}
+    if(mode==='kick'&&K){if(!M.res[K.i])M.res[K.i]={type:'error',pts:0,title:'',sub:''};nextKick();return;}
+    if(mode==='settle'){toHub();}
+  }catch(e){console.error(e);toHub();}
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  try{
+    if(mode==='cut'&&C){updateCut(dt);if(C)drawCut(ctx);}
+    else if(mode==='kick'||mode==='settle'){if(mode==='kick')updateKick(dt);if(K)drawKick(ctx);}
+    errN=0;
+  }catch(e){console.error(e);if(++errN>=5){errN=0;recover();}}
+  pressed={};mouse.click=false;mouse.mv=false;
+}
 $('#bigface').src=IMGDATA.base;
 $('#verTip').textContent='(v'+APP_VERSION+')';
 renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
 showLogin();showSplash();requestAnimationFrame(frame);
 window.__dbg={BGM,BGMT,bgmSync,wantBgm,sfx,SFX,setMuted,setBgm,maybeLoan,du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;}};
-})();
 </script>
 </body>
 </html>

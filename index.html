@@ -214,6 +214,22 @@
   <button class="act" data-k="Space">액션</button>
 </div>
 
-<script src="js/game.js"></script>
+<!-- BUILD:JS:START 아래 순서가 실행 순서예요. 서로 전역 스코프를 공유하는 일반 스크립트라 순서를 바꾸면 안 돼요.
+     dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요. -->
+<script src="js/util.js"></script>
+<script src="js/save.js"></script>
+<script src="js/cloud.js"></script>
+<script src="js/login.js"></script>
+<script src="js/rank.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/render.js"></script>
+<script src="js/kick-data.js"></script>
+<script src="js/kick.js"></script>
+<script src="js/hub.js"></script>
+<script src="js/splash.js"></script>
+<script src="js/duel.js"></script>
+<script src="js/main.js"></script>
+<!-- BUILD:JS:END -->
 </body>
 </html>
