@@ -1,7 +1,9 @@
 'use strict';
 /* ---------- save ---------- */
 const LEGACY_KEY='rocksunting-freekick-v1';
-const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,up:{shoes:0,snack:0,sneak:0},wins:0,losses:0,cleared:false,news:'월요일 아침, 오늘도 학교에서 살아남자.'});
+const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,wins:0,losses:0,cleared:false,
+  str:15,stam:15,mood:50,cond:1,gymGap:0,bbqGap:0,   /* 근력·체력·기분(0~100), 컨디션(0~4=매우나쁨~매우좋음). 신규 가입은 허약하게 시작 */
+  news:'월요일 아침, 오늘도 학교에서 살아남자.'});
 const MEM={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return MEM[k]===undefined?null:MEM[k];}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
@@ -26,9 +28,10 @@ function renderSeason(){
   chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
   rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 (마감 시 기록 초기화)`;
 }
-function mergeData(d){const b=DEF();const o=Object.assign(b,d||{});o.up=Object.assign(DEF().up,(d&&d.up)||{});return o;}
+function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
-function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,up:S.up};}
+function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,
+  str:S.str==null?15:S.str,stam:S.stam==null?15:S.stam,mood:S.mood==null?50:S.mood,cond:S.cond==null?1:S.cond,gymGap:S.gymGap||0,bbqGap:S.bbqGap||0};}
 const PIN_RE=/^\d{4}$/;
 function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
   const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;

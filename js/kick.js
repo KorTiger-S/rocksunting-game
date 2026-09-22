@@ -41,14 +41,23 @@ function solve(ball,tx,ty,s,ys){
   }
   return v;
 }
+/* 컨디션(0~4, 보통=2)이 좋을수록 골키퍼가 덜 정확하고 느리게 반응해요. 대결(duel)은 서버 판정이라 영향 없어요. */
+function applyCondition(k){
+  const cd=(S.cond==null?2:S.cond)-2;
+  k.kerr=Math.max(.5,(k.kerr||1)+cd*.12);
+  k.kread=clamp((k.kread||.25)-cd*.04,.05,.6);
+  k.rk=Math.max(.05,(k.rk||.25)+cd*.02);
+  k.vk=Math.max(2,(k.vk||4)-cd*.15);
+}
 function setupKick(i,ko){
   const k=ko||M.kicks[i];K=Object.assign({},k,{i});
+  applyCondition(K);   /* 컨디션이 좋을수록 골키퍼(주스)가 살짝 무뎌져요 */
   K.ball={x:k.bx,y:.11,z:k.bz};
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
   K.cam={x:k.bx-K.dir.x*5.5,y:1.05,z:k.bz-K.dir.z*5.5};
   K.wallC={x:k.bx+K.dir.x*9.15,z:k.bz+K.dir.z*9.15};
-  K.limit=(i===4?8:12)+2*S.up.snack;K.timer=K.limit;K.lastTick=99;
+  K.limit=(i===4?8:12);K.timer=K.limit;K.lastTick=99;
   K.ph='aim';K.t=0;K.pt=0;K.tip=k.tip;K.introT=0;
   if(k.pen){const g=M.goals||0;K.tip=g===2?'이 킥으로 승패가 갈린다!':g>=3?(g===3?'이미 승리! 넣으면 완승 보너스!':'이미 완승! 마지막 자존심 킥!'):'승리는 어렵지만… 끝까지 차 보자!';K.introT=2.0;}
   const p=proj(0,1.2,0);K.cur={x:p.sx,y:p.sy};K.sw={x:0,y:0};
@@ -67,7 +76,7 @@ function unproject(sx,sy){
   return{x:K.cam.x+t*dxh,y:K.cam.y+t*v};
 }
 const wallObj=()=>K.wall?{cx:K.wallC.x,cz:K.wallC.z,half:K.wall*.27,h:t=>1.70+(K.jump?.30*Math.sin(Math.PI*clamp((t-.14)/.6,0,1)):0)}:null;
-function sweetHalf(){return .05+.015*S.up.shoes;}
+function sweetHalf(){return .05;}
 
 /* ---------- 컷신 ---------- */
 let C=null;
@@ -312,7 +321,7 @@ function settle(){
   S.fatigue=Math.max(0,(S.fatigue||0)-1);
   const delta=win?M.bet+(big?bonus:0):-M.bet;
   const before=S.money;S.money=Math.max(0,S.money+delta);
-  if(win)S.wins++;else S.losses++;
+  if(win)S.wins++;else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}   /* 지면 기분이 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
   const weekend=advanceDay();
   sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
@@ -329,8 +338,23 @@ function settle(){
 }
 function advanceDay(){
   S.day++;
+  dayStats();
   if(S.day>=5){S.day=0;S.week++;S.news=`${S.week-1}주차가 끝났다. 주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`;return true;}
   S.news=`${DAYS[S.day]}요일이 밝았다.`;return false;
+}
+/* 매일 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
+   쇠질하기·난지바베큐를 한 날은 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(오늘 했음)이 돼요. */
+function dayStats(){
+  S.gymGap=(S.gymGap==null?0:S.gymGap)+1;
+  if(S.gymGap>=3)S.str=clamp((S.str==null?15:S.str)-4,0,100);
+  S.bbqGap=(S.bbqGap==null?0:S.bbqGap)+1;
+  if(S.bbqGap>=3)S.stam=clamp((S.stam==null?15:S.stam)-4,0,100);
+  rollCondition();
+}
+/* 컨디션은 그날그날 랜덤이지만, 기분이 나쁘면(<30) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요. */
+function rollCondition(){
+  const m=S.mood==null?50:S.mood,bias=m<30?-1:m>=75?1:0;
+  S.cond=clamp(Math.round(2+gauss()*1.1+bias),0,4);
 }
 
 /* ---------- 킥 업데이트 ---------- */
@@ -585,7 +609,7 @@ function drawSpin(c){
   TX(c,'아래: 낮고 빠르게',640,386,14,'#232a45','center');
   TX(c,'방향키/마우스 · 클릭/Space 확정',640,402,12,'#5d6580','center');
   // 예상 궤적
-  const wind=S.up.sneak>0?K.wind:0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
+  const wind=0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
   fr.path.forEach((p,i)=>{if(i%5||i>fr.path.length-2)return;const q=proj(p.x,p.y,p.z);if(q.f<.5)return;c.fillStyle='rgba(255,255,255,.9)';c.strokeStyle='rgba(35,42,69,.6)';c.lineWidth=1;c.beginPath();c.arc(q.sx,q.sy,3,0,7);c.fill();c.stroke();});
 }
 function drawCeleb(c){
@@ -642,8 +666,7 @@ function drawKick(c){
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
     TX(c,Math.ceil(K.timer)+'초',W/2+192,66,16,K.emerg?'#ffb3bd':'#fff','left','rgba(0,0,0,.5)');
   }
-  const wt=S.up.sneak>0?`바람 ${K.wind===0?'없음':(K.wind>0?'→ ':'← ')+(Math.abs(K.wind)*2).toFixed(1)+'m/s'}`:'바람: 깃발을 봐';
-  TX(c,wt,W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
+  TX(c,'바람: 깃발을 봐',W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
   if(K.ph==='aim'){
     const x=K.cur.x+K.sw.x,y=K.cur.y+K.sw.y;
     c.strokeStyle='#e2334d';c.lineWidth=6;c.beginPath();c.arc(x,y,17,0,7);c.stroke();

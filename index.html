@@ -29,8 +29,12 @@
     <p id="goalTxt"></p>
     <div class="sec">피로도 <span id="fat"></span></div>
     <p style="margin:0 0 4px">알바만 계속하면 과로로 쓰러져요.</p>
-    <div class="sec">능력 키우기 (소지금으로 구매)</div>
-    <div class="list" id="ups"></div>
+    <div class="sec">체력 <span id="statStam"></span></div>
+    <div class="prog stat"><i id="stamBar"></i></div>
+    <div class="sec">근력 <span id="statStr"></span></div>
+    <div class="prog stat"><i id="strBar"></i></div>
+    <div class="sec">기분 <span id="statMood"></span></div>
+    <div class="sec">컨디션 <span id="statCond"></span></div>
   </aside>
   <section id="main" style="display:grid;gap:14px;align-content:start">
     <div class="note" id="note"></div>
@@ -79,6 +83,19 @@
         <button class="go alt" id="duJoin">참가하기</button>
       </div>
       <p id="duNote"></p>
+    </div>
+    <div class="card chall" id="careCard">
+      <h2>몸 관리</h2>
+      <p>근력은 쇠질하기, 체력은 난지바베큐로 올려요. 주기적으로 하지 않으면 서서히 떨어져요.</p>
+      <div class="acts">
+        <button class="go alt" id="gymBtn">🏋 쇠질하기 (헬스장 이용료 1,500원)</button>
+        <button class="go alt" id="bbqBtn">🍖 난지바베큐 (고기값 2,000원)</button>
+      </div>
+      <p>컨디션은 매일 랜덤으로 바뀌고 난이도에 영향을 줘요. 기분이 나쁘면 컨디션도 잘 안 좋아져요.</p>
+      <div class="acts">
+        <button class="go ghost" id="drinkBtn">⚡ 에너지드링크 (700원)</button>
+        <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 떡볶이 (1,000원)</button>
+      </div>
     </div>
     <div>
       <div class="sec" style="margin-top:0">다른 내기 (준비 중)</div>

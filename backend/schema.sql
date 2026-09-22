@@ -132,6 +132,12 @@ language sql immutable as $$
     'bestPts', public.rk_int(d->'bestPts', 0, 99999, 0),
     'plays',   public.rk_int(d->'plays',   0, 99999, 0),
     'cleared', coalesce((d->>'cleared') = 'true', false),
+    'str',     public.rk_int(d->'str',     0, 100, 15),
+    'stam',    public.rk_int(d->'stam',    0, 100, 15),
+    'mood',    public.rk_int(d->'mood',    0, 100, 50),
+    'cond',    public.rk_int(d->'cond',    0, 4,   1),
+    'gymGap',  public.rk_int(d->'gymGap',  0, 999, 0),
+    'bbqGap',  public.rk_int(d->'bbqGap',  0, 999, 0),
     'up', jsonb_build_object(
       'shoes', public.rk_int(d#>'{up,shoes}', 0, 3, 0),
       'snack', public.rk_int(d#>'{up,snack}', 0, 3, 0),
@@ -171,6 +177,7 @@ create or replace function public.rk_default_data() returns jsonb
 language sql immutable as $$
   select jsonb_build_object('fatigue', 0, 'hosp', 0, 'bestPts', 0, 'plays', 0, 'money', 10000, 'day', 0, 'week', 1,
                             'wins', 0, 'losses', 0, 'cleared', false,
+                            'str', 15, 'stam', 15, 'mood', 50, 'cond', 1, 'gymGap', 0, 'bbqGap', 0,
                             'up', jsonb_build_object('shoes', 0, 'snack', 0, 'sneak', 0))
 $$;
 

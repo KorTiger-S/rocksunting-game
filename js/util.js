@@ -5,7 +5,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.5.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "assets/faces/base.jpg",
@@ -29,5 +29,6 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const fmt=n=>Math.floor(n).toLocaleString('ko-KR');
 const FACES=['base','angry','surprise','panic','happy','sad','tired','doubt','resolve','excited','frustrated','worn'];
 const DAYS=['월','화','수','목','금'];
+const CONDS=['매우나쁨','나쁨','보통','좋음','매우좋음'];   /* 컨디션 5단계 (0~4) */
 function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*v);}
 
