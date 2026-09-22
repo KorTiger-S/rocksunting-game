@@ -81,6 +81,7 @@ function setupKick(i,ko){
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
   K.cam={x:k.bx-K.dir.x*5.5,y:1.05,z:k.bz-K.dir.z*5.5};
+  K.povCam=Object.assign({},K.cam);K.povDir=Object.assign({},K.dir);K.povRight=Object.assign({},K.right);K.hl=null;
   K.wallC={x:k.bx+K.dir.x*9.15,z:k.bz+K.dir.z*9.15};
   K.limit=(i===4?13:17)*K.stamMul;K.timer=K.limit;K.lastTick=99;
   K.ph='aim';K.t=0;K.pt=0;K.tip=k.tip;K.introT=0;
@@ -463,7 +464,8 @@ function updateKick(dt){
     else if(!K.charging){if(down)K.charging=true;}
     else{if(down){const pp=K.p;K.p=Math.min(1,K.p+dt*.7);if(Math.floor(K.p*12)!==Math.floor(pp*12))sfx('gauge',K.p);K.face=K.p>.6?'angry':'resolve';}else{fire();return;}}
   }else if(K.ph==='fly'){
-    K.pt+=dt*(K.pt<K.tEvt?.55:.9);
+    const slowmo=K.hl&&K.pt>=K.tEvt&&K.pt<K.tEvt+.4;
+    K.pt+=dt*(K.pt<K.tEvt?.55:slowmo?.22:.9);
     if(!K.evtDone&&K.pt>=K.tEvt){K.evtDone=true;onEvent();}
     if(K.pt>=K.dur){K.ph='res';K.t=0;showResult();}
   }else if(K.ph==='res'){
@@ -501,6 +503,14 @@ function fire(){
     }else out=y>=2.44?'over':'wide';
   }else{out='short';K.tEvt=fr.t;}
   if(!K.kd){const xs=K.ball.x+v.vx/v.vz*(-K.ball.z);K.kd={rk:K.rk,tgt:K.pen?clamp(keeperGuess(),-3,3):clamp(xs+gauss()*K.kerr,-3,3)};if(out==='wall')K.kd.tgt=0;}
+  /* 골키퍼 선방·크로스바 위/골대 밖 미스는 실제 하이라이트처럼 골대 옆 카메라로 짧게 컷 전환해요 */
+  if(out==='save'||out==='wide'||out==='over'){
+    const kx=out==='save'?info.x-info.dx:0;
+    const lx=out==='save'?(info.x+kx)/2:info.x,ly=clamp(out==='save'?(info.y+1.1)/2:info.y,.4,2.6);
+    const hs=lx>=0?-1:1,hc={x:hs*6.5,y:clamp(1.3+ly*.25,1.3,2.3),z:-2.4},lk={x:lx*.5,z:.2};
+    const hdx=lk.x-hc.x,hdz=lk.z-hc.z,hL=Math.hypot(hdx,hdz)||1,hd={x:hdx/hL,z:hdz/hL};
+    K.hl={cam:hc,dir:hd};
+  }
   extend(fr,out,info);
   K.fr=fr;K.path=fr.path;K.dur=fr.path[fr.path.length-1].t;K.out=out;K.info=info;K.sweet=sweet;
   K.ph='fly';K.pt=0;K.evtDone=false;K.face='surprise';
@@ -527,16 +537,16 @@ function onEvent(){
   if(K.wall){const wn=WALLNAMES[Math.floor(Math.random()*Math.min(K.wall,5))],l=line(wn);if(l)say(wn,0,0,l);}
   const kl=KEEPER[type];if(kl)say('주스',0,0,pick(kl));
   if(o==='goal'){
-    cheer();sfx('net');K.flash=.5;K.face='excited';K.celeb=0;K.fwT=0;
+    cheer();sfx('net');K.flash=.5;K.face='excited';K.celeb=0;K.fwT=0;K.celebFlip=Math.random()<.5;
     for(let i=0;i<70;i++)K.conf.push({x:rand(0,W),y:rand(-260,0),vx:rand(-40,40),vy:rand(100,200),a:rand(0,6),c:['#e2334d','#e8a91c','#2f8f5b','#3b7de0','#fff'][Math.floor(rand(0,5))]});
   }
   else if(o==='save'){
-    sfx('thud');K.face='frustrated';
+    sfx('thud');K.face='frustrated';if(K.hl)K.flash=.3;
     if(Math.random()<.6){const who=sp[0];K.react=K.react.filter(r=>r.n!==who.n);say(who.n,who.x,who.z,Math.random()<.5?'주스 키퍼 재능있네':'주스 이제 키퍼만해라');}
   }
   else if(o==='post'){sfx('ping');K.face='surprise';}
   else if(o==='wall'){sfx('thud');K.face='panic';}
-  else{sfx('whoosh');setTimeout(()=>sfx('aww'),250);K.face='frustrated';}
+  else{sfx('whoosh');setTimeout(()=>sfx('aww'),250);K.face='frustrated';if(K.hl)K.flash=.3;}
 }
 function showResult(){
   const o=K.out,i=K.info||{};let r;
@@ -595,7 +605,16 @@ function ballAt(pt){
   const i=clamp(Math.floor(pt*120),0,K.path.length-2),a=K.path[i],b=K.path[i+1],f=clamp(pt*120-i,0,1);
   return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:a.z+(b.z-a.z)*f};
 }
+/* 선방/미스 하이라이트가 잡히면 킥커 시점 카메라에서 골대 옆 중계 카메라로 짧게 스윕 전환해요 */
+function updateCam(){
+  if(!K.hl||!(K.ph==='fly'||K.ph==='res')){K.cam=K.povCam;K.dir=K.povDir;K.right=K.povRight;return;}
+  const tt=K.ph==='res'?K.dur:K.pt,b0=clamp((tt-(K.tEvt-.35))/.35,0,1),b=b0*b0*(3-2*b0);
+  K.cam={x:K.povCam.x+(K.hl.cam.x-K.povCam.x)*b,y:K.povCam.y+(K.hl.cam.y-K.povCam.y)*b,z:K.povCam.z+(K.hl.cam.z-K.povCam.z)*b};
+  const dx=K.povDir.x+(K.hl.dir.x-K.povDir.x)*b,dz=K.povDir.z+(K.hl.dir.z-K.povDir.z)*b,L=Math.hypot(dx,dz)||1;
+  K.dir={x:dx/L,z:dz/L};K.right={x:K.dir.z,z:-K.dir.x};
+}
 function drawField(c){
+  updateCam();
   const th=Math.atan2(K.dir.x,K.dir.z);
   const g0=c.createLinearGradient(0,0,0,HOR);g0.addColorStop(0,'#8fd0f0');g0.addColorStop(1,'#dff3fb');c.fillStyle=g0;c.fillRect(0,0,W,HOR);
   c.fillStyle='rgba(255,255,255,.85)';[[120,80,60],[430,110,80],[680,70,55]].forEach(a=>{const x=(a[0]-th*300+1600)%1000-100;c.beginPath();c.ellipse(x,a[1],a[2],a[2]*.35,0,0,7);c.fill();});
@@ -666,12 +685,18 @@ function drawSpin(c){
   const wind=0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
   fr.path.forEach((p,i)=>{if(i%5||i>fr.path.length-2)return;const q=proj(p.x,p.y,p.z);if(q.f<.5)return;c.fillStyle='rgba(255,255,255,.9)';c.strokeStyle='rgba(35,42,69,.6)';c.lineWidth=1;c.beginPath();c.arc(q.sx,q.sy,3,0,7);c.fill();c.stroke();});
 }
+/* 골 세레머니: 짧게 달려 나가다 손흥민 찰칵(카메라 프레임) 포즈로 멈춰서 세워요 */
 function drawCeleb(c){
-  const t=K.celeb,hop=Math.abs(Math.sin(t*8))*46,fl=Math.floor(t*4)%2===0;
-  c.fillStyle='rgba(255,230,120,.25)';c.beginPath();c.ellipse(175,H-4,110,22,0,0,7);c.fill();
-  kid(c,175,H-6-hop,3,{face:'excited',arms:'up',flip:fl});
-  const words=['롹!','롹롹!','만세!'],w=words[Math.floor(t*3)%3];
-  TX(c,w,175+(fl?-80:80),H-215-hop*.3,46*(1+.1*Math.sin(t*16)),'#fff','center','#e2334d');
+  const t=K.celeb,fl=K.celebFlip,run=clamp(t/.4,0,1),ease=1-Math.pow(1-run,3);
+  const x0=fl?640:160,x1=fl?440:360,x=x0+(x1-x0)*ease,posed=t>=.4;
+  const hop=posed?Math.abs(Math.sin((t-.4)*3))*3:Math.abs(Math.sin(run*3.14159))*10;
+  c.fillStyle='rgba(255,230,120,.25)';c.beginPath();c.ellipse(x,H-4,110,22,0,0,7);c.fill();
+  kid(c,x,H-6-hop,3,{face:'excited',arms:posed?'frame':undefined,run:!posed,ph:t*24,flip:fl});
+  if(posed){
+    const bt=t-.4,blink=Math.floor(bt*3)%2===0;
+    if(blink){c.fillStyle='rgba(255,255,255,.85)';c.beginPath();c.arc(x+(fl?-32:32),H-6-hop-172,9,0,7);c.fill();}
+    TX(c,'찰칵!',x+(fl?-95:95),H-232,44*(1+.08*Math.sin(t*13)),'#fff','center','#3b7de0');
+  }
 }
 function drawBite(c){
   const t=K.t,gy=H-6,rs=2.6,sh=(t>.85&&t<1.5)?Math.sin(t*70)*5:0,rx=180+sh;
@@ -715,6 +740,7 @@ function drawKick(c){
     c.fillStyle=r?(r.type==='goal'?'#2f8f5b':r.type==='post'?'#e8a91c':'#e2334d'):'#dfe4ee';c.beginPath();c.arc(x,68,11,0,7);c.fill();
     c.lineWidth=i===K.i?4:2;c.strokeStyle=i===K.i?'#fff':'#232a45';c.stroke();if(r&&r.type==='goal')TX(c,'✓',x,69,14,'#fff','center');}
   TX(c,`점수 ${M.pts}`,180,68,18,'#fff','left','rgba(0,0,0,.5)');
+  if(K.hl&&(K.ph==='res'||(K.ph==='fly'&&K.pt>=K.tEvt-.05))){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-108,86,92,26,6);c.fill();TX(c,'REPLAY',W-62,99,15,'#fff','center');}
   if(K.ph==='aim'||K.ph==='spin'||K.ph==='power'){
     c.fillStyle='rgba(0,0,0,.35)';rr(c,W/2-150,60,300,12,6);c.fill();
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
