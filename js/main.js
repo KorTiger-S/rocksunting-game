@@ -25,4 +25,4 @@ renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
 showLogin();showSplash();requestAnimationFrame(frame);
 window.__dbg={BGM,BGMT,bgmSync,wantBgm,sfx,SFX,setMuted,setBgm,maybeLoan,du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;},
-  gymAction,bbqAction,buyDrink,buyTteok,rollCondition,applyCondition,CONDS};
+  gymAction,bbqAction,buyDrink,buyTteok,rollCondition,applyCondition,applyBet,applyStats,CONDS};

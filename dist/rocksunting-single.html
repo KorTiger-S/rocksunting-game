@@ -1054,7 +1054,8 @@ const WALLNAMES=['우룡','룡갈','씨붕','현숭','호우'];
 let K=null,M=null;
 function integrate(st,dt,s,ys,wind){
   const g=9.8*(1+.25*ys),vh=Math.hypot(st.vx,st.vz)||1;
-  const rx=st.vz/vh,rz=-st.vx/vh,al=s*13;
+  /* 공의 왼쪽을 차면(s<0) 궤적이 먼저 왼쪽으로 부풀었다가 조준한 곳으로 오른쪽으로 휘어져 들어가요(반대도 마찬가지) */
+  const rx=-st.vz/vh,rz=st.vx/vh,al=s*13;
   st.vx+=(rx*al+wind*K.right.x)*dt;st.vz+=(rz*al+wind*K.right.z)*dt;st.vy-=g*dt;
   st.x+=st.vx*dt;st.y+=st.vy*dt;st.z+=st.vz*dt;
   if(st.y<.11&&st.vy<0){st.y=.11;st.vy=-st.vy*.5;st.vx*=.8;st.vz*=.8;}
@@ -1092,23 +1093,41 @@ function solve(ball,tx,ty,s,ys){
   }
   return v;
 }
-/* 컨디션(0~4, 보통=2)이 좋을수록 골키퍼가 덜 정확하고 느리게 반응해요. 대결(duel)은 서버 판정이라 영향 없어요. */
+/* 컨디션(0~4, 보통=2)이 좋을수록 골키퍼가 덜 정확하고 느리게 반응하고, 바람이 약해지고, 조준이 덜 흔들리고,
+   파워 게이지의 초록 구간(정확한 타이밍)이 넓어져요. 대결(duel)은 서버 판정이라 영향 없어요. */
 function applyCondition(k){
   const cd=(S.cond==null?2:S.cond)-2;
   k.kerr=Math.max(.5,(k.kerr||1)+cd*.12);
   k.kread=clamp((k.kread||.25)-cd*.04,.05,.6);
   k.rk=Math.max(.05,(k.rk||.25)+cd*.02);
   k.vk=Math.max(2,(k.vk||4)-cd*.15);
+  k.wind=(k.wind||0)*(1-cd*.18);
+  k.sweetHalf=clamp(.05+cd*.015,.02,.09);
+  k.swAdd=Math.max(0,-cd*2.5);
+}
+const BET_LO=1000,BET_HI=3000;   /* 이 도전(vs 주스)의 판돈 범위. 최소면 골키퍼가 아예 안 움직이고, 최대면 평소보다 더 날렵해져요 */
+function applyBet(k,bet){
+  const t=clamp(((bet==null?BET_LO:bet)-BET_LO)/(BET_HI-BET_LO),0,1);
+  k.vk=(k.vk||4)*t*1.3;
+  k.rk=Math.max(.05,(k.rk||.25)*(1.5-.8*t));
+}
+/* 근력: 슛 파워(공 속도) 배율(0.8~1.2). 체력: 킥 제한시간 배율(0.8~1.2). 둘 다 0~100%를 그대로 선형 매핑해요. */
+function applyStats(k){
+  const str=clamp(S.str==null?15:S.str,0,100),stam=clamp(S.stam==null?15:S.stam,0,100);
+  k.strMul=.8+str/100*.4;
+  k.stamMul=.8+stam/100*.4;
 }
 function setupKick(i,ko){
   const k=ko||M.kicks[i];K=Object.assign({},k,{i});
   applyCondition(K);   /* 컨디션이 좋을수록 골키퍼(주스)가 살짝 무뎌져요 */
+  applyBet(K,M&&M.bet);   /* 판돈이 클수록 골키퍼가 날렵해지고, 최소 판돈이면 아예 움직이지 않아요 */
+  applyStats(K);   /* 근력이 높을수록 슛이 강해지고, 체력이 높을수록 킥 제한시간이 늘어나요 */
   K.ball={x:k.bx,y:.11,z:k.bz};
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
   K.cam={x:k.bx-K.dir.x*5.5,y:1.05,z:k.bz-K.dir.z*5.5};
   K.wallC={x:k.bx+K.dir.x*9.15,z:k.bz+K.dir.z*9.15};
-  K.limit=(i===4?8:12);K.timer=K.limit;K.lastTick=99;
+  K.limit=(i===4?8:12)*K.stamMul;K.timer=K.limit;K.lastTick=99;
   K.ph='aim';K.t=0;K.pt=0;K.tip=k.tip;K.introT=0;
   if(k.pen){const g=M.goals||0;K.tip=g===2?'이 킥으로 승패가 갈린다!':g>=3?(g===3?'이미 승리! 넣으면 완승 보너스!':'이미 완승! 마지막 자존심 킥!'):'승리는 어렵지만… 끝까지 차 보자!';K.introT=2.0;}
   const p=proj(0,1.2,0);K.cur={x:p.sx,y:p.sy};K.sw={x:0,y:0};
@@ -1127,7 +1146,7 @@ function unproject(sx,sy){
   return{x:K.cam.x+t*dxh,y:K.cam.y+t*v};
 }
 const wallObj=()=>K.wall?{cx:K.wallC.x,cz:K.wallC.z,half:K.wall*.27,h:t=>1.70+(K.jump?.30*Math.sin(Math.PI*clamp((t-.14)/.6,0,1)):0)}:null;
-function sweetHalf(){return .05;}
+function sweetHalf(){return K&&K.sweetHalf!=null?K.sweetHalf:.05;}
 
 /* ---------- 컷신 ---------- */
 let C=null;
@@ -1324,6 +1343,19 @@ const REACT={
  호우:{goal:['킥 소리가 화음이었어.','좋은 리듬이야!'],wall:['쿵. 낮은 도 소리네.'],save:['…불협화음.','박자가 반 박자 늦었어.'],miss:['음이 빗나갔네.']}
 };
 const KEEPER={goal:['깨물어버린다!!','한 손가락만 썼으면…','내 자존심이…!'],save:['한 손가락이면 충분해','앙~! 못 지나가','내 자부심은 안 뚫려'],post:['아슬아슬! 골대가 도왔다!','한 손가락으로도 막았을 거야!'],wall:['벽이 막았네. 난 구경만 했다.'],miss:['골대 밖이잖아. 깨물어버린다!','한 손가락도 안 썼다.']};
+/* 컨디션 매우나쁨(0)일 때 슛하려다 자빠질 확률과, 그때 친구들이 놀리는 대사 */
+const TRIP_CHANCE=.3;
+const TRIP_REACT={
+ 머호:['컨디션 매우나쁨에서 무리했네! 세상은 5할인데 오늘 그쪽 5할이었어 ㅋㅋ','거봐, 쉬라니까~'],
+ 씨붕:['풉ㅋㅋㅋ 방금 그거 봤어?!','아, 판돈 날아가는 소리 들린다 ㅋㅋ'],
+ 히통:['부상 병원비는 이자 10%로 빌려줄게.','컨디션 관리도 신용등급이야.'],
+ 겨맘:['어머, 괜찮아?! 무리하지 말라니까…','다치면 안 되는데… 얼른 쉬어!'],
+ 주멘:['컨디션 매우나쁨은 계획에 없었는데…','변수 발생. 다음엔 에너지드링크부터 마시자.'],
+ ㅈㄱ:['…잠만보처럼 쓰러졌어.','…(안타까운 표정으로 카드를 만지작)'],
+ 현숭:['컨디션 0에서 슛 확률 통계 안 좋았어.','다음엔 컨디션부터 관리하자.'],
+ 호우:['쿵. 낮은 도 소리가 났어.'],
+ 주스:['자, 잘 쉬고 와. 몰수승은 내가 챙길게. 깨물어버린다!','컨디션 관리도 실력이야!']
+};
 const CHAT={
  주스:['오늘도 프리킥 받아줄게. 깨물어버린다!','한 손가락 스트레칭 중이야.','내 자존심은 골대 크기만 해.'],
  머호:['세상은 어차피 다 5할이야!','급식 맛있을 확률? 5할이야.','시험 찍기도 5할이지.'],
@@ -1359,6 +1391,18 @@ function forfeit(){
   if(mode==='hub'||mode==='settle')return;
   C=null;$('#skip').hidden=true;M.forfeit=true;M.goals=0;settle();
 }
+/* 컨디션 매우나쁨(0)에서 슛하려다 자빠지는 연출: 친구들이 놀리는 대사를 띄우고 부상으로 즉시 몰수패 처리해요 */
+function startTrip(){
+  K.ph='trip';K.t=0;K.face='panic';K.shake=.4;sfx('thud');
+  const sp=SPECT.slice().sort(()=>Math.random()-.5).slice(0,2);
+  sp.forEach(a=>{const l=TRIP_REACT[a.n];if(l)K.react.push({n:a.n,x:a.x,z:a.z,tx:pick(l),t:2.2});});
+  const kl=TRIP_REACT['주스'];if(kl)K.react.push({n:'주스',x:0,z:0,tx:pick(kl),t:2.2});
+  K.result={type:'trip',pts:0,title:'앗, 발이 꼬였다!',sub:'컨디션이 매우 나빠서 넘어지고 말았다… 부상으로 몰수패!',col:'#c4372f'};
+}
+function forfeitInjury(){
+  if(mode==='hub'||mode==='settle')return;
+  C=null;$('#skip').hidden=true;M.forfeit=true;M.injured=true;M.goals=0;settle();
+}
 function nextKick(){
   if(K.i>=4){
     const win=M.goals>=3,big=M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
@@ -1372,15 +1416,16 @@ function settle(){
   S.fatigue=Math.max(0,(S.fatigue||0)-1);
   const delta=win?M.bet+(big?bonus:0):-M.bet;
   const before=S.money;S.money=Math.max(0,S.money+delta);
-  if(win)S.wins++;else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}   /* 지면 기분이 나빠져요 */
+  if(win){S.wins++;S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);}   /* 이기면 기분이 조금 좋아져요 */
+  else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}    /* 지면 기분이 조금 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
   const weekend=advanceDay();
   sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
   if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money,week:S.week});
-  $('#sT').textContent=M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
-  $('#sImg').src=IMGDATA[big?'excited':win?'happy':'frustrated'];
+  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.injured?'부상':M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money,week:S.week});
+  $('#sT').textContent=M.injured?'부상으로 기권…':M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
+  $('#sImg').src=IMGDATA[M.injured?'panic':big?'excited':win?'happy':'frustrated'];
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
     `<tr><td>소지금</td><td>${fmt(before)} → ${fmt(S.money)}원</td></tr>`;
@@ -1434,7 +1479,7 @@ function updateKick(dt){
     if(K.emerg){const q=Math.ceil(K.timer*2);if(q!==K.lastTick){K.lastTick=q;beep(K.timer<1.5?950:700,.08,'square',.07);}}
   }else K.emerg=false;
   if(K.ph==='aim'){
-    const A=3+K.i*2.5+(K.pen?4:0);K.sw.x=Math.sin(K.t*1.9)*A;K.sw.y=Math.cos(K.t*2.6)*A*.7;
+    const A=3+K.i*2.5+(K.pen?4:0)+(K.swAdd||0);K.sw.x=Math.sin(K.t*1.9)*A;K.sw.y=Math.cos(K.t*2.6)*A*.7;
     if(mouse.mv){K.cur.x=mouse.x;K.cur.y=mouse.y;}
     const ax=(held.ArrowRight?1:0)-(held.ArrowLeft?1:0),ay=(held.ArrowDown?1:0)-(held.ArrowUp?1:0);
     K.cur.x=clamp(K.cur.x+ax*260*dt,40,760);K.cur.y=clamp(K.cur.y+ay*200*dt,70,400);
@@ -1452,8 +1497,11 @@ function updateKick(dt){
     }
     K.face='resolve';
     if((pressed.Space||pressed.Enter||mouse.click)&&K.t>.15){
+      if((S.cond==null?2:S.cond)===0&&Math.random()<TRIP_CHANCE){startTrip();return;}
       K.s=K.spin.x;K.ys=-K.spin.y;K.ph='power';K.t=0;K.p=0;K.armed=false;K.charging=false;beep(600,.08,'triangle',.07);
     }
+  }else if(K.ph==='trip'){
+    if(K.t>2.4||(K.t>1.2&&(pressed.Space||pressed.Enter||mouse.click)))forfeitInjury();
   }else if(K.ph==='power'){
     const down=held.Space||mouse.down;
     if(!K.armed){if(!down)K.armed=true;}
@@ -1477,7 +1525,7 @@ function updateKick(dt){
 function keeperGuess(){const r=Math.random();return (r<.4?-2.6:r<.8?2.6:0)+gauss()*.25;}
 function fire(){
   const v0=solve(K.ball,K.aim.tx,K.aim.ty,K.s,K.ys);
-  const f=.55+.6*K.p,v={vx:v0.vx*f,vy:v0.vy*f,vz:v0.vz*f};
+  const f=(.55+.6*K.p)*(K.strMul||1),v={vx:v0.vx*f,vy:v0.vy*f,vz:v0.vz*f};
   const fr=flight(K.ball,v,K.s,K.ys,K.wind,K.wall?wallObj():null,true);
   let out='short',info={};
   const sweet=Math.abs(K.p-.75)<=sweetHalf();
@@ -1736,8 +1784,8 @@ function drawKick(c){
     c.strokeStyle='#232a45';c.lineWidth=3;rr(c,x0,y0,x1-x0,22,8);c.stroke();
     TX(c,K.charging?'초록 구간에서 떼!':'Space를 꾹 누르세요 (마우스 누르고 있기도 가능)',W/2,y0-14,16,'#fff','center');
   }
-  if(K.ph==='res'||(K.ph==='fly'&&K.pt>=K.tEvt&&K.result)){
-    if(K.result){const q=K.ph==='res'?Math.min(1,K.t*5):1;c.save();c.translate(W/2,205);c.scale(.6+.4*q,.6+.4*q);TX(c,K.result.title,0,0,54,'#fff','center',K.result.col);TX(c,K.result.sub,0,48,22,'#fff','center','rgba(0,0,0,.6)');c.restore();}
+  if(K.ph==='res'||K.ph==='trip'||(K.ph==='fly'&&K.pt>=K.tEvt&&K.result)){
+    if(K.result){const q=(K.ph==='res'||K.ph==='trip')?Math.min(1,K.t*5):1;c.save();c.translate(W/2,205);c.scale(.6+.4*q,.6+.4*q);TX(c,K.result.title,0,0,54,'#fff','center',K.result.col);TX(c,K.result.sub,0,48,22,'#fff','center','rgba(0,0,0,.6)');c.restore();}
   }
   if(K.pen&&(K.ph==='aim'||K.ph==='spin'||K.ph==='power')&&K.introT<=0){const g=c.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,W*.66);g.addColorStop(0,'rgba(10,13,27,0)');g.addColorStop(1,'rgba(10,13,27,.5)');c.fillStyle=g;c.fillRect(0,52,W,H-52);}
   if(K.emerg&&(K.ph==='aim'||K.ph==='spin'||K.ph==='power'))drawEmerg(c);
@@ -1757,6 +1805,7 @@ function drawKick(c){
   if(!celebOn&&!biteOn){c.fillStyle='rgba(20,24,44,.6)';c.beginPath();c.arc(58,H-58,50,0,7);c.fill();
   faceImg(c,fc,58,H-58,44);c.strokeStyle='#e2334d';c.lineWidth=5;c.beginPath();c.arc(58,H-58,48,0,7);c.stroke();}
   if(K.ph==='res'&&(isGoal?K.celeb>=2.0:K.t>1.8))TX(c,'Space: 다음',W-16,H-24,16,'#fff','right','rgba(0,0,0,.6)');
+  if(K.ph==='trip'&&K.t>1.2)TX(c,'Space: 다음',W-16,H-24,16,'#fff','right','rgba(0,0,0,.6)');
 }
 
 
@@ -2139,7 +2188,7 @@ function duRender(){
     else msg=st.reason==='left'?'😢 자리를 비워서 패배했어요.':'😢 아쉽게 패배했어요.';
     msg+=`  (${hg} : ${gg})`;
     if(!DU.endPlayed){DU.endPlayed=true;sfx(w==='draw'?'chime':w===mine?'bigwin':'lose');if(st.bet>0&&w===mine)setTimeout(()=>sfx('coin'),800);
-      if(w!=='draw'&&w!==mine){S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);save();}}   /* 대결도 지면 기분이 나빠져요 */
+      if(w!=='draw'){S.mood=clamp((S.mood==null?50:S.mood)+(w===mine?6:-6),0,100);save();}}   /* 대결도 이기면 기분이 좋아지고 지면 나빠져요 */
     if(st.bet>0)msg+=w==='draw'?`  🪙 판돈 ${fmt(st.bet)}원을 돌려받았어요.`:w===mine?`  💰 +${fmt(st.bet)}원`:`  💸 -${fmt(st.bet)}원`;
   }else if(live){
     if(duCanShoot())msg=DU.ph==='aim'?'🎯 슛할 곳을 조준하세요!':'⚡ 초록 구간에서 클릭!';
@@ -2270,7 +2319,7 @@ renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});
 showLogin();showSplash();requestAnimationFrame(frame);
 window.__dbg={BGM,BGMT,bgmSync,wantBgm,sfx,SFX,setMuted,setBgm,maybeLoan,du:DU,sp:SP,getS:()=>S,getUser:()=>USER,startLogin,cloudUrl,api,logout,startKick,SPOTS,PEN,DIFF,buildKicks,dayAction,hospitalize,forceFire:(ki,aim,s,ys,p,ko)=>{if(!M)M={bet:1000,goals:0,pts:0,res:[]};if(!M.kicks)M.kicks=buildKicks();setupKick(ki,ko);K.aim=aim;K.s=s;K.ys=ys;K.p=p;fire();return{out:K.out,info:K.info};},startMatch,held,mouse,setKey,solve,flight,proj,unproject,setupKick,getK:()=>K,getM:()=>M,getMode:()=>mode,getS:()=>S,pressedRef:()=>pressed,skipCut:()=>{pressed.SkipCut=true;},
-  gymAction,bbqAction,buyDrink,buyTteok,rollCondition,applyCondition,CONDS};
+  gymAction,bbqAction,buyDrink,buyTteok,rollCondition,applyCondition,applyBet,applyStats,CONDS};
 </script>
 </body>
 </html>
