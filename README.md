@@ -57,7 +57,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (`js/audio.js`), 버튼별 소리는 `BTN_SFX` (`js/hub.js`) |
 | 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js` |
 | 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) (`js/hub.js`) |
-| 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/에너지드링크/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 매일 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
+| 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/소리새가서 노래부르기/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 매일 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
 | 머호 꽈추때리기(값 없이 소지금을 200원으로 털어감) | `mahoAction()`, `MAHO_ANGRY_IMG` (`js/hub.js`), 경고 배경/흔들림 애니메이션은 `.ov.danger`/`#stImg.angry` (`css/style.css`) |
 | 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
@@ -70,7 +70,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 `window.__dbg`(`js/main.js`)는 테스트용 후크예요. 배포할 때는 지워도 돼요.
 
 ## 1:1 페널티킥 대결 (v1.1.0~, 판돈은 v1.2.0~)
-로그인한 두 사람이 방 코드로 만나 번갈아 5번씩 차고 막는 대결이에요. 피파 온라인처럼 **슈터는 조준 + 파워 게이지, 골키퍼는 다이브 방향**을 골라요. 판돈을 걸고 할 수도 있어요. (승패는 랭킹의 "승리" 기록에 반영되지 않고, 판돈만 소지금에 반영돼요)
+로그인한 두 사람이 방 코드로 만나 번갈아 5번씩 차고 막는 대결이에요. 피파 온라인처럼 **슈터는 조준 + 파워 게이지, 골키퍼는 다이브 방향**을 골라요. 판돈을 걸고 할 수도 있어요. (랭킹의 "승리" 기록은 이 1:1 대결의 승패만 반영해요. 판돈은 소지금에 반영되고, 혼자 하는 프리킥 내기의 승패는 랭킹에 반영되지 않아요)
 - **진행**: 방 만들기 → 4자리 코드를 친구에게 전달 → 친구가 "참가하기"에 입력. 두 사람의 선택은 동시에 정해지고, 서버가 둘 다 받은 뒤에 판정해요. 상대가 무엇을 골랐는지는 판정 전까지 알 수 없어요.
 - **슈터**: 마우스(또는 방향키)로 골대 안을 조준 → 클릭/Space로 확정 → 파워 게이지가 **초록 구간**일 때 다시 클릭/Space. 골대 밖을 노리면 빗나가요.
 - **골키퍼**: 6칸(위/아래 × 왼쪽/가운데/오른쪽) 중 다이브할 곳을 클릭하거나 숫자키 1~6.

@@ -16,13 +16,13 @@ function renderHub(){
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 에너지드링크(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
 const moodLabel=m=>CONDS[clamp(Math.floor(clamp(m,0,100)/20),0,4)];   /* 기분(0~100)을 컨디션과 같은 5단계 라벨로 */
 function renderStats(){
-  const stam=clamp(S.stam==null?15:S.stam,0,100),str=clamp(S.str==null?15:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
+  const stam=clamp(S.stam==null?25:S.stam,0,100),str=clamp(S.str==null?25:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#statStam').textContent=Math.round(stam)+'%';$('#stamBar').style.width=stam+'%';
   $('#statStr').textContent=Math.round(str)+'%';$('#strBar').style.width=str+'%';
   $('#statMood').textContent=moodLabel(mood);
@@ -34,30 +34,30 @@ function renderStats(){
 function spendToast(msg){sfx('coin');setTimeout(()=>sfx('coin'),110);toast(msg);}
 function gymAction(){
   if(S.money<GYM_COST)return;
-  const before=Math.round(clamp(S.str==null?15:S.str,0,100));
-  S.str=clamp((S.str==null?15:S.str)+10,0,100);S.gymGap=-1;
+  const before=Math.round(clamp(S.str==null?25:S.str,0,100));
+  S.str=clamp((S.str==null?25:S.str)+10,0,100);S.gymGap=-1;
   spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
   dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
 }
 function bbqAction(){
   if(S.money<BBQ_COST)return;
-  const before=Math.round(clamp(S.stam==null?15:S.stam,0,100));
-  S.stam=clamp((S.stam==null?15:S.stam)+12,0,100);S.bbqGap=-1;
+  const before=Math.round(clamp(S.stam==null?25:S.stam,0,100));
+  S.stam=clamp((S.stam==null?25:S.stam)+12,0,100);S.bbqGap=-1;
   spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
   dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
 }
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
   const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='에너지드링크를 마셨다. 컨디션이 좋아졌다!';
-  spendToast(`⚡ 에너지드링크 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='소리새에 가서 노래를 불렀다. 컨디션이 좋아졌다!';
+  spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
   const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 떡볶이를 사 먹었다. 기분이 좋아졌다!';
-  spendToast(`🍢 디델리 떡볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 라볶이를 사 먹었다. 기분이 좋아졌다!';
+  spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
 /* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */
@@ -87,13 +87,13 @@ function dayAction(msg,gain,job){
   save();renderHub();
 }
 const VISIT=[
- {n:'겨맘',t:'롹순팅! 괜찮아? 무리하지 말고 푹 쉬어~ (죽을 놓고 갔다)'},
+ {n:'겨맘',t:'내가 죽 끓여왔어, 원기회복엔 이만한 게 없다니까! 얼른 낫고 같이 운동장 뛰자~ (죽을 놓고 갔다)'},
  {n:'히통',t:'병원비 모자라면 빌려줄게. 이자는 10%… 퇴원 기념으로 9.9%.'},
  {n:'주멘',t:'이건 계획에 없었는데… 알바 스케줄부터 다시 짜자.'},
  {n:'머호',t:'세상은 어차피 다 5할이야. 쓰러질 확률도 5할이었던 거지~'},
  {n:'주스',t:'아픈 놈은 안 깨문다. 다 나으면 깨물어버린다!'},
  {n:'ㅈㄱ',t:'…(말없이 이상해씨 카드를 두고 갔다)'},
- {n:'씨붕',t:'내기에 나왔으면 판돈 크게 땄을 텐데… 아무튼 빨리 나아!'}
+ {n:'씨붕',t:'인마, 몸 관리 좀 하랬지?! …아, 됐고. 죽 식기 전에 얼른 먹어.'}
 ];
 function hospitalize(){
   const before=S.money,fee=Math.min(8000,Math.max(2000,Math.round(S.money*.35/100)*100)),paid=Math.min(S.money,fee),short=fee-paid;
@@ -142,7 +142,10 @@ $('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHu
 $('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
 $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
 $('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)startMatch(betV);});
-$('#passBtn').addEventListener('click',()=>dayAction('오늘은 조용히 지나갔다.',0,false));
+$('#passBtn').addEventListener('click',()=>{
+  S.stam=clamp((S.stam==null?25:S.stam)+3,0,100);   /* 프리킥을 쉬면 몸이 회복돼서 체력이 살짝 올라요 */
+  dayAction('오늘은 쉬면서 체력을 조금 회복했다.',0,false);
+});
 $('#jobBtn').addEventListener('click',()=>dayAction('머호가 소개해 준 매점 심부름으로 600원을 벌었다.',600,true));
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
