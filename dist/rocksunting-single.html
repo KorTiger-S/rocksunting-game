@@ -58,6 +58,7 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .go:disabled{background:var(--bar);color:var(--muted);box-shadow:none;cursor:default}
 .go.alt{background:var(--board)}
 .go.ghost{background:var(--card);color:var(--ink)}
+.go.warn{background:#3a1014;color:#ffc2cc;border-color:#e2334d}
 .note{padding:12px 14px;border:2px dashed var(--line);border-radius:12px;background:var(--card);font-size:15px}
 .note.win{background:#fff4c9;color:#3a2c00;border-style:solid;font-weight:700}
 .chall{padding:16px;display:grid;gap:12px}
@@ -134,6 +135,15 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .dialog .dupot:empty{display:none}
 .dialog .stb{margin:0;font-weight:700;font-style:italic;color:var(--ring)}
 .dialog .stb[hidden]{display:none}
+
+/* 머호 꽈추때리기: 강탈당하는 순간의 경고 배경 + 화난 애니메이션 */
+.ov.danger{background:repeating-linear-gradient(45deg,#f2c200 0 18px,#1b0e06 18px 36px);background-size:200% 200%;animation:dangerFlash .35s linear infinite}
+.ov.danger .dialog{border-color:#e2334d;box-shadow:0 0 0 6px rgba(226,51,77,.55),4px 4px 0 var(--line);animation:dangerShake .3s infinite}
+.ov.danger .dialog h2{color:#e2334d}
+#stImg.angry{animation:angryPulse .25s infinite}
+@keyframes dangerFlash{0%{background-position:0 0}100%{background-position:72px 0}}
+@keyframes dangerShake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,2px) rotate(-.6deg)}50%{transform:translate(3px,-2px) rotate(.6deg)}75%{transform:translate(-2px,-3px) rotate(-.4deg)}}
+@keyframes angryPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-3deg);filter:drop-shadow(0 0 12px rgba(226,51,77,.85))}}
 </style>
 </head>
 <body>
@@ -223,6 +233,9 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
       <div class="acts">
         <button class="go ghost" id="drinkBtn">⚡ 에너지드링크 (700원)</button>
         <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 떡볶이 (1,000원)</button>
+      </div>
+      <div class="acts">
+        <button class="go warn" id="mahoBtn">💢 머호 꽈추때리기</button>
       </div>
     </div>
     <div>
@@ -367,7 +380,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.6.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -593,6 +606,9 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '1.6.0':{sub:'몸 관리에 위험한 메뉴가 하나 추가됐어요!',items:[
+    '💢 몸 관리 맨 아래에 "머호 꽈추때리기"가 생겼어요. 값은 안 받지만, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요. 조심하세요!'
+  ]},
   '1.5.0':{sub:'체력·근력·컨디션·기분이 생겼어요!',items:[
     '💪 근력이 생겼어요. 헬스장에서 쇠질하기(1,500원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
     '🍖 체력이 생겼어요. 난지바베큐(2,000원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
@@ -777,9 +793,10 @@ const SFX={
   lose(){[392,370,349].forEach((f,i)=>tone(f,.28,'sawtooth',.05,i*.28));tone(330,.7,'sawtooth',.05,.84,262);},  /* 슬픈 트롬본 */
   /* 몸 관리 */
   clank(){tone(220,.05,'square',.05);tone(880,.06,'triangle',.04,.05);tone(180,.09,'square',.05,.1);},          /* 쇠질하기: 아령 부딪는 소리 */
-  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);}                                /* 난지바베큐: 고기 굽는 소리 */
+  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);},                               /* 난지바베큐: 고기 굽는 소리 */
+  grab(){tone(90,.24,'sawtooth',.09,0,45);tone(60,.4,'square',.08,.08);noise(.32,.08,.03,2200,300,.6);}          /* 머호 꽈추때리기: 붙잡혀 돈을 뺏기는 소리 */
 };
-const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
+const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4,grab:1.8};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
 function cheer(){sfx('crowd');}
 
@@ -1871,10 +1888,21 @@ function buyTteok(){
   spendToast(`🍢 디델리 떡볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
+/* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */
+const MAHO_ANGRY_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#3a1014"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="#f1c9a5"/><path d="M46 72Q52 40 100 36Q148 40 154 72L154 102Q100 58 46 102Z" fill="#8a5a2a"/><path d="M56 80Q76 60 94 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M144 80Q124 60 106 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><ellipse cx="76" cy="98" rx="7" ry="9" fill="#2a1a14"/><ellipse cx="124" cy="98" rx="7" ry="9" fill="#2a1a14"/><circle cx="78" cy="95" r="2" fill="#fff"/><circle cx="126" cy="95" r="2" fill="#fff"/><ellipse cx="60" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><ellipse cx="140" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><path d="M78 134Q100 124 122 134Q112 148 100 146Q88 148 78 134Z" fill="#6b2a2a"/><path d="M84 134L92 134L92 142L84 142Z" fill="#fff"/><path d="M96 133L104 133L104 142L96 142Z" fill="#fff"/><path d="M108 134L116 134L116 142L108 142Z" fill="#fff"/><path d="M30 60L14 30M170 60L186 30M22 96L4 96M178 96L196 96" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="none" stroke="#e2334d" stroke-width="5"/></svg>');
+function mahoAction(){
+  const before=Math.max(0,S.money);
+  S.money=200;S.news='머호에게 잡혀 돈을 강탈당했습니다.';
+  save();
+  showStory([
+    {src:MAHO_ANGRY_IMG,sfx:'grab',bgm:'sad',danger:true,title:'머호 꽈추때리기',who:'머호',text:`머호에게 잡혀 돈을 강탈당했습니다. 소지금 ${fmt(before)}원 → 200원.`}
+  ],()=>{chatCur=randChat();renderHub();});
+}
 $('#gymBtn').addEventListener('click',gymAction);
 $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
+$('#mahoBtn').addEventListener('click',mahoAction);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
@@ -1913,7 +1941,8 @@ let STORY=null;
 function showStory(pages,done,bgm){STORY={pages,i:0,done,bgm};renderStory();$('#story').hidden=false;}
 function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;$('#stImg').src=p.src||IMGDATA[p.img||'base'];
   const sb=$('#stB');sb.hidden=!p.burp;sb.textContent=p.burp?pick(BURPS):'';if(p.burp)burp();else sfx(p.sfx||'page');
- $('#stN').textContent=p.who?`${p.who}:`:'';$('#stX').textContent=p.text;$('#stBtn').textContent=STORY.i>=STORY.pages.length-1?'확인':'다음';}
+ $('#stN').textContent=p.who?`${p.who}:`:'';$('#stX').textContent=p.text;$('#stBtn').textContent=STORY.i>=STORY.pages.length-1?'확인':'다음';
+ $('#story').classList.toggle('danger',!!p.danger);$('#stImg').classList.toggle('angry',!!p.danger);}
 $('#stBtn').addEventListener('click',()=>{if(!STORY)return;STORY.i++;if(STORY.i>=STORY.pages.length){$('#story').hidden=true;const d=STORY.done;STORY=null;d&&d();}else renderStory();});
 /* ---------- 라털 선생님: 소지금이 0원 이하가 되면 1만 원을 빌려줘요 ----------
    대머리에 짧은 턱수염이 구레나룻까지 이어진 모습이에요. 돈을 빌려줄 때 말끝마다 "바우!" 하고 트림을 해요. */
@@ -1958,7 +1987,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()에서 직접 재생해요(중복 방지) */
+  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none',mahoBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);

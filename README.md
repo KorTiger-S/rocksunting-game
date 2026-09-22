@@ -58,6 +58,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js` |
 | 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) (`js/hub.js`) |
 | 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/에너지드링크/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 매일 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
+| 머호 꽈추때리기(값 없이 소지금을 200원으로 털어감) | `mahoAction()`, `MAHO_ANGRY_IMG` (`js/hub.js`), 경고 배경/흔들림 애니메이션은 `.ov.danger`/`#stImg.angry` (`css/style.css`) |
 | 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
 | 1:1 대결 판정(오차·골키퍼 반경)·시간 제한 | `rk_duel_shot`, `rk_duel_settle` (backend/schema.sql) |
