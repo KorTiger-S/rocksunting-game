@@ -22,7 +22,7 @@ const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xml
 $('#tteokIcon').src=TTEOK_IMG;
 const moodLabel=m=>CONDS[clamp(Math.floor(clamp(m,0,100)/20),0,4)];   /* 기분(0~100)을 컨디션과 같은 5단계 라벨로 */
 function renderStats(){
-  const stam=clamp(S.stam==null?15:S.stam,0,100),str=clamp(S.str==null?15:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
+  const stam=clamp(S.stam==null?25:S.stam,0,100),str=clamp(S.str==null?25:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#statStam').textContent=Math.round(stam)+'%';$('#stamBar').style.width=stam+'%';
   $('#statStr').textContent=Math.round(str)+'%';$('#strBar').style.width=str+'%';
   $('#statMood').textContent=moodLabel(mood);
@@ -34,15 +34,15 @@ function renderStats(){
 function spendToast(msg){sfx('coin');setTimeout(()=>sfx('coin'),110);toast(msg);}
 function gymAction(){
   if(S.money<GYM_COST)return;
-  const before=Math.round(clamp(S.str==null?15:S.str,0,100));
-  S.str=clamp((S.str==null?15:S.str)+10,0,100);S.gymGap=-1;
+  const before=Math.round(clamp(S.str==null?25:S.str,0,100));
+  S.str=clamp((S.str==null?25:S.str)+10,0,100);S.gymGap=-1;
   spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
   dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
 }
 function bbqAction(){
   if(S.money<BBQ_COST)return;
-  const before=Math.round(clamp(S.stam==null?15:S.stam,0,100));
-  S.stam=clamp((S.stam==null?15:S.stam)+12,0,100);S.bbqGap=-1;
+  const before=Math.round(clamp(S.stam==null?25:S.stam,0,100));
+  S.stam=clamp((S.stam==null?25:S.stam)+12,0,100);S.bbqGap=-1;
   spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
   dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
 }
@@ -142,7 +142,10 @@ $('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHu
 $('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
 $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
 $('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)startMatch(betV);});
-$('#passBtn').addEventListener('click',()=>dayAction('오늘은 조용히 지나갔다.',0,false));
+$('#passBtn').addEventListener('click',()=>{
+  S.stam=clamp((S.stam==null?25:S.stam)+3,0,100);   /* 프리킥을 쉬면 몸이 회복돼서 체력이 살짝 올라요 */
+  dayAction('오늘은 쉬면서 체력을 조금 회복했다.',0,false);
+});
 $('#jobBtn').addEventListener('click',()=>dayAction('머호가 소개해 준 매점 심부름으로 600원을 벌었다.',600,true));
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
