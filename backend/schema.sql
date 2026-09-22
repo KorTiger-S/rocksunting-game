@@ -214,8 +214,9 @@ begin
   if a in ('bad_pin', 'locked') then return jsonb_build_object('ok', false, 'error', a); end if;
 
   if a = 'none' then                                   -- 새 ID: 이때 받은 비밀번호로 등록
-    insert into public.rk_users (id, name, pin_hash, money, wins, losses, best_pts, week, cleared, data, updated_at_ms, season_key)
-    values (k, nm, crypt(p->>'pin', gen_salt('bf')), (d->>'money')::int, (d->>'wins')::int, (d->>'losses')::int,
+    -- wins/losses(랭킹용 전적)는 1:1 대결(rk_duel_*) 결과로만 채워진다. 여기서는 항상 0으로 시작한다.
+    insert into public.rk_users (id, name, pin_hash, money, best_pts, week, cleared, data, updated_at_ms, season_key)
+    values (k, nm, crypt(p->>'pin', gen_salt('bf')), (d->>'money')::int,
             (d->>'bestPts')::int, (d->>'week')::int, (d->>'cleared')::boolean, d, at, cur)
     on conflict (id) do nothing;
     get diagnostics n = row_count;
@@ -228,8 +229,9 @@ begin
   if u.updated_at_ms > at or u.season_key is distinct from (p->>'season') then
     return jsonb_build_object('ok', true, 'conflict', true, 'name', u.name, 'updatedAt', u.updated_at_ms, 'data', u.data, 'season', u.season_key);
   end if;
+  -- wins/losses 열은 여기서 건드리지 않는다: 랭킹 승리 스코어는 1:1 대결(rk_duel_settle)에서만 올라간다.
   update public.rk_users set
-    money = (d->>'money')::int, wins = (d->>'wins')::int, losses = (d->>'losses')::int,
+    money = (d->>'money')::int,
     best_pts = (d->>'bestPts')::int, week = (d->>'week')::int, cleared = (d->>'cleared')::boolean,
     data = d, updated_at_ms = at, updated_at = now()
   where id = k;
@@ -441,6 +443,20 @@ begin
   where id = k and season_key is not distinct from sk;
 end $$;
 
+-- 랭킹의 승리 스코어(wins/losses)는 1:1 대결(친구 대결)의 승패만 반영한다. 무승부는 기록하지 않는다.
+-- 시즌이 바뀌어 기록이 초기화된 사람에게는 적용하지 않는다.
+create or replace function public.rk_duel_record(k text, iswin boolean, sk text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if k is null then return; end if;
+  update public.rk_users set
+    wins = wins + case when iswin then 1 else 0 end,
+    losses = losses + case when iswin then 0 else 1 end,
+    updated_at_ms = greatest(updated_at_ms + 1, (extract(epoch from now()) * 1000)::bigint),
+    updated_at = now()
+  where id = k and season_key is not distinct from sk;
+end $$;
+
 create or replace function public.rk_duel_json(d public.rk_duels, k text) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare me text := case when d.host = k then 'host' else 'guest' end;
@@ -501,7 +517,7 @@ begin
       d.winner := case when d.hg > d.gg then 'host' when d.gg > d.hg then 'guest' else 'draw' end;
     end if;
   end if;
-  -- 판돈 정산(딱 한 번): 이긴 사람이 2배, 무승부/만료는 각자 돌려받는다
+  -- 판돈 정산(딱 한 번): 이긴 사람이 2배, 무승부/만료는 각자 돌려받는다. 승리 스코어(wins/losses)도 이때 함께 기록한다.
   if d.status = 'done' and not d.settled then
     d.settled := true;
     if d.bet > 0 then
@@ -509,6 +525,9 @@ begin
       elsif d.winner = 'guest' then perform public.rk_duel_pay(d.guest, 2 * d.bet, d.season_key);
       else perform public.rk_duel_pay(d.host, d.bet, d.season_key); perform public.rk_duel_pay(d.guest, d.bet, d.season_key);
       end if;
+    end if;
+    if d.winner = 'host' then perform public.rk_duel_record(d.host, true, d.season_key); perform public.rk_duel_record(d.guest, false, d.season_key);
+    elsif d.winner = 'guest' then perform public.rk_duel_record(d.guest, true, d.season_key); perform public.rk_duel_record(d.host, false, d.season_key);
     end if;
   end if;
   update public.rk_duels set status = d.status, round = d.round, hg = d.hg, gg = d.gg,
@@ -684,7 +703,7 @@ end $$;
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
 revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
-                       public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text) from public, anon, authenticated;
+                       public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                        public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
