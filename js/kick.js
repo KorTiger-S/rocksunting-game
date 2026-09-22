@@ -62,7 +62,7 @@ function applyBet(k,bet){
 }
 /* 근력: 슛 파워(공 속도) 배율(0.8~1.2). 체력: 킥 제한시간 배율(0.8~1.2). 둘 다 0~100%를 그대로 선형 매핑해요. */
 function applyStats(k){
-  const str=clamp(S.str==null?15:S.str,0,100),stam=clamp(S.stam==null?15:S.stam,0,100);
+  const str=clamp(S.str==null?25:S.str,0,100),stam=clamp(S.stam==null?25:S.stam,0,100);
   k.strMul=.8+str/100*.4;
   k.stamMul=.8+stam/100*.4;
 }
@@ -391,9 +391,9 @@ function advanceDay(){
    쇠질하기·난지바베큐를 한 날은 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(오늘 했음)이 돼요. */
 function dayStats(){
   S.gymGap=(S.gymGap==null?0:S.gymGap)+1;
-  if(S.gymGap>=3)S.str=clamp((S.str==null?15:S.str)-4,0,100);
+  if(S.gymGap>=3)S.str=clamp((S.str==null?25:S.str)-4,0,100);
   S.bbqGap=(S.bbqGap==null?0:S.bbqGap)+1;
-  if(S.bbqGap>=3)S.stam=clamp((S.stam==null?15:S.stam)-4,0,100);
+  if(S.bbqGap>=3)S.stam=clamp((S.stam==null?25:S.stam)-4,0,100);
   rollCondition();
 }
 /* 컨디션은 그날그날 랜덤이지만, 기분이 나쁘면(<30) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요. */
