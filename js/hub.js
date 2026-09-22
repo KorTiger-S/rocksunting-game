@@ -14,8 +14,6 @@ function renderHub(){
   $('#betV').textContent=fmt(betV)+'원';
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
-  $('#ups').innerHTML=UPS.map(u=>{const lv=S.up[u.id],mx=lv>=UPMAX[u.id],p=u.cost[lv];
-    return `<div class="row"><div><h3>${u.n} <small>Lv.${lv}</small></h3><p>${mx?'최대 레벨':u.d(lv)}</p></div><button class="go alt" data-up="${u.id}" ${mx||S.money<p?'disabled':''}>${mx?'MAX':fmt(p)+'원'}</button></div>`;}).join('');
 }
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
@@ -85,11 +83,6 @@ $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);render
 $('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)startMatch(betV);});
 $('#passBtn').addEventListener('click',()=>dayAction('오늘은 조용히 지나갔다.',0,false));
 $('#jobBtn').addEventListener('click',()=>dayAction('머호가 소개해 준 매점 심부름으로 600원을 벌었다.',600,true));
-$('#ups').addEventListener('click',e=>{
-  const b=e.target.closest('[data-up]');if(!b||b.disabled)return;
-  const u=UPS.find(x=>x.id===b.dataset.up),lv=S.up[u.id],p=u.cost[lv];
-  if(lv>=UPMAX[u.id]||S.money<p)return;S.money-=p;S.up[u.id]++;sfx('buy');save();renderHub();maybeLoan();
-});
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
 $('#quit').addEventListener('click',askQuit);
@@ -106,7 +99,7 @@ renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};
 document.addEventListener('click',e=>{
-  const b=e.target.closest('button');if(!b||b.disabled||b.dataset.up)return;
+  const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];

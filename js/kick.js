@@ -48,7 +48,7 @@ function setupKick(i,ko){
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
   K.cam={x:k.bx-K.dir.x*5.5,y:1.05,z:k.bz-K.dir.z*5.5};
   K.wallC={x:k.bx+K.dir.x*9.15,z:k.bz+K.dir.z*9.15};
-  K.limit=(i===4?8:12)+2*S.up.snack;K.timer=K.limit;K.lastTick=99;
+  K.limit=(i===4?8:12);K.timer=K.limit;K.lastTick=99;
   K.ph='aim';K.t=0;K.pt=0;K.tip=k.tip;K.introT=0;
   if(k.pen){const g=M.goals||0;K.tip=g===2?'이 킥으로 승패가 갈린다!':g>=3?(g===3?'이미 승리! 넣으면 완승 보너스!':'이미 완승! 마지막 자존심 킥!'):'승리는 어렵지만… 끝까지 차 보자!';K.introT=2.0;}
   const p=proj(0,1.2,0);K.cur={x:p.sx,y:p.sy};K.sw={x:0,y:0};
@@ -67,7 +67,7 @@ function unproject(sx,sy){
   return{x:K.cam.x+t*dxh,y:K.cam.y+t*v};
 }
 const wallObj=()=>K.wall?{cx:K.wallC.x,cz:K.wallC.z,half:K.wall*.27,h:t=>1.70+(K.jump?.30*Math.sin(Math.PI*clamp((t-.14)/.6,0,1)):0)}:null;
-function sweetHalf(){return .05+.015*S.up.shoes;}
+function sweetHalf(){return .05;}
 
 /* ---------- 컷신 ---------- */
 let C=null;
@@ -585,7 +585,7 @@ function drawSpin(c){
   TX(c,'아래: 낮고 빠르게',640,386,14,'#232a45','center');
   TX(c,'방향키/마우스 · 클릭/Space 확정',640,402,12,'#5d6580','center');
   // 예상 궤적
-  const wind=S.up.sneak>0?K.wind:0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
+  const wind=0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
   fr.path.forEach((p,i)=>{if(i%5||i>fr.path.length-2)return;const q=proj(p.x,p.y,p.z);if(q.f<.5)return;c.fillStyle='rgba(255,255,255,.9)';c.strokeStyle='rgba(35,42,69,.6)';c.lineWidth=1;c.beginPath();c.arc(q.sx,q.sy,3,0,7);c.fill();c.stroke();});
 }
 function drawCeleb(c){
@@ -642,8 +642,7 @@ function drawKick(c){
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
     TX(c,Math.ceil(K.timer)+'초',W/2+192,66,16,K.emerg?'#ffb3bd':'#fff','left','rgba(0,0,0,.5)');
   }
-  const wt=S.up.sneak>0?`바람 ${K.wind===0?'없음':(K.wind>0?'→ ':'← ')+(Math.abs(K.wind)*2).toFixed(1)+'m/s'}`:'바람: 깃발을 봐';
-  TX(c,wt,W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
+  TX(c,'바람: 깃발을 봐',W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
   if(K.ph==='aim'){
     const x=K.cur.x+K.sw.x,y=K.cur.y+K.sw.y;
     c.strokeStyle='#e2334d';c.lineWidth=6;c.beginPath();c.arc(x,y,17,0,7);c.stroke();

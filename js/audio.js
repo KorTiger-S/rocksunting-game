@@ -52,7 +52,6 @@ const SFX={
   page(){noise(.1,.05,0,3200,900,.7);tone(500,.06,'triangle',.025,.02);},          /* 종이 넘기는 소리 */
   swish(){noise(.28,.05,0,900,250,.6);},                                           /* 하루를 흘려보낼 때 */
   coin(){tone(NT.B5,.07,'square',.045);tone(NT.E6,.28,'square',.045,.07);},        /* 돈이 들어올 때 */
-  buy(){[NT.G5,NT.C6,NT.E6].forEach((f,i)=>tone(f,.06,'square',.04,i*.07));tone(NT.G6,.3,'square',.04,.21);noise(.25,.03,.21,6000,3000,1);},   /* 강화 구매(찰칵) */
   deny(){tone(200,.16,'square',.05);tone(150,.24,'square',.05,.14);},
   error(){tone(160,.12,'sawtooth',.055);tone(120,.22,'sawtooth',.055,.1);},
   chime(){[NT.E5,NT.A5,NT.E6].forEach((f,i)=>tone(f,.28,'triangle',.05,i*.09));},

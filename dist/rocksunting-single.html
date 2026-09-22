@@ -49,10 +49,6 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .prog i{display:block;height:100%;background:var(--ring);width:0}
 .sec{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--muted);text-align:left}
 .list{display:grid;gap:10px}
-.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px;border:2px solid var(--line);border-radius:12px;background:var(--card);text-align:left}
-.row h3{margin:0;font-size:16px;line-height:1.3}
-.row p{margin:1px 0 0;font-size:13px;color:var(--muted)}
-.row.locked{opacity:.55;background:var(--bg)}
 .go{padding:8px 14px;border:2px solid var(--line);background:var(--ring);color:#fff;border-radius:10px;font-weight:700;min-width:76px;box-shadow:2px 2px 0 var(--line)}
 .go:active:not(:disabled){transform:translate(1px,1px);box-shadow:1px 1px 0 var(--line)}
 .go:disabled{background:var(--bar);color:var(--muted);box-shadow:none;cursor:default}
@@ -157,8 +153,6 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
     <p id="goalTxt"></p>
     <div class="sec">피로도 <span id="fat"></span></div>
     <p style="margin:0 0 4px">알바만 계속하면 과로로 쓰러져요.</p>
-    <div class="sec">능력 키우기 (소지금으로 구매)</div>
-    <div class="list" id="ups"></div>
   </aside>
   <section id="main" style="display:grid;gap:14px;align-content:start">
     <div class="note" id="note"></div>
@@ -380,7 +374,7 @@ function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();r
 'use strict';
 /* ---------- save ---------- */
 const LEGACY_KEY='rocksunting-freekick-v1';
-const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,up:{shoes:0,snack:0,sneak:0},wins:0,losses:0,cleared:false,news:'월요일 아침, 오늘도 학교에서 살아남자.'});
+const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,wins:0,losses:0,cleared:false,news:'월요일 아침, 오늘도 학교에서 살아남자.'});
 const MEM={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return MEM[k]===undefined?null:MEM[k];}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
@@ -405,9 +399,9 @@ function renderSeason(){
   chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
   rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 (마감 시 기록 초기화)`;
 }
-function mergeData(d){const b=DEF();const o=Object.assign(b,d||{});o.up=Object.assign(DEF().up,(d&&d.up)||{});return o;}
+function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
-function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,up:S.up};}
+function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared};}
 const PIN_RE=/^\d{4}$/;
 function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
   const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;
@@ -727,7 +721,6 @@ const SFX={
   page(){noise(.1,.05,0,3200,900,.7);tone(500,.06,'triangle',.025,.02);},          /* 종이 넘기는 소리 */
   swish(){noise(.28,.05,0,900,250,.6);},                                           /* 하루를 흘려보낼 때 */
   coin(){tone(NT.B5,.07,'square',.045);tone(NT.E6,.28,'square',.045,.07);},        /* 돈이 들어올 때 */
-  buy(){[NT.G5,NT.C6,NT.E6].forEach((f,i)=>tone(f,.06,'square',.04,i*.07));tone(NT.G6,.3,'square',.04,.21);noise(.25,.03,.21,6000,3000,1);},   /* 강화 구매(찰칵) */
   deny(){tone(200,.16,'square',.05);tone(150,.24,'square',.05,.14);},
   error(){tone(160,.12,'sawtooth',.055);tone(120,.22,'sawtooth',.055,.1);},
   chime(){[NT.E5,NT.A5,NT.E6].forEach((f,i)=>tone(f,.28,'triangle',.05,i*.09));},
@@ -1018,12 +1011,6 @@ function buildKicks(){
   return out;
 }
 const WALLNAMES=['우룡','룡갈','씨붕','현숭','호우'];
-const UPS=[
- {id:'shoes',n:'운동화',d:l=>`파워 게이지의 초록 구간이 넓어져요 (Lv.${l})`,cost:[3000,4000,5000]},
- {id:'snack',n:'간식',d:l=>`킥마다 제한 시간 +${(l+1)*2}초로 (지금 +${l*2}초)`,cost:[2000,3000,4000]},
- {id:'sneak',n:'눈치',d:l=>l?'바람 세기 표시와 바람이 반영된 예상 궤적':'바람 세기 표시, 예상 궤적에 바람 반영',cost:[2500]}
-];
-const UPMAX={shoes:3,snack:3,sneak:1};
 
 
 'use strict';
@@ -1076,7 +1063,7 @@ function setupKick(i,ko){
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
   K.cam={x:k.bx-K.dir.x*5.5,y:1.05,z:k.bz-K.dir.z*5.5};
   K.wallC={x:k.bx+K.dir.x*9.15,z:k.bz+K.dir.z*9.15};
-  K.limit=(i===4?8:12)+2*S.up.snack;K.timer=K.limit;K.lastTick=99;
+  K.limit=(i===4?8:12);K.timer=K.limit;K.lastTick=99;
   K.ph='aim';K.t=0;K.pt=0;K.tip=k.tip;K.introT=0;
   if(k.pen){const g=M.goals||0;K.tip=g===2?'이 킥으로 승패가 갈린다!':g>=3?(g===3?'이미 승리! 넣으면 완승 보너스!':'이미 완승! 마지막 자존심 킥!'):'승리는 어렵지만… 끝까지 차 보자!';K.introT=2.0;}
   const p=proj(0,1.2,0);K.cur={x:p.sx,y:p.sy};K.sw={x:0,y:0};
@@ -1095,7 +1082,7 @@ function unproject(sx,sy){
   return{x:K.cam.x+t*dxh,y:K.cam.y+t*v};
 }
 const wallObj=()=>K.wall?{cx:K.wallC.x,cz:K.wallC.z,half:K.wall*.27,h:t=>1.70+(K.jump?.30*Math.sin(Math.PI*clamp((t-.14)/.6,0,1)):0)}:null;
-function sweetHalf(){return .05+.015*S.up.shoes;}
+function sweetHalf(){return .05;}
 
 /* ---------- 컷신 ---------- */
 let C=null;
@@ -1613,7 +1600,7 @@ function drawSpin(c){
   TX(c,'아래: 낮고 빠르게',640,386,14,'#232a45','center');
   TX(c,'방향키/마우스 · 클릭/Space 확정',640,402,12,'#5d6580','center');
   // 예상 궤적
-  const wind=S.up.sneak>0?K.wind:0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
+  const wind=0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
   fr.path.forEach((p,i)=>{if(i%5||i>fr.path.length-2)return;const q=proj(p.x,p.y,p.z);if(q.f<.5)return;c.fillStyle='rgba(255,255,255,.9)';c.strokeStyle='rgba(35,42,69,.6)';c.lineWidth=1;c.beginPath();c.arc(q.sx,q.sy,3,0,7);c.fill();c.stroke();});
 }
 function drawCeleb(c){
@@ -1670,8 +1657,7 @@ function drawKick(c){
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
     TX(c,Math.ceil(K.timer)+'초',W/2+192,66,16,K.emerg?'#ffb3bd':'#fff','left','rgba(0,0,0,.5)');
   }
-  const wt=S.up.sneak>0?`바람 ${K.wind===0?'없음':(K.wind>0?'→ ':'← ')+(Math.abs(K.wind)*2).toFixed(1)+'m/s'}`:'바람: 깃발을 봐';
-  TX(c,wt,W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
+  TX(c,'바람: 깃발을 봐',W-16,68,16,'#fff','right','rgba(0,0,0,.5)');
   if(K.ph==='aim'){
     const x=K.cur.x+K.sw.x,y=K.cur.y+K.sw.y;
     c.strokeStyle='#e2334d';c.lineWidth=6;c.beginPath();c.arc(x,y,17,0,7);c.stroke();
@@ -1730,8 +1716,6 @@ function renderHub(){
   $('#betV').textContent=fmt(betV)+'원';
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
-  $('#ups').innerHTML=UPS.map(u=>{const lv=S.up[u.id],mx=lv>=UPMAX[u.id],p=u.cost[lv];
-    return `<div class="row"><div><h3>${u.n} <small>Lv.${lv}</small></h3><p>${mx?'최대 레벨':u.d(lv)}</p></div><button class="go alt" data-up="${u.id}" ${mx||S.money<p?'disabled':''}>${mx?'MAX':fmt(p)+'원'}</button></div>`;}).join('');
 }
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
@@ -1801,11 +1785,6 @@ $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);render
 $('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)startMatch(betV);});
 $('#passBtn').addEventListener('click',()=>dayAction('오늘은 조용히 지나갔다.',0,false));
 $('#jobBtn').addEventListener('click',()=>dayAction('머호가 소개해 준 매점 심부름으로 600원을 벌었다.',600,true));
-$('#ups').addEventListener('click',e=>{
-  const b=e.target.closest('[data-up]');if(!b||b.disabled)return;
-  const u=UPS.find(x=>x.id===b.dataset.up),lv=S.up[u.id],p=u.cost[lv];
-  if(lv>=UPMAX[u.id]||S.money<p)return;S.money-=p;S.up[u.id]++;sfx('buy');save();renderHub();maybeLoan();
-});
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
 $('#quit').addEventListener('click',askQuit);
@@ -1822,7 +1801,7 @@ renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};
 document.addEventListener('click',e=>{
-  const b=e.target.closest('button');if(!b||b.disabled||b.dataset.up)return;
+  const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];

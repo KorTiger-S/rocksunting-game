@@ -36,10 +36,4 @@ function buildKicks(){
   return out;
 }
 const WALLNAMES=['우룡','룡갈','씨붕','현숭','호우'];
-const UPS=[
- {id:'shoes',n:'운동화',d:l=>`파워 게이지의 초록 구간이 넓어져요 (Lv.${l})`,cost:[3000,4000,5000]},
- {id:'snack',n:'간식',d:l=>`킥마다 제한 시간 +${(l+1)*2}초로 (지금 +${l*2}초)`,cost:[2000,3000,4000]},
- {id:'sneak',n:'눈치',d:l=>l?'바람 세기 표시와 바람이 반영된 예상 궤적':'바람 세기 표시, 예상 궤적에 바람 반영',cost:[2500]}
-];
-const UPMAX={shoes:3,snack:3,sneak:1};
 
