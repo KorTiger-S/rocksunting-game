@@ -16,7 +16,7 @@ function renderHub(){
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 에너지드링크(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
@@ -49,15 +49,15 @@ function bbqAction(){
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
   const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='에너지드링크를 마셨다. 컨디션이 좋아졌다!';
-  spendToast(`⚡ 에너지드링크 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='소리새에 가서 노래를 불렀다. 컨디션이 좋아졌다!';
+  spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
   const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 떡볶이를 사 먹었다. 기분이 좋아졌다!';
-  spendToast(`🍢 디델리 떡볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 라볶이를 사 먹었다. 기분이 좋아졌다!';
+  spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
 /* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */

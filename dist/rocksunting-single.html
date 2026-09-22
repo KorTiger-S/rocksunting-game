@@ -231,8 +231,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
       </div>
       <p>컨디션은 매일 랜덤으로 바뀌고 난이도에 영향을 줘요. 기분이 나쁘면 컨디션도 잘 안 좋아져요.</p>
       <div class="acts">
-        <button class="go ghost" id="drinkBtn">⚡ 에너지드링크 (700원)</button>
-        <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 떡볶이 (1,000원)</button>
+        <button class="go ghost" id="drinkBtn">🎤 소리새가서 노래부르기 (700원)</button>
+        <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 라볶이 (1,000원)</button>
       </div>
       <div class="acts">
         <button class="go warn" id="mahoBtn">💢 머호 꽈추때리기</button>
@@ -612,8 +612,8 @@ const RELEASE_NOTES={
   '1.5.0':{sub:'체력·근력·컨디션·기분이 생겼어요!',items:[
     '💪 근력이 생겼어요. 헬스장에서 쇠질하기(1,500원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
     '🍖 체력이 생겼어요. 난지바베큐(2,000원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
-    '⚡ 컨디션(매우나쁨~매우좋음)이 매일 랜덤으로 바뀌고, 프리킥 난이도에 영향을 줘요. 에너지드링크(700원)를 마시면 한 단계 좋아져요.',
-    '😊 기분이 생겼어요. 계속 지면 기분이 나빠지고, 기분이 나쁘면 컨디션도 잘 안 좋아져요. 디델리 떡볶이(1,000원)를 사 먹으면 좋아져요.'
+    '⚡ 컨디션(매우나쁨~매우좋음)이 매일 랜덤으로 바뀌고, 프리킥 난이도에 영향을 줘요. 소리새가서 노래부르면(700원) 한 단계 좋아져요.',
+    '😊 기분이 생겼어요. 계속 지면 기분이 나빠지고, 기분이 나쁘면 컨디션도 잘 안 좋아져요. 디델리 라볶이(1,000원)를 사 먹으면 좋아져요.'
   ]},
   '1.4.0':{sub:'이제 소리가 나요! 🔊🎵',items:[
     '🔊 게임 전체에 효과음이 생겼어요. 버튼 누르는 소리, 돈이 들어오는 소리, 학교 종소리, 구급차 사이렌, 호루라기, 공 차는 소리, 골망, 환호와 탄식까지!',
@@ -1367,7 +1367,7 @@ const TRIP_REACT={
  씨붕:['풉ㅋㅋㅋ 방금 그거 봤어?!','아, 판돈 날아가는 소리 들린다 ㅋㅋ'],
  히통:['부상 병원비는 이자 10%로 빌려줄게.','컨디션 관리도 신용등급이야.'],
  겨맘:['어머, 괜찮아?! 무리하지 말라니까…','다치면 안 되는데… 얼른 쉬어!'],
- 주멘:['컨디션 매우나쁨은 계획에 없었는데…','변수 발생. 다음엔 에너지드링크부터 마시자.'],
+ 주멘:['컨디션 매우나쁨은 계획에 없었는데…','변수 발생. 다음엔 소리새부터 가서 노래하자.'],
  ㅈㄱ:['…잠만보처럼 쓰러졌어.','…(안타까운 표정으로 카드를 만지작)'],
  현숭:['컨디션 0에서 슛 확률 통계 안 좋았어.','다음엔 컨디션부터 관리하자.'],
  호우:['쿵. 낮은 도 소리가 났어.'],
@@ -1844,7 +1844,7 @@ function renderHub(){
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 에너지드링크(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
@@ -1877,15 +1877,15 @@ function bbqAction(){
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
   const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='에너지드링크를 마셨다. 컨디션이 좋아졌다!';
-  spendToast(`⚡ 에너지드링크 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='소리새에 가서 노래를 불렀다. 컨디션이 좋아졌다!';
+  spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
   const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 떡볶이를 사 먹었다. 기분이 좋아졌다!';
-  spendToast(`🍢 디델리 떡볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 라볶이를 사 먹었다. 기분이 좋아졌다!';
+  spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
 /* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */
