@@ -8,6 +8,7 @@ function renderHub(){
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   $('#jobBtn').textContent=f>=2?'매점 알바 (+600원) ⚠쓰러질 위험':`매점 알바 (+600원)`;
+  renderStats();
   $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   betV=clamp(betV,1000,Math.max(1000,betMax()));
@@ -15,6 +16,43 @@ function renderHub(){
   const can=S.money>=1000;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 에너지드링크(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
+const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
+$('#tteokIcon').src=TTEOK_IMG;
+function renderStats(){
+  const stam=clamp(S.stam==null?15:S.stam,0,100),str=clamp(S.str==null?15:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
+  $('#statStam').textContent=Math.round(stam)+'%';$('#stamBar').style.width=stam+'%';
+  $('#statStr').textContent=Math.round(str)+'%';$('#strBar').style.width=str+'%';
+  $('#statMood').textContent=CONDS[clamp(Math.floor(mood/20),0,4)];   /* 기분도 컨디션처럼 5단계 라벨로 보여줘요 */
+  $('#statCond').textContent=CONDS[cond];
+  $('#gymBtn').disabled=S.money<GYM_COST;$('#bbqBtn').disabled=S.money<BBQ_COST;
+  $('#drinkBtn').disabled=S.money<DRINK_COST||cond>=4;$('#tteokBtn').disabled=S.money<TTEOK_COST||mood>=100;
+}
+function gymAction(){
+  if(S.money<GYM_COST)return;
+  S.str=clamp((S.str==null?15:S.str)+10,0,100);S.gymGap=-1;
+  dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
+}
+function bbqAction(){
+  if(S.money<BBQ_COST)return;
+  S.stam=clamp((S.stam==null?15:S.stam)+12,0,100);S.bbqGap=-1;
+  dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
+}
+function buyDrink(){
+  if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='에너지드링크를 마셨다. 컨디션이 좋아졌다!';
+  save();renderHub();
+}
+function buyTteok(){
+  if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 떡볶이를 사 먹었다. 기분이 좋아졌다!';
+  save();renderHub();
+}
+$('#gymBtn').addEventListener('click',gymAction);
+$('#bbqBtn').addEventListener('click',bbqAction);
+$('#drinkBtn').addEventListener('click',buyDrink);
+$('#tteokBtn').addEventListener('click',buyTteok);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
@@ -97,7 +135,8 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};
+const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
+  gymBtn:'clank',bbqBtn:'sizzle',drinkBtn:'chime',tteokBtn:'chime'};
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);

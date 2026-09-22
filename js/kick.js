@@ -41,8 +41,17 @@ function solve(ball,tx,ty,s,ys){
   }
   return v;
 }
+/* 컨디션(0~4, 보통=2)이 좋을수록 골키퍼가 덜 정확하고 느리게 반응해요. 대결(duel)은 서버 판정이라 영향 없어요. */
+function applyCondition(k){
+  const cd=(S.cond==null?2:S.cond)-2;
+  k.kerr=Math.max(.5,(k.kerr||1)+cd*.12);
+  k.kread=clamp((k.kread||.25)-cd*.04,.05,.6);
+  k.rk=Math.max(.05,(k.rk||.25)+cd*.02);
+  k.vk=Math.max(2,(k.vk||4)-cd*.15);
+}
 function setupKick(i,ko){
   const k=ko||M.kicks[i];K=Object.assign({},k,{i});
+  applyCondition(K);   /* 컨디션이 좋을수록 골키퍼(주스)가 살짝 무뎌져요 */
   K.ball={x:k.bx,y:.11,z:k.bz};
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
@@ -312,7 +321,7 @@ function settle(){
   S.fatigue=Math.max(0,(S.fatigue||0)-1);
   const delta=win?M.bet+(big?bonus:0):-M.bet;
   const before=S.money;S.money=Math.max(0,S.money+delta);
-  if(win)S.wins++;else S.losses++;
+  if(win)S.wins++;else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}   /* 지면 기분이 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
   const weekend=advanceDay();
   sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
@@ -329,8 +338,23 @@ function settle(){
 }
 function advanceDay(){
   S.day++;
+  dayStats();
   if(S.day>=5){S.day=0;S.week++;S.news=`${S.week-1}주차가 끝났다. 주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`;return true;}
   S.news=`${DAYS[S.day]}요일이 밝았다.`;return false;
+}
+/* 매일 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
+   쇠질하기·난지바베큐를 한 날은 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(오늘 했음)이 돼요. */
+function dayStats(){
+  S.gymGap=(S.gymGap==null?0:S.gymGap)+1;
+  if(S.gymGap>=3)S.str=clamp((S.str==null?15:S.str)-4,0,100);
+  S.bbqGap=(S.bbqGap==null?0:S.bbqGap)+1;
+  if(S.bbqGap>=3)S.stam=clamp((S.stam==null?15:S.stam)-4,0,100);
+  rollCondition();
+}
+/* 컨디션은 그날그날 랜덤이지만, 기분이 나쁘면(<30) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요. */
+function rollCondition(){
+  const m=S.mood==null?50:S.mood,bias=m<30?-1:m>=75?1:0;
+  S.cond=clamp(Math.round(2+gauss()*1.1+bias),0,4);
 }
 
 /* ---------- 킥 업데이트 ---------- */
