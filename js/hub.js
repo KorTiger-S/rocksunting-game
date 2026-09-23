@@ -4,7 +4,7 @@ let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
 function renderHub(){
   renderDuelCard();
-  $('#hMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
+  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   $('#jobBtn').textContent=f>=2?'매점 알바 (+600원) ⚠쓰러질 위험':`매점 알바 (+600원)`;
@@ -276,7 +276,7 @@ const BURPS=['(꺼억~)','(끄으윽~)','(꺼어어억…)'];
 function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtooth',.1),120);setTimeout(()=>beep(70,.25,'square',.06),380);}
 /* 허브에 있을 때 소지금이 0원 이하면 라털 선생님이 나타나요. 대결 화면·로그인·업데이트 팝업이 열려 있을 땐 기다려요. */
 function maybeLoan(){
-  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#houQuiz').hidden||!$('#challengeInfo').hidden)return;
+  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#houQuiz').hidden||!$('#challengeInfo').hidden||!$('#profile').hidden)return;
   const before=Math.max(0,S.money);
   S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
   showStory([
@@ -319,6 +319,10 @@ document.addEventListener('click',e=>{
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
-$('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];});
+/* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/스탯/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
+function openProfile(){renderStats();$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;}
+function closeProfile(){$('#profile').hidden=true;}
+$('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
+$('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});
 

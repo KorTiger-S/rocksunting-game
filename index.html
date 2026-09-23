@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.7.3">
+<link rel="stylesheet" href="css/style.css?v=1.7.4">
 </head>
 <body>
 <header class="board">
@@ -14,28 +14,11 @@
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
   </div>
 </header>
 
 <div id="hub">
-  <aside class="card" id="side">
-    <h2>롹순팅</h2>
-    <p id="bigmsg">오늘도 학교에서 살아남자.</p>
-    <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
-    <p class="tip" id="syncInfo"></p>
-    <div class="sec" style="margin-top:6px">목표: 100만 원</div>
-    <div class="prog"><i id="prog"></i></div>
-    <p id="goalTxt"></p>
-    <div class="sec">피로도 <span id="fat"></span></div>
-    <p style="margin:0 0 4px">알바만 계속하면 과로로 쓰러져요.</p>
-    <div class="sec">체력 <span id="statStam"></span></div>
-    <div class="prog stat"><i id="stamBar"></i></div>
-    <div class="sec">근력 <span id="statStr"></span></div>
-    <div class="prog stat"><i id="strBar"></i></div>
-    <div class="sec">기분 <span id="statMood"></span></div>
-    <div class="sec">컨디션 <span id="statCond"></span></div>
-  </aside>
   <section id="main" style="display:grid;gap:14px;align-content:start">
     <div class="note" id="note"></div>
     <div class="note" id="chat"></div>
@@ -206,6 +189,27 @@
     <div class="btns"><button class="go" id="hqGo">제출하기</button><button class="go ghost" id="hqClose">닫기</button></div>
   </div>
 </div>
+<div class="ov ovfix" id="profile" hidden role="dialog" aria-labelledby="pfT">
+  <div class="card dialog">
+    <h2 id="pfT">롹순팅</h2>
+    <p id="bigmsg">오늘도 학교에서 살아남자.</p>
+    <div class="acts" style="justify-content:center"><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
+    <p class="tip" id="syncInfo"></p>
+    <div class="sec" style="margin-top:6px">소지금 <span id="pfMoney"></span></div>
+    <div class="sec">목표: 100만 원</div>
+    <div class="prog"><i id="prog"></i></div>
+    <p id="goalTxt"></p>
+    <div class="sec">피로도 <span id="fat"></span></div>
+    <p style="margin:0 0 4px">알바만 계속하면 과로로 쓰러져요.</p>
+    <div class="sec">체력 <span id="statStam"></span></div>
+    <div class="prog stat"><i id="stamBar"></i></div>
+    <div class="sec">근력 <span id="statStr"></span></div>
+    <div class="prog stat"><i id="strBar"></i></div>
+    <div class="sec">기분 <span id="statMood"></span></div>
+    <div class="sec">컨디션 <span id="statCond"></span></div>
+    <div class="btns"><button class="go" id="pfClose">닫기</button></div>
+  </div>
+</div>
 <div class="ov ovfix" id="challengeInfo" hidden role="dialog" aria-labelledby="chT">
   <div class="card dialog">
     <h2 id="chT">주스의 프리킥 도전장</h2>
@@ -270,20 +274,20 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.7.3"></script>
-<script src="js/save.js?v=1.7.3"></script>
-<script src="js/cloud.js?v=1.7.3"></script>
-<script src="js/login.js?v=1.7.3"></script>
-<script src="js/rank.js?v=1.7.3"></script>
-<script src="js/audio.js?v=1.7.3"></script>
-<script src="js/input.js?v=1.7.3"></script>
-<script src="js/render.js?v=1.7.3"></script>
-<script src="js/kick-data.js?v=1.7.3"></script>
-<script src="js/kick.js?v=1.7.3"></script>
-<script src="js/hub.js?v=1.7.3"></script>
-<script src="js/splash.js?v=1.7.3"></script>
-<script src="js/duel.js?v=1.7.3"></script>
-<script src="js/main.js?v=1.7.3"></script>
+<script src="js/util.js?v=1.7.4"></script>
+<script src="js/save.js?v=1.7.4"></script>
+<script src="js/cloud.js?v=1.7.4"></script>
+<script src="js/login.js?v=1.7.4"></script>
+<script src="js/rank.js?v=1.7.4"></script>
+<script src="js/audio.js?v=1.7.4"></script>
+<script src="js/input.js?v=1.7.4"></script>
+<script src="js/render.js?v=1.7.4"></script>
+<script src="js/kick-data.js?v=1.7.4"></script>
+<script src="js/kick.js?v=1.7.4"></script>
+<script src="js/hub.js?v=1.7.4"></script>
+<script src="js/splash.js?v=1.7.4"></script>
+<script src="js/duel.js?v=1.7.4"></script>
+<script src="js/main.js?v=1.7.4"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
