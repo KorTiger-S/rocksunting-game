@@ -335,7 +335,11 @@ let quitAsk=0;
 function showGame(g){$('#hub').hidden=g;$('#gameWrap').hidden=!g;$('#pad').classList.toggle('on',g);document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
 function startMatch(bet){
   sfx('start');
+  bet=Math.min(bet,S.money);
   M={bet,goals:0,pts:0,res:[],before:S.money,kicks:buildKicks()};
+  /* 판돈을 걸자마자 소지금에서 빼고 저장해요. 이렇게 안 하면, 지고 있을 때 새로고침해서
+     아직 반영 안 된 판돈을 그대로 되돌리는 부정행위가 가능해져요(정산은 원래 대결이 끝날 때만 했어요). */
+  S.money-=bet;save();
   showGame(true);$('#ovSet').hidden=true;pressed={};mouse.click=false;
   playCut(introA(bet),()=>playCut(introB(),()=>startKick(0)));
 }
@@ -372,8 +376,8 @@ function settle(){
   mode='settle';
   const win=M.forfeit?false:M.goals>=3,big=!M.forfeit&&M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
   S.fatigue=Math.max(0,(S.fatigue||0)-1);
-  const delta=win?M.bet+(big?bonus:0):-M.bet;
-  const before=S.money;S.money=Math.max(0,S.money+delta);
+  const delta=win?2*M.bet+(big?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+완승 보너스)만 더해요 */
+  S.money=Math.max(0,S.money+delta);
   if(win){S.wins++;S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);}   /* 이기면 기분이 조금 좋아져요 */
   else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}    /* 지면 기분이 조금 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
@@ -386,7 +390,7 @@ function settle(){
   $('#sImg').src=IMGDATA[M.injured?'panic':big?'excited':win?'happy':'frustrated'];
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
-    `<tr><td>소지금</td><td>${fmt(before)} → ${fmt(S.money)}원</td></tr>`;
+    `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;
   $('#sX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
   $('#ovSet').hidden=false;
 }
