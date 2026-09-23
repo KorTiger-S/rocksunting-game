@@ -253,6 +253,21 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- 비밀번호 변경: 기존 비밀번호를 확인한 뒤 새 비밀번호(숫자 4자리)로 바꾼다.
+create or replace function public.rk_change_pin(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text := lower(public.rk_norm_id(p->>'id')); a text;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  if not public.rk_pin_ok(p->>'newPin') then return jsonb_build_object('ok', false, 'error', 'bad_new_pin'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
+  update public.rk_users set pin_hash = crypt(p->>'newPin', gen_salt('bf')), updated_at = now() where id = k;
+  return jsonb_build_object('ok', true);
+end $$;
+
 create or replace function public.rk_top(p jsonb default '{}') returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
 declare m text := coalesce(p->>'metric', 'money'); n int := public.rk_int(p->'limit', 1, 30, 10); res jsonb;
@@ -705,13 +720,13 @@ revoke all on function public.rk_auth(text, text), public.rk_season_json(), publ
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
+                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
                        public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                        public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb) from public;
 revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb),
+                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb),
                           public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                           public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb)
   to anon, authenticated;

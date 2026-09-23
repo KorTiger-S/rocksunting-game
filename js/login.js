@@ -76,7 +76,10 @@ function enter(name,data,at,news,isNew){
   sfx('welcome');toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
   maybeShowNotes(isNew);maybeLoan();
 }
-function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
+function updateUserChip(){
+  $('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';
+  const pb=$('#pinBtn');if(pb)pb.disabled=!USER||USER.guest;
+}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
@@ -166,4 +169,37 @@ $('#lgUrlSave').addEventListener('click',async()=>{
 });
 $('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
+/* ---------- 비밀번호 변경 ---------- */
+function openPinChange(){
+  if(!USER||USER.guest)return;
+  $('#pcOld').value='';$('#pcNew').value='';$('#pcNew2').value='';$('#pcMsg').textContent='';
+  $('#pinChange').hidden=false;setTimeout(()=>{try{$('#pcOld').focus();}catch(e){}},30);
+}
+function closePinChange(){$('#pinChange').hidden=true;}
+async function submitPinChange(){
+  const oldPin=$('#pcOld').value.trim(),n1=$('#pcNew').value.trim(),n2=$('#pcNew2').value.trim(),msg=$('#pcMsg');
+  if(!PIN_RE.test(oldPin)){msg.textContent='현재 비밀번호를 숫자 4자리로 입력해 주세요.';return;}
+  if(!PIN_RE.test(n1)){msg.textContent='새 비밀번호는 숫자 4자리로 입력해 주세요.';return;}
+  if(n1!==n2){msg.textContent='새 비밀번호가 서로 달라요.';return;}
+  if(n1===oldPin){msg.textContent='기존 비밀번호와 다른 번호로 정해 주세요.';return;}
+  $('#pcGo').disabled=true;msg.textContent='변경하는 중…';
+  try{
+    if(cloudUrl())await api('change_pin',{id:USER.id,pin:oldPin,newPin:n1});
+    else if(oldPin!==USER.pin)throw new Error('bad_pin');
+    USER.pin=n1;USER.ph=pinHash(USER.id,n1);save();
+    sfx('coin');toast('비밀번호를 변경했어요.');closePinChange();
+  }catch(e){
+    const m=e&&e.message;
+    msg.textContent=m==='bad_pin'?'현재 비밀번호가 맞지 않아요.':m==='locked'?'비밀번호를 여러 번 틀려서 잠겼어요. 잠시 후 다시 시도해 주세요.':'변경에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    sfx('error');
+  }
+  $('#pcGo').disabled=false;
+}
+$('#pinBtn').addEventListener('click',openPinChange);
+$('#pcClose').addEventListener('click',closePinChange);
+$('#pcGo').addEventListener('click',submitPinChange);
+[$('#pcOld'),$('#pcNew'),$('#pcNew2')].forEach(el=>{
+  el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPinChange();}});
+});
 
