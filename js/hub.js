@@ -8,7 +8,7 @@ function renderHub(){
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   $('#jobBtn').textContent=f>=2?'매점 알바 (+600원) ⚠쓰러질 위험':`매점 알바 (+600원)`;
-  const hb=$('#houBtn');hb.disabled=houDone();hb.textContent=houDone()?'😂 호우의 아재개그 (내일 다시)':'😂 호우의 아재개그';
+  $('#houBtn').textContent=houDone()?'😂 호우의 아재개그 (오늘은 다 함)':'😂 호우의 아재개그';
   renderStats();
   $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
@@ -179,8 +179,16 @@ function houMatch(user,ans){
   return list.some(raw=>{const a=houNorm(raw);return a&&(u===a||(u.length>=2&&a.length>=2&&(u.includes(a)||a.includes(u))));});
 }
 const houAnsText=item=>Array.isArray(item.a)?item.a[0]:item.a;
+/* 오늘 이미 참여했는데 또 누르면, 호우가 다시 시작하려다 씨붕에게 단호하게 저지당해요 */
+function houBlockedCut(){
+  pressed={};mouse.click=false;showGame(true);
+  playCut({bg:'hall',chars:[{id:'호우',x:220,y:340,s:2.4},{id:'씨붕',x:560,y:340,s:2.4,arms:'cross'}],lines:[
+    {who:'호우',text:'퀴즈를 시작해볼까? 줄여서 퀴-시?'},
+    {who:'씨붕',text:'그만.'}
+  ]},toHub);
+}
 function openHouQuiz(){
-  if(houDone())return;
+  if(houDone()){houBlockedCut();return;}
   houCur=pick(HOU_QUIZ);
   $('#hqQ').textContent=houCur.q;$('#hqAns').value='';$('#hqAns').disabled=false;$('#hqGo').disabled=false;$('#hqMsg').textContent='';
   $('#houQuiz').hidden=false;setTimeout(()=>{try{$('#hqAns').focus();}catch(e){}},30);
