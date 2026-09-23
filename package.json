@@ -1,6 +1,6 @@
 {
   "name": "rocksunting-game",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "private": true,
   "description": "롹순팅 키우기 - 머대부속 고등학교 프리킥 내기",
   "scripts": {

@@ -23,22 +23,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 #pad button{touch-action:none}
 button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .board{background:var(--board);color:var(--chalk);border-bottom:8px solid var(--wood);padding:14px 16px 12px;position:relative}
-.board-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-right:44px}
+.board-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-right:88px}
 .logo{width:38px;height:38px;border-radius:50%;border:9px solid var(--ring);flex:none}
 .board h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(26px,5vw,38px);line-height:1.1}
 .board .sub{margin:0;font-size:13px;opacity:.85}
 .hud{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-/* 게임 제목(h1)과 비슷한 높이로, 헤더 우측 상단에 고정 배치해요(칩이 줄바꿈돼도 항상 같은 자리) */
-.hubface{position:absolute;top:14px;right:16px;width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:2px solid var(--ring);background:#f4f1ee;cursor:pointer}
+/* 게임 제목(h1)의 약 2배 높이로, 헤더 우측 상단에 고정 배치해요(칩이 줄바꿈돼도 항상 같은 자리).
+   누르면 표정이 바뀌면서 소지금/스탯/로그아웃 같은 프로필 정보 팝업이 함께 열려요. */
+.hubface{position:absolute;top:8px;right:16px;width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--ring);background:#f4f1ee;cursor:pointer}
 .chip{background:rgba(255,255,255,.12);border:1.5px solid rgba(244,246,239,.45);border-radius:999px;padding:4px 12px;font-weight:700;font-size:14px}
 .card{background:var(--card);border:2px solid var(--line);border-radius:14px;box-shadow:4px 4px 0 var(--line)}
 #hub{max-width:1040px;margin:0 auto;padding:16px;display:grid;gap:16px}
-@media(min-width:860px){#hub{grid-template-columns:320px 1fr;align-items:start}#side{position:sticky;top:12px}}
-/* 모바일(한 칸 세로 배치)에서는 프로필 카드보다 게임 진입(도전장) 카드가 먼저 보이도록 순서만 바꿔요 */
-@media(max-width:859px){#main{order:-1}}
-#side{padding:16px;text-align:center}
-#side h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px}
-#side p{margin:2px 0 8px;color:var(--muted);font-size:14px}
 .prog{height:14px;background:var(--bar);border:2px solid var(--line);border-radius:99px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ring);width:0}
 .prog.stat{height:10px;margin-bottom:4px}
