@@ -1,6 +1,7 @@
 'use strict';
 /* ---------- 물리 ---------- */
 let K=null,M=null;
+const padBackBtn=$('#padBack');
 function integrate(st,dt,s,ys,wind){
   const g=9.8,vh=Math.hypot(st.vx,st.vz)||1;
   /* 공의 왼쪽을 차면(s<0) 궤적이 먼저 왼쪽으로 부풀었다가 조준한 곳으로 오른쪽으로 휘어져 들어가요(반대도 마찬가지).
@@ -452,6 +453,7 @@ function updateKick(dt){
       K.spin.x=clamp((mouse.x-640)/(88*.8),-1,1);K.spin.y=clamp((mouse.y-262)/(88*.8),-1,1);
     }
     K.face='resolve';
+    if(pressed.Backspace){K.ph='aim';K.t=0;beep(360,.08,'triangle',.05);return;}
     if((pressed.Space||pressed.Enter||mouse.click)&&K.t>.15){
       if((S.cond==null?2:S.cond)===0&&Math.random()<TRIP_CHANCE){startTrip();return;}
       K.s=K.spin.x;K.ys=-K.spin.y;K.ph='power';K.t=0;K.p=0;K.armed=false;K.charging=false;beep(600,.08,'triangle',.07);
@@ -459,6 +461,7 @@ function updateKick(dt){
   }else if(K.ph==='trip'){
     if(K.t>2.4||(K.t>1.2&&(pressed.Space||pressed.Enter||mouse.click)))forfeitInjury();
   }else if(K.ph==='power'){
+    if(pressed.Backspace){K.ph='spin';K.t=0;beep(360,.08,'triangle',.05);return;}
     const down=held.Space||mouse.down;
     if(!K.armed){if(!down)K.armed=true;}
     else if(!K.charging){if(down)K.charging=true;}
@@ -470,10 +473,10 @@ function updateKick(dt){
     if(K.pt>=K.dur){K.ph='res';K.t=0;showResult();}
   }else if(K.ph==='res'){
     const goal=K.result&&K.result.type==='goal',go=pressed.Space||pressed.Enter||mouse.click;
-    if(goal){if(K.celeb>=2.6||(K.celeb>=2.0&&go))nextKick();}
+    if(goal){if(K.celeb>=2.0&&go)nextKick();}
     else{
       if(!K.biteDone&&K.t>=.85){K.biteDone=true;K.shake=.35;beep(180,.08,'square',.12);setTimeout(()=>beep(90,.18,'sawtooth',.12),70);}
-      if(K.t>2.6||(K.t>1.8&&go))nextKick();
+      if(K.t>1.8&&go)nextKick();
     }
   }
   K.react.forEach(r=>r.t-=dt);K.react=K.react.filter(r=>r.t>0);
@@ -669,7 +672,7 @@ function drawField(c){
 }
 function drawSpin(c){
   const cx=640,cy=262,R=88;
-  c.fillStyle='rgba(255,255,255,.96)';rr(c,520,110,240,300,14);c.fill();c.strokeStyle='#232a45';c.lineWidth=3;c.stroke();
+  c.fillStyle='rgba(255,255,255,.96)';rr(c,520,110,240,320,14);c.fill();c.strokeStyle='#232a45';c.lineWidth=3;c.stroke();
   TX(c,'공의 어디를 찰까?',640,130,20,'#232a45','center');
   c.fillStyle='#fff';c.strokeStyle='#232a45';c.lineWidth=4;c.beginPath();c.arc(cx,cy,R,0,7);c.fill();c.stroke();
   c.fillStyle='#232a45';c.beginPath();c.arc(cx,cy,R*.3,0,7);c.fill();
@@ -680,7 +683,8 @@ function drawSpin(c){
   TX(c,'위: 넘겨 차기 (급강하)',640,152,14,'#232a45','center');
   TX(c,'← 왼쪽으로 휨',575,370,13,'#5d6580','center');TX(c,'오른쪽으로 휨 →',705,370,13,'#5d6580','center');
   TX(c,'아래: 낮고 빠르게',640,386,14,'#232a45','center');
-  TX(c,'방향키/마우스 · 클릭/Space 확정',640,402,12,'#5d6580','center');
+  TX(c,'방향키/마우스 · 클릭/Space 확정',640,400,12,'#5d6580','center');
+  TX(c,'Backspace: 조준 단계로 되돌리기',640,418,12,'#5d6580','center');
   // 예상 궤적
   const wind=0,v=solve(K.ball,K.aim.tx,K.aim.ty,K.spin.x,-K.spin.y),fr=flight(K.ball,v,K.spin.x,-K.spin.y,wind,null,true);
   fr.path.forEach((p,i)=>{if(i%5||i>fr.path.length-2)return;const q=proj(p.x,p.y,p.z);if(q.f<.5)return;c.fillStyle='rgba(255,255,255,.9)';c.strokeStyle='rgba(35,42,69,.6)';c.lineWidth=1;c.beginPath();c.arc(q.sx,q.sy,3,0,7);c.fill();c.stroke();});
@@ -734,6 +738,7 @@ function drawParticles(c){
   c.globalAlpha=1;
 }
 function drawKick(c){
+  if(padBackBtn)padBackBtn.classList.toggle('show',K.ph==='spin'||K.ph==='power');
   c.save();if(K.shake>0)c.translate(rand(-5,5),rand(-4,4));drawField(c);c.restore();
   hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`판돈 ${fmt(M.bet)}원`);
   for(let i=0;i<5;i++){const r=M.res[i],x=26+i*30;
@@ -758,12 +763,13 @@ function drawKick(c){
   if(K.ph==='spin')drawSpin(c);
   if(K.ph==='power'){
     const x0=200,x1=600,y0=414;
-    c.fillStyle='rgba(20,24,44,.85)';rr(c,x0-10,y0-30,x1-x0+20,64,12);c.fill();
+    c.fillStyle='rgba(20,24,44,.85)';rr(c,x0-10,y0-30,x1-x0+20,84,12);c.fill();
     c.fillStyle='#dfe4ee';rr(c,x0,y0,x1-x0,22,8);c.fill();
     const sw=sweetHalf();c.fillStyle='#2f8f5b';c.fillRect(x0+(x1-x0)*(.75-sw),y0,(x1-x0)*sw*2,22);
     c.fillStyle='#e2334d';rr(c,x0,y0,(x1-x0)*K.p,22,8);c.fill();
     c.strokeStyle='#232a45';c.lineWidth=3;rr(c,x0,y0,x1-x0,22,8);c.stroke();
     TX(c,K.charging?'초록 구간에서 떼!':'Space를 꾹 누르세요 (마우스 누르고 있기도 가능)',W/2,y0-14,16,'#fff','center');
+    TX(c,'Backspace: 공 부위 단계로 되돌리기',W/2,y0+44,13,'#c7cede','center');
   }
   if(K.ph==='res'||K.ph==='trip'||(K.ph==='fly'&&K.pt>=K.tEvt&&K.result)){
     if(K.result){const q=(K.ph==='res'||K.ph==='trip')?Math.min(1,K.t*5):1;c.save();c.translate(W/2,205);c.scale(.6+.4*q,.6+.4*q);TX(c,K.result.title,0,0,54,'#fff','center',K.result.col);TX(c,K.result.sub,0,48,22,'#fff','center','rgba(0,0,0,.6)');c.restore();}
