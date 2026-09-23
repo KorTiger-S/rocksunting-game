@@ -1224,11 +1224,15 @@ function setupKick(i,ko){
   const p=proj(0,1.2,0);K.cur={x:p.sx,y:p.sy};K.sw={x:0,y:0};
   K.spin={x:0,y:0};K.p=0;K.armed=false;K.charging=false;K.s=0;K.ys=0;K.aim={tx:0,ty:1.2};
   K.react=[];K.face='resolve';K.flash=0;K.prevKey='';K.prevV=null;
-  K.celeb=-1;K.fw=[];K.conf=[];K.fwT=0;K.emerg=false;K.shake=0;K.biteDone=false;
+  K.celeb=-1;K.fw=[];K.conf=[];K.fwT=0;K.emerg=false;K.shake=0;K.biteDone=false;K.hlT=0;
 }
 function proj(x,y,z){
-  const dx=x-K.cam.x,dz=z-K.cam.z,f=dx*K.dir.x+dz*K.dir.z,r=dx*K.right.x+dz*K.right.z;
-  return{sx:400+r/f*F,sy:HOR+(K.cam.y-y)/f*F,f};
+  const dx=x-K.cam.x,dz=z-K.cam.z,dy=y-K.cam.y,r=dx*K.right.x+dz*K.right.z;
+  const horiz=dx*K.dir.x+dz*K.dir.z,p=K.camPitch||0;
+  /* 기본(p=0)일 때는 원래 수평 카메라 공식과 동일해요. 하이라이트 리플레이의 대각선 공중뷰처럼
+     카메라가 아래로 내려다볼 때만 p를 줘서, 원근이 그 기울기만큼 반영되게 해요. */
+  const f=p?horiz*Math.cos(p)-dy*Math.sin(p):horiz,u=p?horiz*Math.sin(p)+dy*Math.cos(p):dy;
+  return{sx:400+r/f*F,sy:HOR-u/f*F,f};
 }
 function unproject(sx,sy){
   const u=(sx-400)/F,v=(HOR-sy)/F;
@@ -1238,6 +1242,25 @@ function unproject(sx,sy){
 }
 const wallObj=()=>K.wall?{cx:K.wallC.x,cz:K.wallC.z,half:K.wall*.27,h:t=>1.70+(K.jump?.30*Math.sin(Math.PI*clamp((t-.14)/.6,0,1)):0)}:null;
 function sweetHalf(){return K&&K.sweetHalf!=null?K.sweetHalf:.05;}
+/* 운명의 페널티킥 하이라이트: 총 3초. 1.5초까지는 판정 순간까지의 전체 궤적을 대각선 공중뷰로,
+   나머지 1.5초는 판정 순간 전후 0.75초 구간을 골대 안 리버스 앵글로 확대 리플레이해요. */
+const PK_HL_DUR=3.0,PK_HL_CUT=1.5;
+function pkTiming(){
+  if(K.hlT<PK_HL_CUT)return{seg:0,pt:clamp(K.hlT/PK_HL_CUT*K.tEvt,0,K.dur)};
+  const p0=Math.max(0,K.tEvt-.25),p1=Math.min(K.dur,K.tEvt+.5),q=clamp((K.hlT-PK_HL_CUT)/(PK_HL_DUR-PK_HL_CUT),0,1);
+  return{seg:1,pt:clamp(p0+(p1-p0)*q,0,K.dur)};
+}
+function startPkHighlight(){K.ph='pkhl';K.hlT=0;}
+/* 하이라이트 카메라 1: 축구 중계처럼 대각선 위에서 내려다보며 공을 따라 회전하는 공중뷰 */
+function pkCamA(b){
+  const cam={x:9,y:6,z:-9},dx=b.x-cam.x,dz=b.z-cam.z,L=Math.hypot(dx,dz)||1,dir={x:dx/L,z:dz/L};
+  return{cam,dir,right:{x:dir.z,z:-dir.x},pitch:.34};
+}
+/* 하이라이트 카메라 2: 골대 훨씬 뒤쪽 관중석 쯤에서 필드를 마주 보는 리버스 앵글(너무 가까우면 골키퍼가 화면을 꽉 채워버려요) */
+function pkCamB(b){
+  const cam={x:0,y:3.4,z:12},dx=b.x-cam.x,dz=b.z-cam.z,L=Math.hypot(dx,dz)||1,dir={x:dx/L,z:dz/L};
+  return{cam,dir,right:{x:dir.z,z:-dir.x},pitch:.27};
+}
 
 /* ---------- 컷신 ---------- */
 let C=null;
@@ -1608,12 +1631,21 @@ function updateKick(dt){
     else if(!K.charging){if(down)K.charging=true;}
     else{if(down){const pp=K.p;K.p=Math.min(1,K.p+dt*.7);if(Math.floor(K.p*12)!==Math.floor(pp*12))sfx('gauge',K.p);K.face=K.p>.6?'angry':'resolve';}else{fire();return;}}
   }else if(K.ph==='fly'){
-    /* 운명의 페널티킥은 골/실축 상관없이 판정 순간 앞뒤로 항상 슬로우모션을 걸어서 긴장감을 살려요 */
-    const penNear=K.pen&&K.pt>=K.tEvt-.3&&K.pt<K.tEvt+.5;
-    const slowmo=(K.hl&&K.pt>=K.tEvt&&K.pt<K.tEvt+.4)||penNear;
-    K.pt+=dt*(penNear?(K.pt<K.tEvt?.3:.16):K.pt<K.tEvt?.55:slowmo?.22:.9);
-    if(!K.evtDone&&K.pt>=K.tEvt){K.evtDone=true;onEvent();}
-    if(K.pt>=K.dur){K.ph='res';K.t=0;showResult();}
+    if(K.pen){
+      /* 운명의 페널티킥은 판정 순간 직전에 2개 카메라를 오가는 3초 하이라이트 리플레이로 넘어가요 */
+      K.pt+=dt*.55;
+      if(K.pt>=K.tEvt-.05){startPkHighlight();return;}
+    }else{
+      const slowmo=K.hl&&K.pt>=K.tEvt&&K.pt<K.tEvt+.4;
+      K.pt+=dt*(K.pt<K.tEvt?.55:slowmo?.22:.9);
+      if(!K.evtDone&&K.pt>=K.tEvt){K.evtDone=true;onEvent();}
+      if(K.pt>=K.dur){K.ph='res';K.t=0;showResult();}
+    }
+  }else if(K.ph==='pkhl'){
+    K.hlT+=dt;
+    const pk=pkTiming();
+    if(pk.seg===1&&!K.evtDone&&pk.pt>=K.tEvt){K.evtDone=true;onEvent();}
+    if(K.hlT>=PK_HL_DUR){showResult();K.ph='res';K.t=0;}
   }else if(K.ph==='res'){
     const goal=K.result&&K.result.type==='goal',go=pressed.Space||pressed.Enter||mouse.click;
     if(goal){if(K.celeb>=2.0&&go)nextKick();}
@@ -1751,8 +1783,14 @@ function ballAt(pt){
   const i=clamp(Math.floor(pt*120),0,K.path.length-2),a=K.path[i],b=K.path[i+1],f=clamp(pt*120-i,0,1);
   return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:a.z+(b.z-a.z)*f};
 }
+function flightT(){return K.ph==='res'?K.dur:K.ph==='pkhl'?pkTiming().pt:K.pt;}
 /* 선방/미스 하이라이트가 잡히면 킥커 시점 카메라에서 골대 옆 중계 카메라로 짧게 스윕 전환해요 */
 function updateCam(){
+  K.camPitch=0;
+  if(K.ph==='pkhl'){
+    const pk=pkTiming(),b=ballAt(pk.pt),cfg=pk.seg===0?pkCamA(b):pkCamB(b);
+    K.cam=cfg.cam;K.dir=cfg.dir;K.right=cfg.right;K.camPitch=cfg.pitch||0;return;
+  }
   if(!K.hl||!(K.ph==='fly'||K.ph==='res')){K.cam=K.povCam;K.dir=K.povDir;K.right=K.povRight;return;}
   const tt=K.ph==='res'?K.dur:K.pt,b0=clamp((tt-(K.tEvt-.35))/.35,0,1),b=b0*b0*(3-2*b0);
   K.cam={x:K.povCam.x+(K.hl.cam.x-K.povCam.x)*b,y:K.povCam.y+(K.hl.cam.y-K.povCam.y)*b,z:K.povCam.z+(K.hl.cam.z-K.povCam.z)*b};
@@ -1776,14 +1814,14 @@ function drawField(c){
   const rc=K.react;
   S4.forEach(a=>{const p=proj(a.x,0,a.z);items.push({f:p.f,fn:()=>{person(c,a.x,a.z,1.7,CH[a.n],0,a.n,true);
     const r=rc.find(q=>q.n===a.n);if(r){const q=proj(a.x,1.95,a.z);c.font='16px "Noto Sans KR",sans-serif';const w=c.measureText(r.tx).width+16;c.fillStyle='#fff';rr(c,q.sx-w/2,q.sy-20,w,24,8);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();TX(c,r.tx,q.sx,q.sy-8,15,'#232a45','center');}}});});
-  const kt=K.ph==='fly'?K.pt:0,tc=K.tEvt||1,kx=K.ph==='fly'?keeperPos(K.pt):0;
+  const kt=(K.ph==='fly'||K.ph==='pkhl')?flightT():0,tc=K.tEvt||1,kx=(K.ph==='fly'||K.ph==='pkhl')?keeperPos(flightT()):0;
   {const kp=proj(kx,0,-.4);items.push({f:kp.f,fn:()=>{
     const s=1.85*F/kp.f/69;let lift=0,rot=0;
-    if(K.ph==='fly'||K.ph==='res'){const kd=K.kd,tt=K.ph==='res'?K.dur:K.pt,q=clamp((tt-kd.rk)/Math.max(.2,tc-kd.rk),0,1);
+    if(K.ph==='fly'||K.ph==='res'||K.ph==='pkhl'){const kd=K.kd,tt=flightT(),q=clamp((tt-kd.rk)/Math.max(.2,tc-kd.rk),0,1);
       rot=Math.sign(kd.tgt||1)*q*1.15*Math.min(1,Math.abs(kd.tgt)/1.5);lift=Math.sin(q*Math.PI)*.4*Math.min(1,Math.abs(kd.tgt)/1.5)*F/kp.f;}
-    const kx2=K.ph==='res'?keeperPos(K.dur):kx,kp2=proj(kx2,0,-.4);
+    const kx2=(K.ph==='res'||K.ph==='pkhl')?keeperPos(flightT()):kx,kp2=proj(kx2,0,-.4);
     c.save();c.translate(kp2.sx,kp2.sy-34*s-lift);c.rotate(rot);
-    kid(c,0,34*s,s,{coat:'#e8c13a',vest:'#e8c13a',hair:'#2b1d14',arms:K.ph==='fly'?'up':undefined});c.restore();
+    kid(c,0,34*s,s,{coat:'#e8c13a',vest:'#e8c13a',hair:'#2b1d14',arms:(K.ph==='fly'||K.ph==='pkhl')?'up':undefined});c.restore();
     if(K.ph==='aim'||K.ph==='spin')TX(c,'주스',kp2.sx,kp2.sy-78*s,clamp(s*10,11,18),'#fff','center','rgba(0,0,0,.55)');
     const kr=rc.find(q=>q.n==='주스');
     if(kr){c.font='16px "Noto Sans KR",sans-serif';const bw=c.measureText(kr.tx).width+18,by=kp2.sy-84*s-lift;c.fillStyle='#fff';rr(c,kp2.sx-bw/2,by-22,bw,26,8);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();TX(c,kr.tx,kp2.sx,by-9,15,'#232a45','center');}
@@ -1798,12 +1836,12 @@ function drawField(c){
       const wr=rc.find(q=>q.n===WALLNAMES[j%5]);
       if(wr){const q=proj(wx,1.95+lift,wz);c.font='15px "Noto Sans KR",sans-serif';const w=c.measureText(wr.tx).width+16;c.fillStyle='#fff';rr(c,q.sx-w/2,q.sy-22-j*0,w,24,8);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();TX(c,wr.tx,q.sx,q.sy-10,14,'#232a45','center');}}});
   }
-  const bp=(K.ph==='fly'||K.ph==='res')?ballAt(K.ph==='res'?K.dur:K.pt):K.ball;
+  const bp=(K.ph==='fly'||K.ph==='res'||K.ph==='pkhl')?ballAt(flightT()):K.ball;
   const bq=proj(bp.x,bp.y,bp.z);
   items.push({f:bq.f-.01,fn:()=>{
     const sh=proj(bp.x,0,bp.z),rad=Math.max(3,.11*F/bq.f);
     c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(sh.sx,sh.sy,rad*1.1,rad*.35,0,0,7);c.fill();
-    if(K.ph==='fly'){for(let k=1;k<7;k++){const q=ballAt(Math.max(0,K.pt-k*.03)),pq=proj(q.x,q.y,q.z);c.fillStyle='rgba(255,255,255,'+(0.25-k*.03)+')';c.beginPath();c.arc(pq.sx,pq.sy,Math.max(2,.11*F/pq.f),0,7);c.fill();}}
+    if(K.ph==='fly'||K.ph==='pkhl'){const curT=flightT();for(let k=1;k<7;k++){const q=ballAt(Math.max(0,curT-k*.03)),pq=proj(q.x,q.y,q.z);c.fillStyle='rgba(255,255,255,'+(0.25-k*.03)+')';c.beginPath();c.arc(pq.sx,pq.sy,Math.max(2,.11*F/pq.f),0,7);c.fill();}}
     c.fillStyle='#fff';c.strokeStyle='#222';c.lineWidth=2;c.beginPath();c.arc(bq.sx,bq.sy,rad,0,7);c.fill();c.stroke();
     c.fillStyle='#222';c.beginPath();c.arc(bq.sx,bq.sy,rad*.36,0,7);c.fill();}});
   items.sort((a,b)=>b.f-a.f).forEach(o=>o.fn());
@@ -1888,8 +1926,7 @@ function drawKick(c){
     c.fillStyle=r?(r.type==='goal'?'#2f8f5b':r.type==='post'?'#e8a91c':'#e2334d'):'#dfe4ee';c.beginPath();c.arc(x,68,11,0,7);c.fill();
     c.lineWidth=i===K.i?4:2;c.strokeStyle=i===K.i?'#fff':'#232a45';c.stroke();if(r&&r.type==='goal')TX(c,'✓',x,69,14,'#fff','center');}
   TX(c,`점수 ${M.pts}`,180,68,18,'#fff','left','rgba(0,0,0,.5)');
-  if(K.hl&&(K.ph==='res'||(K.ph==='fly'&&K.pt>=K.tEvt-.05))){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-108,86,92,26,6);c.fill();TX(c,'REPLAY',W-62,99,15,'#fff','center');}
-  else if(K.pen&&K.ph==='fly'&&K.pt>=K.tEvt-.3&&K.pt<K.tEvt+.5){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-118,86,102,26,6);c.fill();TX(c,'SLOW-MO',W-67,99,14,'#fff','center');}
+  if((K.hl&&(K.ph==='res'||(K.ph==='fly'&&K.pt>=K.tEvt-.05)))||K.ph==='pkhl'){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-108,86,92,26,6);c.fill();TX(c,'REPLAY',W-62,99,15,'#fff','center');}
   if(K.ph==='aim'||K.ph==='spin'||K.ph==='power'){
     c.fillStyle='rgba(0,0,0,.35)';rr(c,W/2-150,60,300,12,6);c.fill();
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
@@ -1928,7 +1965,7 @@ function drawKick(c){
     TX(c,'마지막 한 방 · 11m',W/2,262,24,'#ffd166','center','rgba(0,0,0,.7)');
     TX(c,K.tip,W/2,306,22,'#fff','center','rgba(0,0,0,.7)');
   }
-  const isGoal=K.result&&K.result.type==='goal',celebOn=K.celeb>=0&&K.celeb<3.2,biteOn=K.ph==='res'&&!isGoal;
+  const isGoal=K.result&&K.result.type==='goal',celebOn=K.ph!=='pkhl'&&K.celeb>=0&&K.celeb<3.2,biteOn=K.ph==='res'&&!isGoal;
   if(celebOn)drawCeleb(c);
   if(biteOn)drawBite(c);
   drawParticles(c);
