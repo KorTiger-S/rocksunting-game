@@ -75,10 +75,9 @@ const SFX={
   lose(){[392,370,349].forEach((f,i)=>tone(f,.28,'sawtooth',.05,i*.28));tone(330,.7,'sawtooth',.05,.84,262);},  /* 슬픈 트롬본 */
   /* 몸 관리 */
   clank(){tone(220,.05,'square',.05);tone(880,.06,'triangle',.04,.05);tone(180,.09,'square',.05,.1);},          /* 쇠질하기: 아령 부딪는 소리 */
-  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);},                               /* 난지바베큐: 고기 굽는 소리 */
-  grab(){tone(90,.24,'sawtooth',.09,0,45);tone(60,.4,'square',.08,.08);noise(.32,.08,.03,2200,300,.6);}          /* 머호 꽈추때리기: 붙잡혀 돈을 뺏기는 소리 */
+  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);}                                /* 난지바베큐: 고기 굽는 소리 */
 };
-const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4,grab:1.8};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
+const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
 function cheer(){sfx('crowd');}
 

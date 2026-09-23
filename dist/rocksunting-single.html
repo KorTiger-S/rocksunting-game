@@ -58,7 +58,6 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .go:disabled{background:var(--bar);color:var(--muted);box-shadow:none;cursor:default}
 .go.alt{background:var(--board)}
 .go.ghost{background:var(--card);color:var(--ink)}
-.go.warn{background:#3a1014;color:#ffc2cc;border-color:#e2334d}
 .note{padding:12px 14px;border:2px dashed var(--line);border-radius:12px;background:var(--card);font-size:15px}
 .note.win{background:#fff4c9;color:#3a2c00;border-style:solid;font-weight:700}
 .chall{padding:16px;display:grid;gap:12px}
@@ -138,7 +137,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .dialog .stb{margin:0;font-weight:700;font-style:italic;color:var(--ring)}
 .dialog .stb[hidden]{display:none}
 
-/* 머호 꽈추때리기: 강탈당하는 순간의 경고 배경 + 화난 애니메이션 */
+/* 스토리 페이지의 danger 플래그: 위험/경고 장면에 쓰는 배경 + 화난 애니메이션 */
 .ov.danger{background:repeating-linear-gradient(45deg,#f2c200 0 18px,#1b0e06 18px 36px);background-size:200% 200%;animation:dangerFlash .35s linear infinite}
 .ov.danger .dialog{border-color:#e2334d;box-shadow:0 0 0 6px rgba(226,51,77,.55),4px 4px 0 var(--line);animation:dangerShake .3s infinite}
 .ov.danger .dialog h2{color:#e2334d}
@@ -235,9 +234,6 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
       <div class="acts">
         <button class="go ghost" id="drinkBtn">🎤 소리새가서 노래부르기 (700원)</button>
         <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 라볶이 (1,000원)</button>
-      </div>
-      <div class="acts">
-        <button class="go warn" id="mahoBtn">💢 머호 꽈추때리기</button>
       </div>
     </div>
     <div>
@@ -623,9 +619,6 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
-  '1.6.0':{sub:'몸 관리에 위험한 메뉴가 하나 추가됐어요!',items:[
-    '💢 몸 관리 맨 아래에 "머호 꽈추때리기"가 생겼어요. 값은 안 받지만, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요. 조심하세요!'
-  ]},
   '1.5.0':{sub:'체력·근력·컨디션·기분이 생겼어요!',items:[
     '💪 근력이 생겼어요. 헬스장에서 쇠질하기(1,500원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
     '🍖 체력이 생겼어요. 난지바베큐(2,000원)로 올릴 수 있고, 오래 쉬면 점점 떨어져요.',
@@ -843,10 +836,9 @@ const SFX={
   lose(){[392,370,349].forEach((f,i)=>tone(f,.28,'sawtooth',.05,i*.28));tone(330,.7,'sawtooth',.05,.84,262);},  /* 슬픈 트롬본 */
   /* 몸 관리 */
   clank(){tone(220,.05,'square',.05);tone(880,.06,'triangle',.04,.05);tone(180,.09,'square',.05,.1);},          /* 쇠질하기: 아령 부딪는 소리 */
-  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);},                               /* 난지바베큐: 고기 굽는 소리 */
-  grab(){tone(90,.24,'sawtooth',.09,0,45);tone(60,.4,'square',.08,.08);noise(.32,.08,.03,2200,300,.6);}          /* 머호 꽈추때리기: 붙잡혀 돈을 뺏기는 소리 */
+  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);}                                /* 난지바베큐: 고기 굽는 소리 */
 };
-const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4,grab:1.8};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
+const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
 function cheer(){sfx('crowd');}
 
@@ -1982,21 +1974,10 @@ function buyTteok(){
   spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
-/* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */
-const MAHO_ANGRY_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#3a1014"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="#f1c9a5"/><path d="M46 72Q52 40 100 36Q148 40 154 72L154 102Q100 58 46 102Z" fill="#8a5a2a"/><path d="M56 80Q76 60 94 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M144 80Q124 60 106 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><ellipse cx="76" cy="98" rx="7" ry="9" fill="#2a1a14"/><ellipse cx="124" cy="98" rx="7" ry="9" fill="#2a1a14"/><circle cx="78" cy="95" r="2" fill="#fff"/><circle cx="126" cy="95" r="2" fill="#fff"/><ellipse cx="60" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><ellipse cx="140" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><path d="M78 134Q100 124 122 134Q112 148 100 146Q88 148 78 134Z" fill="#6b2a2a"/><path d="M84 134L92 134L92 142L84 142Z" fill="#fff"/><path d="M96 133L104 133L104 142L96 142Z" fill="#fff"/><path d="M108 134L116 134L116 142L108 142Z" fill="#fff"/><path d="M30 60L14 30M170 60L186 30M22 96L4 96M178 96L196 96" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="none" stroke="#e2334d" stroke-width="5"/></svg>');
-function mahoAction(){
-  const before=Math.max(0,S.money);
-  S.money=200;S.news='머호에게 잡혀 돈을 강탈당했습니다.';
-  save();
-  showStory([
-    {src:MAHO_ANGRY_IMG,sfx:'grab',bgm:'sad',danger:true,title:'머호 꽈추때리기',who:'머호',text:`머호에게 잡혀 돈을 강탈당했습니다. 소지금 ${fmt(before)}원 → 200원.`}
-  ],()=>{chatCur=randChat();renderHub();});
-}
 $('#gymBtn').addEventListener('click',gymAction);
 $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
-$('#mahoBtn').addEventListener('click',mahoAction);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
@@ -2084,7 +2065,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none',mahoBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
+  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
