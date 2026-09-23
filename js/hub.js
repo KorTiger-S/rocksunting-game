@@ -276,7 +276,7 @@ const BURPS=['(꺼억~)','(끄으윽~)','(꺼어어억…)'];
 function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtooth',.1),120);setTimeout(()=>beep(70,.25,'square',.06),380);}
 /* 허브에 있을 때 소지금이 0원 이하면 라털 선생님이 나타나요. 대결 화면·로그인·업데이트 팝업이 열려 있을 땐 기다려요. */
 function maybeLoan(){
-  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#houQuiz').hidden)return;
+  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#houQuiz').hidden||!$('#challengeInfo').hidden)return;
   const before=Math.max(0,S.money);
   S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
   showStory([
@@ -288,7 +288,11 @@ function maybeLoan(){
 $('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHub();});
 $('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
 $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
-$('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)startMatch(betV);});
+function openChallengeInfo(){$('#chBetInfo').textContent=`이번 판돈: ${fmt(betV)}원`;$('#challengeInfo').hidden=false;}
+function closeChallengeInfo(){$('#challengeInfo').hidden=true;}
+$('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)openChallengeInfo();});
+$('#chClose').addEventListener('click',closeChallengeInfo);
+$('#chStart').addEventListener('click',()=>{closeChallengeInfo();if(S.money>=1000)startMatch(betV);});
 $('#passBtn').addEventListener('click',()=>{
   S.stam=clamp((S.stam==null?25:S.stam)+3,0,100);   /* 프리킥을 쉬면 몸이 회복돼서 체력이 살짝 올라요 */
   dayAction('오늘은 쉬면서 체력을 조금 회복했다.',0,false);
@@ -308,7 +312,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
+const BTN_SFX={jobBtn:'coin',passBtn:'swish',chStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
   gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none',hqGo:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;

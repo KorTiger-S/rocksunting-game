@@ -6,20 +6,20 @@
 <title>롹순팅 키우기 - 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.7.1">
+<link rel="stylesheet" href="css/style.css?v=1.7.3">
 </head>
 <body>
 <header class="board">
   <div class="board-in">
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
     <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button></div>
   </div>
 </header>
 
 <div id="hub">
   <aside class="card" id="side">
-    <img class="bigface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
     <h2>롹순팅</h2>
     <p id="bigmsg">오늘도 학교에서 살아남자.</p>
     <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
@@ -41,14 +41,6 @@
     <div class="note" id="chat"></div>
     <div class="card chall">
       <h2>주스의 프리킥 도전장</h2>
-      <p>축구부 에이스 주스가 골키퍼를 서는 5킥 내기예요.</p>
-      <ul class="rules">
-        <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, 판돈을 그대로 받아요.</li>
-        <li><b>4골 이상</b>이면 완승! 주스가 판돈의 절반을 더 얹어 줘요.</li>
-        <li>지면 판돈은 주스의 크림빵 값이 돼요.</li>
-        <li>킥 위치는 매번 달라져요. 처음엔 가깝고 점점 멀어지고, <b>마지막은 운명의 페널티킥</b>이에요!</li>
-        <li>주스는 <b>3,000원</b>까지만 받아 줘요.</li>
-      </ul>
       <div class="stepper">
         <button class="go ghost" id="bMinus">-100</button>
         <span class="amt" id="betV">1,000원</span>
@@ -57,11 +49,16 @@
       </div>
       <div class="acts">
         <button class="go" id="acceptBtn">내기 받기</button>
+      </div>
+    </div>
+    <div class="card chall">
+      <h2 style="font-size:20px">오늘의 다른 선택</h2>
+      <p>패스와 알바는 하루를 써요. 금요일이 지나면 새 주가 시작돼요. 소지금이 0원이 되면 라털 선생님이 1만 원을 빌려줘요.</p>
+      <div class="acts">
         <button class="go alt" id="passBtn">오늘은 패스</button>
         <button class="go alt" id="jobBtn">매점 알바 (+600원)</button>
         <button class="go alt" id="houBtn">😂 호우의 아재개그</button>
       </div>
-      <p>패스와 알바는 하루를 써요. 금요일이 지나면 새 주가 시작돼요. 소지금이 0원이 되면 라털 선생님이 1만 원을 빌려줘요.</p>
     </div>
     <div class="card chall" id="duelCard">
       <h2>친구와 1:1 페널티킥 대결</h2>
@@ -209,6 +206,21 @@
     <div class="btns"><button class="go" id="hqGo">제출하기</button><button class="go ghost" id="hqClose">닫기</button></div>
   </div>
 </div>
+<div class="ov ovfix" id="challengeInfo" hidden role="dialog" aria-labelledby="chT">
+  <div class="card dialog">
+    <h2 id="chT">주스의 프리킥 도전장</h2>
+    <p>축구부 에이스 주스가 골키퍼를 서는 5킥 내기예요.</p>
+    <ul class="rules" style="text-align:left">
+      <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, 판돈을 그대로 받아요.</li>
+      <li><b>4골 이상</b>이면 완승! 주스가 판돈의 절반을 더 얹어 줘요.</li>
+      <li>지면 판돈은 주스의 크림빵 값이 돼요.</li>
+      <li>킥 위치는 매번 달라져요. 처음엔 가깝고 점점 멀어지고, <b>마지막은 운명의 페널티킥</b>이에요!</li>
+      <li>주스는 <b>3,000원</b>까지만 받아 줘요.</li>
+    </ul>
+    <p class="tip" id="chBetInfo" style="margin-top:0"></p>
+    <div class="btns"><button class="go" id="chStart">내기 시작</button><button class="go ghost" id="chClose">닫기</button></div>
+  </div>
+</div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">
   <div class="card dialog">
     <h2 id="wnT"></h2>
@@ -258,20 +270,20 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.7.1"></script>
-<script src="js/save.js?v=1.7.1"></script>
-<script src="js/cloud.js?v=1.7.1"></script>
-<script src="js/login.js?v=1.7.1"></script>
-<script src="js/rank.js?v=1.7.1"></script>
-<script src="js/audio.js?v=1.7.1"></script>
-<script src="js/input.js?v=1.7.1"></script>
-<script src="js/render.js?v=1.7.1"></script>
-<script src="js/kick-data.js?v=1.7.1"></script>
-<script src="js/kick.js?v=1.7.1"></script>
-<script src="js/hub.js?v=1.7.1"></script>
-<script src="js/splash.js?v=1.7.1"></script>
-<script src="js/duel.js?v=1.7.1"></script>
-<script src="js/main.js?v=1.7.1"></script>
+<script src="js/util.js?v=1.7.3"></script>
+<script src="js/save.js?v=1.7.3"></script>
+<script src="js/cloud.js?v=1.7.3"></script>
+<script src="js/login.js?v=1.7.3"></script>
+<script src="js/rank.js?v=1.7.3"></script>
+<script src="js/audio.js?v=1.7.3"></script>
+<script src="js/input.js?v=1.7.3"></script>
+<script src="js/render.js?v=1.7.3"></script>
+<script src="js/kick-data.js?v=1.7.3"></script>
+<script src="js/kick.js?v=1.7.3"></script>
+<script src="js/hub.js?v=1.7.3"></script>
+<script src="js/splash.js?v=1.7.3"></script>
+<script src="js/duel.js?v=1.7.3"></script>
+<script src="js/main.js?v=1.7.3"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
