@@ -8,7 +8,7 @@ function renderHub(){
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   $('#jobBtn').textContent=f>=2?'매점 알바 (+600원) ⚠쓰러질 위험':`매점 알바 (+600원)`;
-  $('#houBtn').textContent=houDone()?'😂 호우의 아재개그 (오늘은 다 함)':'😂 호우의 아재개그';
+  $('#houBtn').textContent=houDone()?'😂 호우의 아재개그 (오늘은 다 씀)':`😂 호우의 아재개그 (${houLeftToday()}/${HOU_DAILY})`;
   renderStats();
   $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
@@ -169,8 +169,21 @@ const HOU_QUIZ=[
  {q:'인천 앞바다의 반댓말은?',a:'인천엄마다'},
  {q:'세상에서 가장 무서운 전화의 이름은?',a:'무선전화'}
 ];
-const dayId=()=>(S.week-1)*5+S.day;
-const houDone=()=>S.houDay!=null&&S.houDay===dayId();
+/* 하루 한도는 게임 속 "하루"(알바/패스로 얼마든지 빨리 지나갈 수 있어요)가 아니라
+   실제 달력 날짜(KST 자정 기준) 기준으로 세요. 부정행위 방지를 위해 답을 맞히든 틀리든,
+   심지어 답을 안 내고 닫아도 버튼을 누르는 순간 바로 한 번을 깎아요(houConsume). */
+const HOU_DAILY=3;
+const houEpochDay=()=>Math.floor((Date.now()+KST_MS)/DAY_MS);
+function houLeftToday(){
+  return S.houDate===houEpochDay()?Math.max(0,S.houLeft==null?HOU_DAILY:S.houLeft):HOU_DAILY;
+}
+const houDone=()=>houLeftToday()<=0;
+function houConsume(){
+  const t=houEpochDay();
+  if(S.houDate!==t){S.houDate=t;S.houLeft=HOU_DAILY;}
+  S.houLeft=Math.max(0,(S.houLeft==null?HOU_DAILY:S.houLeft)-1);
+  save();
+}
 let houCur=null;
 const houNorm=s=>String(s||'').trim().replace(/[\s.,!?~()'"`]/g,'').toLowerCase();
 function houMatch(user,ans){
@@ -179,7 +192,7 @@ function houMatch(user,ans){
   return list.some(raw=>{const a=houNorm(raw);return a&&(u===a||(u.length>=2&&a.length>=2&&(u.includes(a)||a.includes(u))));});
 }
 const houAnsText=item=>Array.isArray(item.a)?item.a[0]:item.a;
-/* 오늘 이미 참여했는데 또 누르면, 호우가 다시 시작하려다 씨붕에게 단호하게 저지당해요 */
+/* 오늘 이미 3번 다 참여했는데 또 누르면, 호우가 다시 시작하려다 씨붕에게 단호하게 저지당해요 */
 function houBlockedCut(){
   pressed={};mouse.click=false;showGame(true);
   playCut({bg:'hall',chars:[{id:'호우',x:220,y:340,s:2.4},{id:'씨붕',x:560,y:340,s:2.4,arms:'cross'}],lines:[
@@ -189,15 +202,16 @@ function houBlockedCut(){
 }
 function openHouQuiz(){
   if(houDone()){houBlockedCut();return;}
+  houConsume();renderHub();
   houCur=pick(HOU_QUIZ);
   $('#hqQ').textContent=houCur.q;$('#hqAns').value='';$('#hqAns').disabled=false;$('#hqGo').disabled=false;$('#hqMsg').textContent='';
   $('#houQuiz').hidden=false;setTimeout(()=>{try{$('#hqAns').focus();}catch(e){}},30);
 }
 function closeHouQuiz(){$('#houQuiz').hidden=true;}
 function submitHouQuiz(){
-  if(!houCur||houDone())return;
+  if(!houCur)return;
   const item=houCur,ok=houMatch($('#hqAns').value,item.a),ans=houAnsText(item)+(item.note?` (${item.note})`:'');
-  S.houDay=dayId();houCur=null;
+  houCur=null;
   if(ok){S.money+=HOU_REWARD;S.news=`호우의 아재개그를 맞혀서 ${fmt(HOU_REWARD)}원을 받았다!`;sfx('coin');}
   else sfx('deny');
   $('#hqMsg').textContent=ok?`😂 정답! "${ans}" · 호우에게 ${fmt(HOU_REWARD)}원 받았어요!`:`😅 아쉽지만 오답이에요. 정답은 "${ans}"였어요.`;
