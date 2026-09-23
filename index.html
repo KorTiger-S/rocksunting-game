@@ -22,7 +22,7 @@
     <img class="bigface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
     <h2>롹순팅</h2>
     <p id="bigmsg">오늘도 학교에서 살아남자.</p>
-    <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="outBtn">로그아웃</button></div>
+    <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
     <p class="tip" id="syncInfo"></p>
     <div class="sec" style="margin-top:6px">목표: 100만 원</div>
     <div class="prog"><i id="prog"></i></div>
@@ -188,6 +188,17 @@
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go" id="rkClose">닫기</button></div>
+  </div>
+</div>
+<div class="ov ovfix" id="pinChange" hidden role="dialog" aria-labelledby="pcT">
+  <div class="card dialog">
+    <h2 id="pcT">🔑 비밀번호 변경</h2>
+    <p class="tip" style="margin-top:0">현재 비밀번호와 새 비밀번호(숫자 4자리)를 입력하세요.</p>
+    <input class="lgin" id="pcOld" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="현재 비밀번호" autocomplete="off" aria-label="현재 비밀번호 4자리">
+    <input class="lgin" id="pcNew" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 비밀번호" autocomplete="off" aria-label="새 비밀번호 4자리">
+    <input class="lgin" id="pcNew2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 비밀번호 확인" autocomplete="off" aria-label="새 비밀번호 확인">
+    <p class="lgmsg" id="pcMsg"></p>
+    <div class="btns"><button class="go" id="pcGo">변경하기</button><button class="go ghost" id="pcClose">닫기</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">

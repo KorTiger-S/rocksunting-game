@@ -162,7 +162,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
     <img class="bigface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
     <h2>롹순팅</h2>
     <p id="bigmsg">오늘도 학교에서 살아남자.</p>
-    <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="outBtn">로그아웃</button></div>
+    <div class="acts" style="justify-content:center"><button class="go ghost" id="rankBtn">🏆 랭킹</button><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
     <p class="tip" id="syncInfo"></p>
     <div class="sec" style="margin-top:6px">목표: 100만 원</div>
     <div class="prog"><i id="prog"></i></div>
@@ -328,6 +328,17 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go" id="rkClose">닫기</button></div>
+  </div>
+</div>
+<div class="ov ovfix" id="pinChange" hidden role="dialog" aria-labelledby="pcT">
+  <div class="card dialog">
+    <h2 id="pcT">🔑 비밀번호 변경</h2>
+    <p class="tip" style="margin-top:0">현재 비밀번호와 새 비밀번호(숫자 4자리)를 입력하세요.</p>
+    <input class="lgin" id="pcOld" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="현재 비밀번호" autocomplete="off" aria-label="현재 비밀번호 4자리">
+    <input class="lgin" id="pcNew" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 비밀번호" autocomplete="off" aria-label="새 비밀번호 4자리">
+    <input class="lgin" id="pcNew2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 비밀번호 확인" autocomplete="off" aria-label="새 비밀번호 확인">
+    <p class="lgmsg" id="pcMsg"></p>
+    <div class="btns"><button class="go" id="pcGo">변경하기</button><button class="go ghost" id="pcClose">닫기</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">
@@ -600,7 +611,10 @@ function enter(name,data,at,news,isNew){
   sfx('welcome');toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
   maybeShowNotes(isNew);maybeLoan();
 }
-function updateUserChip(){$('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';}
+function updateUserChip(){
+  $('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';
+  const pb=$('#pinBtn');if(pb)pb.disabled=!USER||USER.guest;
+}
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
@@ -690,6 +704,39 @@ $('#lgUrlSave').addEventListener('click',async()=>{
 });
 $('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
+/* ---------- 비밀번호 변경 ---------- */
+function openPinChange(){
+  if(!USER||USER.guest)return;
+  $('#pcOld').value='';$('#pcNew').value='';$('#pcNew2').value='';$('#pcMsg').textContent='';
+  $('#pinChange').hidden=false;setTimeout(()=>{try{$('#pcOld').focus();}catch(e){}},30);
+}
+function closePinChange(){$('#pinChange').hidden=true;}
+async function submitPinChange(){
+  const oldPin=$('#pcOld').value.trim(),n1=$('#pcNew').value.trim(),n2=$('#pcNew2').value.trim(),msg=$('#pcMsg');
+  if(!PIN_RE.test(oldPin)){msg.textContent='현재 비밀번호를 숫자 4자리로 입력해 주세요.';return;}
+  if(!PIN_RE.test(n1)){msg.textContent='새 비밀번호는 숫자 4자리로 입력해 주세요.';return;}
+  if(n1!==n2){msg.textContent='새 비밀번호가 서로 달라요.';return;}
+  if(n1===oldPin){msg.textContent='기존 비밀번호와 다른 번호로 정해 주세요.';return;}
+  $('#pcGo').disabled=true;msg.textContent='변경하는 중…';
+  try{
+    if(cloudUrl())await api('change_pin',{id:USER.id,pin:oldPin,newPin:n1});
+    else if(oldPin!==USER.pin)throw new Error('bad_pin');
+    USER.pin=n1;USER.ph=pinHash(USER.id,n1);save();
+    sfx('coin');toast('비밀번호를 변경했어요.');closePinChange();
+  }catch(e){
+    const m=e&&e.message;
+    msg.textContent=m==='bad_pin'?'현재 비밀번호가 맞지 않아요.':m==='locked'?'비밀번호를 여러 번 틀려서 잠겼어요. 잠시 후 다시 시도해 주세요.':'변경에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    sfx('error');
+  }
+  $('#pcGo').disabled=false;
+}
+$('#pinBtn').addEventListener('click',openPinChange);
+$('#pcClose').addEventListener('click',closePinChange);
+$('#pcGo').addEventListener('click',submitPinChange);
+[$('#pcOld'),$('#pcNew'),$('#pcNew2')].forEach(el=>{
+  el.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPinChange();}});
+});
 
 
 'use strict';
@@ -2004,7 +2051,7 @@ const BURPS=['(꺼억~)','(끄으윽~)','(꺼어어억…)'];
 function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtooth',.1),120);setTimeout(()=>beep(70,.25,'square',.06),380);}
 /* 허브에 있을 때 소지금이 0원 이하면 라털 선생님이 나타나요. 대결 화면·로그인·업데이트 팝업이 열려 있을 땐 기다려요. */
 function maybeLoan(){
-  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden)return;
+  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden)return;
   const before=Math.max(0,S.money);
   S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
   showStory([
