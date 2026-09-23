@@ -8,7 +8,7 @@ window.addEventListener('keydown',e=>{
   let code=e.code;
   if(mode==='cut'&&code==='KeyS'){pressed.SkipCut=true;e.preventDefault();return;}
   code=KMAP[code]||code;
-  if(mode!=='hub'&&(code.startsWith('Arrow')||code==='Space'))e.preventDefault();
+  if(mode!=='hub'&&(code.startsWith('Arrow')||code==='Space'||code==='Backspace'))e.preventDefault();
   if(mode!=='hub'&&code==='Escape'){askQuit();return;}
   if(!e.repeat)setKey(code,true);else held[code]=true;
 });
