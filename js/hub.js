@@ -60,21 +60,10 @@ function buyTteok(){
   spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
-/* 머호 꽈추때리기: 값은 안 받고, 대신 머호에게 붙잡혀 소지금이 200원으로 털려요 */
-const MAHO_ANGRY_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#3a1014"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="#f1c9a5"/><path d="M46 72Q52 40 100 36Q148 40 154 72L154 102Q100 58 46 102Z" fill="#8a5a2a"/><path d="M56 80Q76 60 94 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M144 80Q124 60 106 78" stroke="#2a201c" stroke-width="7" stroke-linecap="round" fill="none"/><ellipse cx="76" cy="98" rx="7" ry="9" fill="#2a1a14"/><ellipse cx="124" cy="98" rx="7" ry="9" fill="#2a1a14"/><circle cx="78" cy="95" r="2" fill="#fff"/><circle cx="126" cy="95" r="2" fill="#fff"/><ellipse cx="60" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><ellipse cx="140" cy="112" rx="11" ry="6" fill="#e2334d" opacity=".6"/><path d="M78 134Q100 124 122 134Q112 148 100 146Q88 148 78 134Z" fill="#6b2a2a"/><path d="M84 134L92 134L92 142L84 142Z" fill="#fff"/><path d="M96 133L104 133L104 142L96 142Z" fill="#fff"/><path d="M108 134L116 134L116 142L108 142Z" fill="#fff"/><path d="M30 60L14 30M170 60L186 30M22 96L4 96M178 96L196 96" stroke="#f2c200" stroke-width="5" stroke-linecap="round"/><ellipse cx="100" cy="94" rx="54" ry="58" fill="none" stroke="#e2334d" stroke-width="5"/></svg>');
-function mahoAction(){
-  const before=Math.max(0,S.money);
-  S.money=200;S.news='머호에게 잡혀 돈을 강탈당했습니다.';
-  save();
-  showStory([
-    {src:MAHO_ANGRY_IMG,sfx:'grab',bgm:'sad',danger:true,title:'머호 꽈추때리기',who:'머호',text:`머호에게 잡혀 돈을 강탈당했습니다. 소지금 ${fmt(before)}원 → 200원.`}
-  ],()=>{chatCur=randChat();renderHub();});
-}
 $('#gymBtn').addEventListener('click',gymAction);
 $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
-$('#mahoBtn').addEventListener('click',mahoAction);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
@@ -162,7 +151,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none',mahoBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
+  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
