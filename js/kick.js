@@ -474,8 +474,10 @@ function updateKick(dt){
     else if(!K.charging){if(down)K.charging=true;}
     else{if(down){const pp=K.p;K.p=Math.min(1,K.p+dt*.7);if(Math.floor(K.p*12)!==Math.floor(pp*12))sfx('gauge',K.p);K.face=K.p>.6?'angry':'resolve';}else{fire();return;}}
   }else if(K.ph==='fly'){
-    const slowmo=K.hl&&K.pt>=K.tEvt&&K.pt<K.tEvt+.4;
-    K.pt+=dt*(K.pt<K.tEvt?.55:slowmo?.22:.9);
+    /* 운명의 페널티킥은 골/실축 상관없이 판정 순간 앞뒤로 항상 슬로우모션을 걸어서 긴장감을 살려요 */
+    const penNear=K.pen&&K.pt>=K.tEvt-.3&&K.pt<K.tEvt+.5;
+    const slowmo=(K.hl&&K.pt>=K.tEvt&&K.pt<K.tEvt+.4)||penNear;
+    K.pt+=dt*(penNear?(K.pt<K.tEvt?.3:.16):K.pt<K.tEvt?.55:slowmo?.22:.9);
     if(!K.evtDone&&K.pt>=K.tEvt){K.evtDone=true;onEvent();}
     if(K.pt>=K.dur){K.ph='res';K.t=0;showResult();}
   }else if(K.ph==='res'){
@@ -753,6 +755,7 @@ function drawKick(c){
     c.lineWidth=i===K.i?4:2;c.strokeStyle=i===K.i?'#fff':'#232a45';c.stroke();if(r&&r.type==='goal')TX(c,'✓',x,69,14,'#fff','center');}
   TX(c,`점수 ${M.pts}`,180,68,18,'#fff','left','rgba(0,0,0,.5)');
   if(K.hl&&(K.ph==='res'||(K.ph==='fly'&&K.pt>=K.tEvt-.05))){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-108,86,92,26,6);c.fill();TX(c,'REPLAY',W-62,99,15,'#fff','center');}
+  else if(K.pen&&K.ph==='fly'&&K.pt>=K.tEvt-.3&&K.pt<K.tEvt+.5){c.fillStyle='rgba(226,51,77,.92)';rr(c,W-118,86,102,26,6);c.fill();TX(c,'SLOW-MO',W-67,99,14,'#fff','center');}
   if(K.ph==='aim'||K.ph==='spin'||K.ph==='power'){
     c.fillStyle='rgba(0,0,0,.35)';rr(c,W/2-150,60,300,12,6);c.fill();
     c.fillStyle=K.emerg?(Math.floor(performance.now()/120)%2?'#fff':'#e2334d'):'#e8a91c';rr(c,W/2-150,60,300*clamp(K.timer/K.limit,0,1),12,6);c.fill();
