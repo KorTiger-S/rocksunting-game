@@ -461,6 +461,7 @@ function updateKick(dt){
   }else if(K.ph==='trip'){
     if(K.t>2.4||(K.t>1.2&&(pressed.Space||pressed.Enter||mouse.click)))forfeitInjury();
   }else if(K.ph==='power'){
+    if(pressed.Backspace){K.ph='spin';K.t=0;beep(360,.08,'triangle',.05);return;}
     const down=held.Space||mouse.down;
     if(!K.armed){if(!down)K.armed=true;}
     else if(!K.charging){if(down)K.charging=true;}
@@ -737,7 +738,7 @@ function drawParticles(c){
   c.globalAlpha=1;
 }
 function drawKick(c){
-  if(padBackBtn)padBackBtn.classList.toggle('show',K.ph==='spin');
+  if(padBackBtn)padBackBtn.classList.toggle('show',K.ph==='spin'||K.ph==='power');
   c.save();if(K.shake>0)c.translate(rand(-5,5),rand(-4,4));drawField(c);c.restore();
   hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`판돈 ${fmt(M.bet)}원`);
   for(let i=0;i<5;i++){const r=M.res[i],x=26+i*30;
@@ -762,12 +763,13 @@ function drawKick(c){
   if(K.ph==='spin')drawSpin(c);
   if(K.ph==='power'){
     const x0=200,x1=600,y0=414;
-    c.fillStyle='rgba(20,24,44,.85)';rr(c,x0-10,y0-30,x1-x0+20,64,12);c.fill();
+    c.fillStyle='rgba(20,24,44,.85)';rr(c,x0-10,y0-30,x1-x0+20,84,12);c.fill();
     c.fillStyle='#dfe4ee';rr(c,x0,y0,x1-x0,22,8);c.fill();
     const sw=sweetHalf();c.fillStyle='#2f8f5b';c.fillRect(x0+(x1-x0)*(.75-sw),y0,(x1-x0)*sw*2,22);
     c.fillStyle='#e2334d';rr(c,x0,y0,(x1-x0)*K.p,22,8);c.fill();
     c.strokeStyle='#232a45';c.lineWidth=3;rr(c,x0,y0,x1-x0,22,8);c.stroke();
     TX(c,K.charging?'초록 구간에서 떼!':'Space를 꾹 누르세요 (마우스 누르고 있기도 가능)',W/2,y0-14,16,'#fff','center');
+    TX(c,'Backspace: 공 부위 단계로 되돌리기',W/2,y0+44,13,'#c7cede','center');
   }
   if(K.ph==='res'||K.ph==='trip'||(K.ph==='fly'&&K.pt>=K.tEvt&&K.result)){
     if(K.result){const q=(K.ph==='res'||K.ph==='trip')?Math.min(1,K.t*5):1;c.save();c.translate(W/2,205);c.scale(.6+.4*q,.6+.4*q);TX(c,K.result.title,0,0,54,'#fff','center',K.result.col);TX(c,K.result.sub,0,48,22,'#fff','center','rgba(0,0,0,.6)');c.restore();}
