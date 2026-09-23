@@ -59,6 +59,7 @@
         <button class="go" id="acceptBtn">내기 받기</button>
         <button class="go alt" id="passBtn">오늘은 패스</button>
         <button class="go alt" id="jobBtn">매점 알바 (+600원)</button>
+        <button class="go alt" id="houBtn">😂 호우의 아재개그</button>
       </div>
       <p>패스와 알바는 하루를 써요. 금요일이 지나면 새 주가 시작돼요. 소지금이 0원이 되면 라털 선생님이 1만 원을 빌려줘요.</p>
     </div>
@@ -196,6 +197,16 @@
     <input class="lgin" id="pcNew2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="새 비밀번호 확인" autocomplete="off" aria-label="새 비밀번호 확인">
     <p class="lgmsg" id="pcMsg"></p>
     <div class="btns"><button class="go" id="pcGo">변경하기</button><button class="go ghost" id="pcClose">닫기</button></div>
+  </div>
+</div>
+<div class="ov ovfix" id="houQuiz" hidden role="dialog" aria-labelledby="hqT">
+  <div class="card dialog">
+    <h2 id="hqT">😂 호우의 아재개그</h2>
+    <p class="tip" style="margin-top:0">정답을 맞히면 호우가 500원을 줘요! (하루 한 번)</p>
+    <p id="hqQ" style="font-weight:700;color:var(--ink);margin:10px 0"></p>
+    <input class="lgin" id="hqAns" placeholder="정답을 입력하세요" autocomplete="off" aria-label="정답">
+    <p class="lgmsg" id="hqMsg"></p>
+    <div class="btns"><button class="go" id="hqGo">제출하기</button><button class="go ghost" id="hqClose">닫기</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">

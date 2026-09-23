@@ -8,6 +8,7 @@ function renderHub(){
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   $('#jobBtn').textContent=f>=2?'매점 알바 (+600원) ⚠쓰러질 위험':`매점 알바 (+600원)`;
+  const hb=$('#houBtn');hb.disabled=houDone();hb.textContent=houDone()?'😂 호우의 아재개그 (내일 다시)':'😂 호우의 아재개그';
   renderStats();
   $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
@@ -64,6 +65,141 @@ $('#gymBtn').addEventListener('click',gymAction);
 $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
+/* ---------- 호우의 아재개그: 하루에 한 번, 정답을 맞히면 500원 ---------- */
+const HOU_REWARD=500;
+const HOU_QUIZ=[
+ {q:'아기 공룡 둘리가 고등학교에 입학했대요. 어디 고등학교죠?',a:'빙하타고'},
+ {q:'세상에서 가장 쎈 대학교 이름은?',a:'와세다 대학'},
+ {q:'가장 지루하고 지겨운 중학교 이름은?',a:'로딩중'},
+ {q:'해리포터는 어떤 사람을 말하는가요?',a:'해를 취재하는 사람'},
+ {q:'우리 몸에 좋지 않은 청바지 이름은?',a:'유해진'},
+ {q:'도둑놈이 가장 좋아하는 아이스크림은?',a:'보석바'},
+ {q:'이 세상에서 가장 뜨거운 과일은?',a:'천도복숭아'},
+ {q:'반성문을 영어로 표현하면?',a:'글로벌'},
+ {q:'우리나라에서 가장 오래된 화장실은?',a:'전봇대'},
+ {q:'아픈 사람들이 원하는 반지는 어떤 반지가 있죠?',a:'힐링'},
+ {q:'몸매랑 얼굴은 예쁜데 속이 텅빈 여자는?',a:'마네킹'},
+ {q:'서울에서 조금 뚱뚱한 사람들이 사는 동네는?',a:'반포동'},
+ {q:'지구에서 기형아가 가장 많이 태어나는 나라 이름은?',a:'네팔'},
+ {q:'아이스크림이 죽다는 네자로 줄여보세요',a:'다이하드'},
+ {q:'김밥이 경찰서에 간 이유는 무엇인겨?',a:'참기름이 고소해서'},
+ {q:'세상에서 가장 야한 채소는 무엇인겨?',a:'버섯'},
+ {q:'김밥이 죽으면 어디로 가남요?',a:'김밥천국'},
+ {q:'바나나가 웃으면?',a:'바나나킥'},
+ {q:'아버지가 정말 강한 사람이다를 세자로 줄이면?',a:'부가세'},
+ {q:'할아버지 할머니가 가장 좋아하는 폭포는 무엇이대요?',a:'나이야가라'},
+ {q:'할아버지가 좋아하는 돈은?',a:'할머니'},
+ {q:'조금 전에 울었다가 그쳤던 사람을 다섯자로 줄이면',a:'아까운사람'},
+ {q:'한의사가 가장 좋아하는 말은?',a:'인생은 한방이여'},
+ {q:'이 죽을 먹으면 자연스럽게 웃게 되죠. 무슨 죽이죠?',a:'히죽'},
+ {q:'이 세상에서 가장 쉬운 숫자는',a:['190000','19만'],note:'쉽구만'},
+ {q:'닿기만 해도 취하는 술이 있어요.',a:'입술'},
+ {q:'아저씨들이 좋아하는 돈은?',a:'아주머니'},
+ {q:'도둑놈이 훔치는 돈을 무엇이라고 말할까?',a:'슬그머니'},
+ {q:'채소 장수가 가장 싫어하는 도시 이름은?',a:'시드니'},
+ {q:'사람의 머리가 세 개 있다를 영어로 말하면?',a:'헤드셋'},
+ {q:'인디언 추장보다 높은 사람은?',a:'고추장'},
+ {q:'어부들이 이 가수를 싫어합니다. 누구죠?',a:'배철수'},
+ {q:'남을 등처먹고 사는 사람은?',a:'안마사'},
+ {q:'많은 개수의 모자가 뭉쳐 있는 것을 네자로 줄이면',a:'밀짚모자'},
+ {q:'제일 억울한 도형은?',a:'원통'},
+ {q:'모든 사람들을 일어나게 하는 숫자는?',a:'5',note:'다~섯'},
+ {q:'치과 의사들은 이 아파트에는 살지 않아요. 어디예요?',a:'이편한세상'},
+ {q:'세계에서 가장 인기 있는 벌레 이름은?',a:'스타벅스'},
+ {q:'지방 흡임의 반대말이 있다네요.',a:'수도권배출'},
+ {q:'소금의 유통기간은 며칠일까요?',a:'천일염'},
+ {q:'이 세상에서 가장 잔인한 비빔밥은?',a:'산채비빔밥'},
+ {q:'고등학생이 가장 싫어하는 나무 이름은?',a:'야자나무'},
+ {q:'비가 한시간 동안 내린다를 5자로 줄이면',a:'추적육십분'},
+ {q:'승용차 문을 세게 닫으면 안되는 이유는?',a:'문에 네개니까'},
+ {q:'미소의 반댓말을 무엇이라 하죠?',a:'당기소'},
+ {q:'사람의 몸무게가 가장 많이 나갈때는 언제인가요?',a:'철들때'},
+ {q:'자동차를 발로 차다를 네자로 말한다면?',a:'카놀라유'},
+ {q:'소변과 대변 중에 어떤 것이 먼저 나오는지 아는 사람?',a:'급한것'},
+ {q:'단무지가 버스를 타면서 하는 말은?',a:'저 무임 승차요'},
+ {q:'전화를 가지고 건물을 세웠는데 그 건물의 이름은?',a:'콜로세움'},
+ {q:'신데렐라가 잠을 못잔다를 네자로 줄이면',a:'모짜렐라'},
+ {q:'신이 화를 내고 있다를 세자로 줄이면',a:'신발끈'},
+ {q:'우리나라에서 땅값이 가장 싼 동네의 이름은?',a:'일원동'},
+ {q:'술과 커피를 팔지 않습니다를 사자성어로 하면?',a:'주차금지'},
+ {q:'연예인 송해교 송대관 송윤아 송중기의 공통점을 세자로 줄이면?',a:'성동일'},
+ {q:'한국에서 가장 싸움을 잘하는 오리는?',a:'을지문덕'},
+ {q:'딱 세사람 밖에 탈 수 없는 차 이름은?',a:'인삼차'},
+ {q:'일본산 귤이 자신을 까먹으라고 하는 말은?',a:'나까무라'},
+ {q:'드라마를 제작했는데 새우가 주인공이래요? 어떤 드라마죠?',a:'대하드라마'},
+ {q:'호랑이가 새차를 타고 지나가는 여자에게 하는 말은?',a:'타이거'},
+ {q:'못팔고도 돈을 잘 버는 사람은 누구인교?',a:'철물점 아저씨'},
+ {q:'곰돌이 푸가 세 마리가 있으면?',a:'삼푸'},
+ {q:'얼음이 죽다를 세자로 줄이면?',a:'다이빙'},
+ {q:'왼쪽으로 절하는 것을 이렇게 표현하죠.',a:'좌절'},
+ {q:'신발 한통에는 오천원 두통엔?',a:'게보린'},
+ {q:'곰은 사고를 어떻게 먹을까요?',a:'베어먹지롱'},
+ {q:'돌잔치를 하다를 영어로 말해보쇼',a:'락페스티벌'},
+ {q:'세상에서 가장 뜨거운 바다는?',a:'열받아'},
+ {q:'바람이 살랑살랑 가볍고 귀엽게 부는 동네는?',a:'분당'},
+ {q:'손가락은 핑거라고 말하죠. 주먹은 뭐라고 말하죠?',a:'오므린거'},
+ {q:'아주 오래전에 건설된 다리를 뭐라 부를까요?',a:'구닥다리'},
+ {q:'침대를 밀고 돌리다를 네자로 줄이면?',a:'배드민턴'},
+ {q:'우리나라 왕중에 성형한 왕이 있어요. 누구죠?',a:'인조임금'},
+ {q:'세상에서 가장 돈을 많이 가지고 있는 새는?',a:'백조'},
+ {q:'복은 크게 받아야 하는데 가장 작은 복은 뭐라할까요?',a:'복분자'},
+ {q:'땅이 슬프다고 우는데 어떻게 우는지 아는교?',a:'흙흙'},
+ {q:'베를린에서 밥을 먹으면 안되는 이유는?',a:'독일수도'},
+ {q:'파 중에서 가장 인기 있는 파는?',a:'파스타'},
+ {q:'빵이 시골에 가는 이유는 무얼까?',a:'소보로'},
+ {q:'담배가 시골에 가는 이유는 무얼까?',a:'말보로'},
+ {q:'미국에서 비가 온다를 영어로 말하면?',a:'usb'},
+ {q:'과자가 자기 자신을 소개하면서 하는 말은?',a:'전과자'},
+ {q:'이 동물은 항상 미안한 마음으로 살아가고 있어요 어떤 동물?',a:'오소리',note:'오,쏘~리'},
+ {q:'이 세상에서 가장 뜨거운 전화는?',a:'화상전화'},
+ {q:'우리나라에서 가장 바쁜 대학교 이름은?',a:'부산대학교'},
+ {q:'호주의 화폐단위를 말하시오.',a:'호주머니'},
+ {q:'하나님이 버스를 타고 내리다를 세자로 줄이면?',a:'신내림'},
+ {q:'머리 아플 때 약을 얼마나 먹어야 할까?',a:'두통'},
+ {q:'아마존에는 누가 살고 있을까요?',a:'아마존이'},
+ {q:'이 세상에서 가장 가난한 임금은?',a:'최저임금'},
+ {q:'성적이 나와도 말하지 못하는 이유는 무엇인가요?',a:'내성적이라서'},
+ {q:'달걀을 팔아서 번 돈을 무엇이라고 하죠?',a:'에그머니'},
+ {q:'가장 싼 사냥 도구는?',a:'파리채'},
+ {q:'개가 사람을 가르치다 라는 사자성어는?',a:'개인지도'},
+ {q:'사우디에서 우리나라까지 석유가 수입되어서 오는 기간은?',a:'오일'},
+ {q:'식인종이 우사인 볼트를 보면 하는 말이 있대요',a:'패스트푸드'},
+ {q:'말이 분노하고 있다를 네자로 줄이면',a:'마리화나'},
+ {q:'동생이 형을 너무 좋아한다를 세자로 말하면?',a:'형광펜'},
+ {q:'인천 앞바다의 반댓말은?',a:'인천엄마다'},
+ {q:'세상에서 가장 무서운 전화의 이름은?',a:'무선전화'}
+];
+const dayId=()=>(S.week-1)*5+S.day;
+const houDone=()=>S.houDay!=null&&S.houDay===dayId();
+let houCur=null;
+const houNorm=s=>String(s||'').trim().replace(/[\s.,!?~()'"`]/g,'').toLowerCase();
+function houMatch(user,ans){
+  const list=Array.isArray(ans)?ans:[ans],u=houNorm(user);
+  if(!u)return false;
+  return list.some(raw=>{const a=houNorm(raw);return a&&(u===a||(u.length>=2&&a.length>=2&&(u.includes(a)||a.includes(u))));});
+}
+const houAnsText=item=>Array.isArray(item.a)?item.a[0]:item.a;
+function openHouQuiz(){
+  if(houDone())return;
+  houCur=pick(HOU_QUIZ);
+  $('#hqQ').textContent=houCur.q;$('#hqAns').value='';$('#hqAns').disabled=false;$('#hqGo').disabled=false;$('#hqMsg').textContent='';
+  $('#houQuiz').hidden=false;setTimeout(()=>{try{$('#hqAns').focus();}catch(e){}},30);
+}
+function closeHouQuiz(){$('#houQuiz').hidden=true;}
+function submitHouQuiz(){
+  if(!houCur||houDone())return;
+  const item=houCur,ok=houMatch($('#hqAns').value,item.a),ans=houAnsText(item)+(item.note?` (${item.note})`:'');
+  S.houDay=dayId();houCur=null;
+  if(ok){S.money+=HOU_REWARD;S.news=`호우의 아재개그를 맞혀서 ${fmt(HOU_REWARD)}원을 받았다!`;sfx('coin');}
+  else sfx('deny');
+  $('#hqMsg').textContent=ok?`😂 정답! "${ans}" · 호우에게 ${fmt(HOU_REWARD)}원 받았어요!`:`😅 아쉽지만 오답이에요. 정답은 "${ans}"였어요.`;
+  $('#hqAns').disabled=true;$('#hqGo').disabled=true;
+  save();renderHub();
+}
+$('#houBtn').addEventListener('click',openHouQuiz);
+$('#hqClose').addEventListener('click',closeHouQuiz);
+$('#hqGo').addEventListener('click',submitHouQuiz);
+$('#hqAns').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitHouQuiz();}});
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 function dayAction(msg,gain,job){
   if(gain)S.money+=gain;
@@ -118,7 +254,7 @@ const BURPS=['(꺼억~)','(끄으윽~)','(꺼어어억…)'];
 function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtooth',.1),120);setTimeout(()=>beep(70,.25,'square',.06),380);}
 /* 허브에 있을 때 소지금이 0원 이하면 라털 선생님이 나타나요. 대결 화면·로그인·업데이트 팝업이 열려 있을 땐 기다려요. */
 function maybeLoan(){
-  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden)return;
+  if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#houQuiz').hidden)return;
   const before=Math.max(0,S.money);
   S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
   showStory([
@@ -151,7 +287,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
 const BTN_SFX={jobBtn:'coin',passBtn:'swish',acceptBtn:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
+  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none',hqGo:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
