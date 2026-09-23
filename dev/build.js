@@ -23,7 +23,7 @@ let css = read('css/style.css');
 // 적힌 순서 그대로 이어붙인다. (서로 전역 스코프를 공유하는 일반 스크립트라 순서가 중요해요)
 const blockM = html.match(/<!-- BUILD:JS:START[\s\S]*?-->([\s\S]*?)<!-- BUILD:JS:END -->/);
 if (!blockM) { console.error('index.html에서 BUILD:JS:START/END 블록을 찾지 못했어요.'); process.exit(1); }
-const jsFiles = [...blockM[1].matchAll(/<script src="(js\/[\w-]+\.js)"><\/script>/g)].map(m => m[1]);
+const jsFiles = [...blockM[1].matchAll(/<script src="(js\/[\w-]+\.js)(?:\?[^"]*)?"><\/script>/g)].map(m => m[1]);
 if (!jsFiles.length) { console.error('BUILD:JS 블록에서 <script src="js/...">를 찾지 못했어요.'); process.exit(1); }
 let js = jsFiles.map(f => read(f)).join('\n');
 
@@ -46,7 +46,7 @@ if (url) {
   if (!js.includes(marker)) { console.error("CLOUD_DEFAULT 줄을 찾지 못했어요."); process.exit(1); }
   js = js.replace(marker, () => "const CLOUD_DEFAULT=" + JSON.stringify({ url, key }) + ";");
 }
-html = html.replace('<link rel="stylesheet" href="css/style.css">', () => '<style>\n' + css + '</style>')
+html = html.replace(/<link rel="stylesheet" href="css\/style\.css(?:\?[^"]*)?">/, () => '<style>\n' + css + '</style>')
            .replace(/<!-- BUILD:JS:START[\s\S]*?-->[\s\S]*?<!-- BUILD:JS:END -->/, () => '<script>\n' + js + '</script>');
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 const out = path.join(root, 'dist', 'rocksunting-single.html');
