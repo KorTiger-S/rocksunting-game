@@ -14,9 +14,41 @@ function renderHub(){
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   betV=clamp(betV,1000,Math.max(1000,betMax()));
   $('#betV').textContent=fmt(betV)+'원';
-  const can=S.money>=1000;
+  ballTick();renderBalls();
+  const can=S.money>=1000&&S.balls>0;
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
+/* ---------- 프리킥 도전 횟수: 축구공 5개, 도전할 때마다 1개 사라지고 30분마다 1개씩 다시 채워져요 ----------
+   실제 시각(Date.now) 기준이라 앱을 꺼 둬도 시간은 흘러요. S.ballAt은 "다음 공이 채워지기 시작한 시각"(epoch 분)이고, 공이 가득 차 있을 땐 쓰지 않아요. */
+const BALL_MAX=5,BALL_MIN=30;
+const ballMin=()=>Math.floor(Date.now()/60000);
+function ballTick(){   /* 지난 시간만큼 공을 채워요. 개수가 늘었으면 true */
+  const now=ballMin();let b=S.balls==null?BALL_MAX:clamp(Math.floor(S.balls),0,BALL_MAX),up=false;
+  if(b<BALL_MAX){
+    let at=Math.min(S.ballAt>0?S.ballAt:now,now);   /* 기기 시계가 뒤로 가도 30분 넘게 기다리지 않게 */
+    const gain=Math.floor((now-at)/BALL_MIN);
+    if(gain>0){b=Math.min(BALL_MAX,b+gain);at+=gain*BALL_MIN;up=true;}
+    S.ballAt=b>=BALL_MAX?0:at;
+  }else S.ballAt=0;
+  S.balls=b;return up;
+}
+function ballUse(){   /* 도전 시작할 때 1개 써요. 공이 없으면 false */
+  ballTick();if(S.balls<=0)return false;
+  if(S.balls>=BALL_MAX)S.ballAt=ballMin();   /* 가득 찬 상태에서 쓰면 이때부터 30분을 세요 */
+  S.balls--;return true;
+}
+const ballWaitSec=()=>Math.max(0,Math.ceil(((S.ballAt+BALL_MIN)*60000-Date.now())/1000));
+function renderBalls(){
+  const b=S.balls==null?BALL_MAX:S.balls;
+  $('#balls').setAttribute('aria-label',`프리킥 도전 횟수 ${b}/${BALL_MAX}`);
+  [...$('#balls').children].forEach((el,i)=>el.classList.toggle('used',i>=b));
+  const w=ballWaitSec(),t=`${Math.floor(w/60)}:${String(w%60).padStart(2,'0')}`;
+  $('#ballNote').textContent=b>=BALL_MAX?'도전 횟수가 가득 찼어요!':b<=0?`축구공이 다 떨어졌어요. 다음 공까지 ${t}`:`다음 축구공까지 ${t} (30분마다 1개 충전)`;
+}
+setInterval(()=>{
+  if(!USER||mode!=='hub')return;
+  if(ballTick()){save();renderHub();sfx('ping');toast('⚽ 도전 횟수가 하나 충전됐어요!');}else renderBalls();
+},1000);
 /* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
@@ -288,11 +320,16 @@ function maybeLoan(){
 $('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHub();});
 $('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
 $('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
-function openChallengeInfo(){$('#chBetInfo').textContent=`이번 판돈: ${fmt(betV)}원`;$('#challengeInfo').hidden=false;}
+function openChallengeInfo(){$('#chBetInfo').textContent=`이번 판돈: ${fmt(betV)}원 · 축구공 1개를 써요 (남은 공 ${S.balls}개)`;$('#challengeInfo').hidden=false;}
 function closeChallengeInfo(){$('#challengeInfo').hidden=true;}
-$('#acceptBtn').addEventListener('click',()=>{if(S.money>=1000)openChallengeInfo();});
+$('#acceptBtn').addEventListener('click',()=>{ballTick();if(S.money>=1000&&S.balls>0)openChallengeInfo();});
 $('#chClose').addEventListener('click',closeChallengeInfo);
-$('#chStart').addEventListener('click',()=>{closeChallengeInfo();if(S.money>=1000)startMatch(betV);});
+$('#chStart').addEventListener('click',()=>{
+  closeChallengeInfo();
+  if(S.money<1000)return;
+  if(!ballUse()){sfx('deny');toast('축구공이 없어요. 공이 채워질 때까지 기다려 주세요.');renderHub();return;}
+  startMatch(betV);   /* startMatch가 저장해요 */
+});
 $('#passBtn').addEventListener('click',()=>{
   S.stam=clamp((S.stam==null?25:S.stam)+3,0,100);   /* 프리킥을 쉬면 몸이 회복돼서 체력이 살짝 올라요 */
   dayAction('오늘은 쉬면서 체력을 조금 회복했다.',0,false);
