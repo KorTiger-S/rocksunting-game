@@ -42,6 +42,13 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await save('히포우', 3000, { money: 9e15, wins: 'x', up: { shoes: 99 } });
   let d = (await load('히포우')).data;
   ok(d.money === 100000000 && d.wins === 0 && d.up.shoes === 3, '값 범위 보정(치트/오류 방지)');
+  ok(d.balls === 5 && d.ballAt === 0, '도전 횟수(축구공)는 값을 안 보내면 가득(5개)으로 시작');
+  await save('히포우', 3500, { balls: 99, ballAt: 29000000 });
+  d = (await load('히포우')).data;
+  ok(d.balls === 5 && d.ballAt === 29000000, '도전 횟수는 0~5개로 보정되고 충전 시각이 저장됨');
+  await save('히포우', 3600, { balls: -3 });
+  d = (await load('히포우')).data;
+  ok(d.balls === 0, '도전 횟수는 음수가 될 수 없음');
   await save('히포우', 4000, { money: 1000, note: 'x'.repeat(9000) });
   d = (await load('히포우')).data;
   ok(d.money === 1000 && !('note' in d), '허용되지 않은 필드는 버리고 저장');

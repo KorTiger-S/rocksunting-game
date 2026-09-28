@@ -63,6 +63,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
 | 1:1 대결 판정(오차·골키퍼 반경)·시간 제한 | `rk_duel_shot`, `rk_duel_settle` (backend/schema.sql) |
 | 1:1 대결 판돈 상한(5,000원)·정산 | `DU_BETMAX` (`js/duel.js`), `rk_duel_create`, `rk_duel_pay`, `rk_duel_settle` (backend/schema.sql) |
+| 프리킥 도전 횟수(축구공 5개·30분마다 1개 충전) | `BALL_MAX`, `BALL_MIN`, `ballTick()`, `ballUse()`, `renderBalls()` (`js/hub.js`), 저장은 `S.balls`/`S.ballAt`(epoch 분), 서버 보정은 `rk_clean` (backend/schema.sql) |
 | 판돈 한도(3,000원) | `betMax()` (`js/hub.js`) |
 | 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` (`js/cloud.js`) |
 | 캐릭터 이미지 추가 | `IMGDATA`(`js/util.js`)에 경로 등록 후 `assets/faces/`에 파일 추가 |

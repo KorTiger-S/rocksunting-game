@@ -56,6 +56,9 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .chall h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.2}
 .chall p{margin:0;color:var(--muted);font-size:14px}
 .rules{margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
+.balls{display:flex;gap:6px;font-size:28px;line-height:1}
+.balls span{transition:filter .3s,opacity .3s}
+.balls span.used{filter:grayscale(1);opacity:.22}
 .stepper{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .stepper .amt{font-family:var(--display);font-size:28px;min-width:130px;text-align:center}
 .stepper button{min-width:52px}
