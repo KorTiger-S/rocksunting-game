@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.8.0">
+<link rel="stylesheet" href="css/style.css?v=1.8.1">
 </head>
 <body>
 <header class="board">
@@ -34,15 +34,6 @@
       </div>
       <div class="acts">
         <button class="go" id="acceptBtn">내기 받기</button>
-      </div>
-    </div>
-    <div class="card chall">
-      <h2 style="font-size:20px">오늘의 다른 선택</h2>
-      <p>패스와 알바는 하루를 써요. 금요일이 지나면 새 주가 시작돼요. 소지금이 0원이 되면 라털 선생님이 1만 원을 빌려줘요.</p>
-      <div class="acts">
-        <button class="go alt" id="passBtn">오늘은 패스</button>
-        <button class="go alt" id="jobBtn">매점 알바 (+600원)</button>
-        <button class="go alt" id="houBtn">😂 호우의 아재개그</button>
       </div>
     </div>
     <div class="card chall" id="duelCard">
@@ -181,16 +172,6 @@
     <div class="btns"><button class="go" id="pcGo">변경하기</button><button class="go ghost" id="pcClose">닫기</button></div>
   </div>
 </div>
-<div class="ov ovfix" id="houQuiz" hidden role="dialog" aria-labelledby="hqT">
-  <div class="card dialog">
-    <h2 id="hqT">😂 호우의 아재개그</h2>
-    <p class="tip" style="margin-top:0">정답을 맞히면 호우가 500원을 줘요! (하루 한 번)</p>
-    <p id="hqQ" style="font-weight:700;color:var(--ink);margin:10px 0"></p>
-    <input class="lgin" id="hqAns" placeholder="정답을 입력하세요" autocomplete="off" aria-label="정답">
-    <p class="lgmsg" id="hqMsg"></p>
-    <div class="btns"><button class="go" id="hqGo">제출하기</button><button class="go ghost" id="hqClose">닫기</button></div>
-  </div>
-</div>
 <div class="ov ovfix" id="profile" hidden role="dialog" aria-labelledby="pfT">
   <div class="card dialog">
     <h2 id="pfT">롹순팅</h2>
@@ -277,20 +258,20 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.8.0"></script>
-<script src="js/save.js?v=1.8.0"></script>
-<script src="js/cloud.js?v=1.8.0"></script>
-<script src="js/login.js?v=1.8.0"></script>
-<script src="js/rank.js?v=1.8.0"></script>
-<script src="js/audio.js?v=1.8.0"></script>
-<script src="js/input.js?v=1.8.0"></script>
-<script src="js/render.js?v=1.8.0"></script>
-<script src="js/kick-data.js?v=1.8.0"></script>
-<script src="js/kick.js?v=1.8.0"></script>
-<script src="js/hub.js?v=1.8.0"></script>
-<script src="js/splash.js?v=1.8.0"></script>
-<script src="js/duel.js?v=1.8.0"></script>
-<script src="js/main.js?v=1.8.0"></script>
+<script src="js/util.js?v=1.8.1"></script>
+<script src="js/save.js?v=1.8.1"></script>
+<script src="js/cloud.js?v=1.8.1"></script>
+<script src="js/login.js?v=1.8.1"></script>
+<script src="js/rank.js?v=1.8.1"></script>
+<script src="js/audio.js?v=1.8.1"></script>
+<script src="js/input.js?v=1.8.1"></script>
+<script src="js/render.js?v=1.8.1"></script>
+<script src="js/kick-data.js?v=1.8.1"></script>
+<script src="js/kick.js?v=1.8.1"></script>
+<script src="js/hub.js?v=1.8.1"></script>
+<script src="js/splash.js?v=1.8.1"></script>
+<script src="js/duel.js?v=1.8.1"></script>
+<script src="js/main.js?v=1.8.1"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
