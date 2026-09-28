@@ -251,7 +251,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
           <summary>옵션 (속도 · 싱크)</summary>
           <div class="pgrow"><span>속도</span><button class="go ghost" id="pgSpdM">-</button><span class="val" id="pgSpdV"></span><button class="go ghost" id="pgSpdP">+</button></div>
           <div class="pgrow"><span>싱크</span><button class="go ghost" id="pgOffM">-10</button><span class="val" id="pgOffV"></span><button class="go ghost" id="pgOffP">+10</button></div>
-          <p class="tip" style="text-align:left;margin:0">판정에 계속 <b>느림</b>이 뜨면 +쪽으로, <b>빠름</b>이 뜨면 -쪽으로 맞춰 보세요. 블루투스 이어폰을 쓰면 +쪽으로 크게 밀어야 할 수 있어요.</p>
+          <div class="pgrow"><button class="go alt" id="pgCalBtn">🎯 싱크 자동 측정</button></div>
+          <p class="tip" style="text-align:left;margin:0">소리와 노트가 어긋나면 자동 측정을 해 보세요. 직접 맞추려면 판정에 계속 <b>느림</b>이 뜨면 +쪽으로, <b>빠름</b>이 뜨면 -쪽으로 맞춰 보세요. 블루투스 이어폰을 쓰면 +쪽으로 크게 밀어야 할 수 있어요.</p>
         </details>
         <div class="stepper">
           <button class="go ghost" id="pgBm">-100</button>
@@ -346,6 +347,15 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
     <div id="pgPad" hidden>
       <button data-l="1" aria-label="왼쪽 위 발판 (Q)"></button><button data-l="3" aria-label="오른쪽 위 발판 (E)"></button><button data-l="2" aria-label="가운데 발판 (S)"></button><button data-l="0" aria-label="왼쪽 아래 발판 (Z)"></button><button data-l="4" aria-label="오른쪽 아래 발판 (C)"></button>
     </div>
+  </div>
+</div>
+<div class="ov ovfix" id="pgCal" hidden role="dialog" aria-labelledby="pgCalT">
+  <div class="card dialog">
+    <h2 id="pgCalT">🎯 싱크 측정</h2>
+    <p id="pgCalMsg"></p>
+    <div class="pggrade" id="pgCalCnt" style="font-size:48px"></div>
+    <p class="tip">이어폰을 쓰는 사람은 이어폰을 낀 상태로 측정하세요.</p>
+    <div class="btns"><button class="go ghost" id="pgCalClose">취소</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="pgPause" hidden role="dialog" aria-labelledby="pgPT">
@@ -523,7 +533,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.8.2';
+const APP_VERSION='1.8.3';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -2889,7 +2899,7 @@ const pgBetMax=()=>Math.min(3000,S.money);
 })();
 function renderPumpCard(){
   const open=pgUnlocked();
-  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!open;
+  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 펌프 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
   $('#pgH2').firstChild.textContent=open?'호우와 소리새 펌프 ':'??? ';
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
@@ -2934,8 +2944,20 @@ const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ 
 const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
 const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
 const PGKEYS={KeyZ:0,KeyQ:1,KeyS:2,KeyE:3,KeyC:4,Numpad1:0,Numpad7:1,Numpad5:2,Numpad9:3,Numpad3:4};
-const pgClock=()=>AC?AC.currentTime:performance.now()/1000;
-const pgNow=()=>PG.paused?PG.frozen:pgClock()-PG.t0-PG.off;
+const pgClock=()=>AC?AC.currentTime:performance.now()/1000;   /* 소리를 예약하는 시계(스피커에서 실제로 들리는 것보다 앞서 있어요) */
+/* 지금 스피커에서 실제로 들리는 곡의 위치(컨텍스트 시간).
+   브라우저가 outputLatency를 0으로 잘못 알려 주는 경우가 많아서, 추측하지 않고 getOutputTimestamp()가 알려 주는
+   "지금 나오고 있는 샘플"을 기준으로 삼아요. 이 시계로 노트 위치·판정을 계산하니 소리와 노트가 맞아요.
+   값이 이상하거나 지원 안 하는 브라우저는 currentTime에서 알려진 지연만큼 뺀 값을 써요. */
+function pgHeard(){
+  if(!AC)return performance.now()/1000;
+  try{
+    const ts=AC.getOutputTimestamp(),lag=AC.currentTime-ts.contextTime;
+    if(ts.contextTime>0&&ts.performanceTime>0&&lag>=0&&lag<.6)return ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+  }catch(e){}
+  return AC.currentTime-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
+}
+const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
@@ -2971,8 +2993,7 @@ function pumpStart(){
 }
 function pgBegin(){
   const g=PG,a=actx(),lead=Math.max(3.2,g.approach+1.2);
-  const lat=a?clamp((a.baseLatency||0)+(a.outputLatency||0),0,.3):0;   /* 소리가 스피커까지 가는 시간만큼 판정 시계를 늦춰요 */
-  g.off=lat+PGO.off/1000;
+  g.off=PGO.off/1000;   /* 기기 지연은 pgHeard()가 알아서 반영해요. 여기는 사용자가 옵션에서 맞춘 싱크만 */
   g.t0=pgClock()+lead;g.nextT=g.t0;
   if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
 }
@@ -3071,7 +3092,7 @@ function pgTogglePause(){
 }
 function pgPause(){
   const g=PG;if(!g||g.paused||g.state==='end')return;
-  g.frozen=pgNow();g.pauseAt=pgClock();g.paused=true;g.resumeAt=0;
+  g.frozen=pgNow();g.pauseAt=pgClock();g.pauseAudio=g.pauseAt-g.t0;g.paused=true;g.resumeAt=0;
   g.held=[false,false,false,false,false];
   /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
      이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
@@ -3109,7 +3130,7 @@ function pgUpdate(){
         g.t0+=pgClock()-g.pauseAt;g.resumeAt=0;g.paused=false;
         if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 */
           g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
-          g.step=Math.max(0,Math.ceil((g.frozen+g.off)/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
+          g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
         }
         g.grace=g.frozen+1;   /* 롱노트를 누르던 중이었다면 다시 누를 시간을 줘요 */
       }
@@ -3304,6 +3325,46 @@ function pgDraw(){
     if(g.resumeAt){const n=Math.max(1,Math.ceil((g.resumeAt-perf)/1000));pgText(c,String(n),PGW/2,H*.5,110,'#ffd23f');}
   }
 }
+
+/* ---------- 싱크 자동 측정 ----------
+   일정한 간격(0.6초)의 딸깍 소리를 10번 들려주고, 사용자가 아무 발판 키/화면을 눌러서 박자를 맞추면
+   "눌린 시각 - 딸깍이 들린 시각"의 중앙값을 싱크 옵션에 넣어요. (양수 = 평소 늦게 누르는 편 → 노트를 늦게 내려 줘요) */
+let PGCAL=null;
+const PGCAL_N=10,PGCAL_GAP=.6;
+function pgCalStart(){
+  const a=actx();if(!a||PGCAL||mode!=='hub'){if(!a)toast('이 브라우저는 소리를 지원하지 않아요.');return;}
+  const c0=a.currentTime+1.2;
+  PGCAL={c0,taps:[],done:false};
+  for(let i=0;i<PGCAL_N;i++)tone(1400,.06,'square',.09,c0-a.currentTime+i*PGCAL_GAP);
+  $('#pgCalMsg').textContent='딸깍 소리에 맞춰 Z Q S E C 아무 키(또는 화면)를 눌러 주세요.';$('#pgCalCnt').textContent='0 / '+PGCAL_N;
+  $('#pgCalClose').textContent='취소';$('#pgCal').hidden=false;
+  PGCAL.timer=setTimeout(pgCalEnd,(1.2+PGCAL_N*PGCAL_GAP+.6)*1000);
+}
+function pgCalTap(){
+  const c=PGCAL;if(!c||c.done)return;
+  const h=pgHeard()-c.c0,i=Math.round(h/PGCAL_GAP);
+  if(i<0||i>=PGCAL_N||Math.abs(h-i*PGCAL_GAP)>.3)return;   /* 딸깍과 상관없는 눌림은 무시 */
+  if(!c.taps.some(t=>t.i===i))c.taps.push({i,e:h-i*PGCAL_GAP});
+  $('#pgCalCnt').textContent=c.taps.length+' / '+PGCAL_N;
+}
+function pgCalEnd(){
+  const c=PGCAL;if(!c||c.done)return;c.done=true;clearTimeout(c.timer);
+  const t=c.taps.filter(x=>x.i>=2).map(x=>x.e).sort((x,y)=>x-y);   /* 처음 두 번은 적응 시간이라 빼요 */
+  if(t.length<5){$('#pgCalMsg').textContent='박자를 충분히 못 잡았어요. 딸깍 소리에 맞춰 다시 해 볼까요?';$('#pgCalClose').textContent='닫기';sfx('error');return;}
+  const med=t.length%2?t[(t.length-1)/2]:(t[t.length/2-1]+t[t.length/2])/2;
+  PGO.off=clamp(Math.round(med*1000/10)*10,-200,200);pgOptSave();renderPumpCard();
+  $('#pgCalMsg').textContent=`측정 완료! 싱크를 ${PGO.off>0?'+':''}${PGO.off}ms로 맞췄어요. (${t.length}번 측정)`;$('#pgCalClose').textContent='확인';sfx('welcome');
+}
+function pgCalClose(){if(PGCAL){clearTimeout(PGCAL.timer);PGCAL=null;}$('#pgCal').hidden=true;}
+$('#pgCalBtn').addEventListener('click',pgCalStart);
+$('#pgCalClose').addEventListener('click',pgCalClose);
+window.addEventListener('keydown',e=>{
+  if(!PGCAL||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();pgCalClose();return;}
+  if(PGKEYS[e.code]===undefined)return;
+  e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)pgCalTap();
+},true);
+$('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
 
 'use strict';
 /* ---------- 메인 루프 ---------- */

@@ -67,7 +67,7 @@ const pgBetMax=()=>Math.min(3000,S.money);
 })();
 function renderPumpCard(){
   const open=pgUnlocked();
-  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!open;
+  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 펌프 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
   $('#pgH2').firstChild.textContent=open?'호우와 소리새 펌프 ':'??? ';
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
@@ -112,8 +112,20 @@ const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ 
 const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
 const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
 const PGKEYS={KeyZ:0,KeyQ:1,KeyS:2,KeyE:3,KeyC:4,Numpad1:0,Numpad7:1,Numpad5:2,Numpad9:3,Numpad3:4};
-const pgClock=()=>AC?AC.currentTime:performance.now()/1000;
-const pgNow=()=>PG.paused?PG.frozen:pgClock()-PG.t0-PG.off;
+const pgClock=()=>AC?AC.currentTime:performance.now()/1000;   /* 소리를 예약하는 시계(스피커에서 실제로 들리는 것보다 앞서 있어요) */
+/* 지금 스피커에서 실제로 들리는 곡의 위치(컨텍스트 시간).
+   브라우저가 outputLatency를 0으로 잘못 알려 주는 경우가 많아서, 추측하지 않고 getOutputTimestamp()가 알려 주는
+   "지금 나오고 있는 샘플"을 기준으로 삼아요. 이 시계로 노트 위치·판정을 계산하니 소리와 노트가 맞아요.
+   값이 이상하거나 지원 안 하는 브라우저는 currentTime에서 알려진 지연만큼 뺀 값을 써요. */
+function pgHeard(){
+  if(!AC)return performance.now()/1000;
+  try{
+    const ts=AC.getOutputTimestamp(),lag=AC.currentTime-ts.contextTime;
+    if(ts.contextTime>0&&ts.performanceTime>0&&lag>=0&&lag<.6)return ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+  }catch(e){}
+  return AC.currentTime-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
+}
+const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
@@ -149,8 +161,7 @@ function pumpStart(){
 }
 function pgBegin(){
   const g=PG,a=actx(),lead=Math.max(3.2,g.approach+1.2);
-  const lat=a?clamp((a.baseLatency||0)+(a.outputLatency||0),0,.3):0;   /* 소리가 스피커까지 가는 시간만큼 판정 시계를 늦춰요 */
-  g.off=lat+PGO.off/1000;
+  g.off=PGO.off/1000;   /* 기기 지연은 pgHeard()가 알아서 반영해요. 여기는 사용자가 옵션에서 맞춘 싱크만 */
   g.t0=pgClock()+lead;g.nextT=g.t0;
   if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
 }
@@ -249,7 +260,7 @@ function pgTogglePause(){
 }
 function pgPause(){
   const g=PG;if(!g||g.paused||g.state==='end')return;
-  g.frozen=pgNow();g.pauseAt=pgClock();g.paused=true;g.resumeAt=0;
+  g.frozen=pgNow();g.pauseAt=pgClock();g.pauseAudio=g.pauseAt-g.t0;g.paused=true;g.resumeAt=0;
   g.held=[false,false,false,false,false];
   /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
      이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
@@ -287,7 +298,7 @@ function pgUpdate(){
         g.t0+=pgClock()-g.pauseAt;g.resumeAt=0;g.paused=false;
         if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 */
           g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
-          g.step=Math.max(0,Math.ceil((g.frozen+g.off)/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
+          g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
         }
         g.grace=g.frozen+1;   /* 롱노트를 누르던 중이었다면 다시 누를 시간을 줘요 */
       }
@@ -482,3 +493,43 @@ function pgDraw(){
     if(g.resumeAt){const n=Math.max(1,Math.ceil((g.resumeAt-perf)/1000));pgText(c,String(n),PGW/2,H*.5,110,'#ffd23f');}
   }
 }
+
+/* ---------- 싱크 자동 측정 ----------
+   일정한 간격(0.6초)의 딸깍 소리를 10번 들려주고, 사용자가 아무 발판 키/화면을 눌러서 박자를 맞추면
+   "눌린 시각 - 딸깍이 들린 시각"의 중앙값을 싱크 옵션에 넣어요. (양수 = 평소 늦게 누르는 편 → 노트를 늦게 내려 줘요) */
+let PGCAL=null;
+const PGCAL_N=10,PGCAL_GAP=.6;
+function pgCalStart(){
+  const a=actx();if(!a||PGCAL||mode!=='hub'){if(!a)toast('이 브라우저는 소리를 지원하지 않아요.');return;}
+  const c0=a.currentTime+1.2;
+  PGCAL={c0,taps:[],done:false};
+  for(let i=0;i<PGCAL_N;i++)tone(1400,.06,'square',.09,c0-a.currentTime+i*PGCAL_GAP);
+  $('#pgCalMsg').textContent='딸깍 소리에 맞춰 Z Q S E C 아무 키(또는 화면)를 눌러 주세요.';$('#pgCalCnt').textContent='0 / '+PGCAL_N;
+  $('#pgCalClose').textContent='취소';$('#pgCal').hidden=false;
+  PGCAL.timer=setTimeout(pgCalEnd,(1.2+PGCAL_N*PGCAL_GAP+.6)*1000);
+}
+function pgCalTap(){
+  const c=PGCAL;if(!c||c.done)return;
+  const h=pgHeard()-c.c0,i=Math.round(h/PGCAL_GAP);
+  if(i<0||i>=PGCAL_N||Math.abs(h-i*PGCAL_GAP)>.3)return;   /* 딸깍과 상관없는 눌림은 무시 */
+  if(!c.taps.some(t=>t.i===i))c.taps.push({i,e:h-i*PGCAL_GAP});
+  $('#pgCalCnt').textContent=c.taps.length+' / '+PGCAL_N;
+}
+function pgCalEnd(){
+  const c=PGCAL;if(!c||c.done)return;c.done=true;clearTimeout(c.timer);
+  const t=c.taps.filter(x=>x.i>=2).map(x=>x.e).sort((x,y)=>x-y);   /* 처음 두 번은 적응 시간이라 빼요 */
+  if(t.length<5){$('#pgCalMsg').textContent='박자를 충분히 못 잡았어요. 딸깍 소리에 맞춰 다시 해 볼까요?';$('#pgCalClose').textContent='닫기';sfx('error');return;}
+  const med=t.length%2?t[(t.length-1)/2]:(t[t.length/2-1]+t[t.length/2])/2;
+  PGO.off=clamp(Math.round(med*1000/10)*10,-200,200);pgOptSave();renderPumpCard();
+  $('#pgCalMsg').textContent=`측정 완료! 싱크를 ${PGO.off>0?'+':''}${PGO.off}ms로 맞췄어요. (${t.length}번 측정)`;$('#pgCalClose').textContent='확인';sfx('welcome');
+}
+function pgCalClose(){if(PGCAL){clearTimeout(PGCAL.timer);PGCAL=null;}$('#pgCal').hidden=true;}
+$('#pgCalBtn').addEventListener('click',pgCalStart);
+$('#pgCalClose').addEventListener('click',pgCalClose);
+window.addEventListener('keydown',e=>{
+  if(!PGCAL||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();pgCalClose();return;}
+  if(PGKEYS[e.code]===undefined)return;
+  e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)pgCalTap();
+},true);
+$('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
