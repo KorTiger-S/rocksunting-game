@@ -5,6 +5,7 @@ const KMAP={KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight'};
 let mode='hub';
 function setKey(code,down){if(down&&!held[code])pressed[code]=true;held[code]=down;}
 window.addEventListener('keydown',e=>{
+  if(mode==='pump'){pumpKeyDown(e);return;}   /* 소리새 펌프는 Z Q S E C를 그대로 받아요 (pump.js) */
   let code=e.code;
   if(mode==='cut'&&code==='KeyS'){pressed.SkipCut=true;e.preventDefault();return;}
   code=KMAP[code]||code;
@@ -12,7 +13,7 @@ window.addEventListener('keydown',e=>{
   if(mode!=='hub'&&code==='Escape'){askQuit();return;}
   if(!e.repeat)setKey(code,true);else held[code]=true;
 });
-window.addEventListener('keyup',e=>{held[KMAP[e.code]||e.code]=false;});
+window.addEventListener('keyup',e=>{if(mode==='pump'){pumpKeyUp(e);return;}held[KMAP[e.code]||e.code]=false;});
 window.addEventListener('blur',()=>{Object.keys(held).forEach(k=>held[k]=false);mouse.down=false;});
 const cv=$('#cv'),ctx=cv.getContext('2d');
 ['#pad','#cv','.stagewrap'].forEach(s=>{const el=document.querySelector(s);if(el){el.addEventListener('contextmenu',e=>e.preventDefault());el.addEventListener('selectstart',e=>e.preventDefault());}});
