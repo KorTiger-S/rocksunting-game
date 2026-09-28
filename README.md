@@ -38,7 +38,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `render.js` | 캔버스 그리기 공용 헬퍼, 캐릭터(`kid`, `bigHead`) |
 | `kick-data.js` | 프리킥 위치·난이도·강화 항목 데이터 (`SPOTS`, `DIFF`, `UPS` 등) |
 | `kick.js` | 프리킥 미니게임 전체 — 물리, 컷신, 매치 흐름, 필드 렌더링 |
-| `hub.js` | 허브 화면(내기/알바/강화), 병원, 라털 선생님 대출 |
+| `hub.js` | 허브 화면(내기/몸 관리/강화), 병원, 라털 선생님 대출 |
 | `splash.js` | 시작 화면(등교 애니메이션) |
 | `duel.js` | 1:1 페널티킥 대결 |
 | `main.js` | 메인 루프(`frame()`)와 최초 실행(부트스트랩) — **항상 맨 마지막에 로드돼야 해요** |
@@ -56,8 +56,6 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` (`js/hub.js`) |
 | 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (`js/audio.js`), 버튼별 소리는 `BTN_SFX` (`js/hub.js`) |
 | 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js` |
-| 알바 수입, 피로도 기준 | `dayAction()` (알바 +600원, 피로 3회 입원) (`js/hub.js`) |
-| 호우의 아재개그(실제 날짜 기준 하루 3회, 정답 500원)·문제/정답 목록 | `HOU_QUIZ`, `HOU_REWARD`, `HOU_DAILY`, `houMatch()`, `submitHouQuiz()` (`js/hub.js`), 하루 판정은 `houEpochDay()`/`S.houDate`/`S.houLeft`(버튼을 누르는 즉시 `houConsume()`으로 차감) |
 | 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/소리새가서 노래부르기/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 매일 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
 | 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
