@@ -1,10 +1,10 @@
 'use strict';
 /* ---------- 랭킹 ---------- */
 let rankMetric='money';
-const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점'};
+const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
 function localTop(metric){
   const out=[];
-  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
+  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
   out.sort((a,b)=>b.v-a.v);return out.slice(0,10);
 }
 async function renderRank(){

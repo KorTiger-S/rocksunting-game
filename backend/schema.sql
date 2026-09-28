@@ -142,6 +142,9 @@ language sql immutable as $$
     'houLeft', public.rk_int(d->'houLeft', 0, 3, 3),
     'balls',   public.rk_int(d->'balls',   0, 5, 5),
     'ballAt',  public.rk_int(d->'ballAt',  0, 2147483647, 0),
+    'mics',    public.rk_int(d->'mics',    0, 5, 5),               -- 소리새 펌프 도전 횟수(마이크)
+    'micAt',   public.rk_int(d->'micAt',   0, 2147483647, 0),
+    'pumpBest', public.rk_int(d->'pumpBest', 0, 1000000, 0),       -- 소리새 펌프 클리어 최고 점수
     'up', jsonb_build_object(
       'shoes', public.rk_int(d#>'{up,shoes}', 0, 3, 0),
       'snack', public.rk_int(d#>'{up,snack}', 0, 3, 0),
@@ -181,7 +184,7 @@ create or replace function public.rk_default_data() returns jsonb
 language sql immutable as $$
   select jsonb_build_object('fatigue', 0, 'hosp', 0, 'bestPts', 0, 'plays', 0, 'money', 10000, 'day', 0, 'week', 1,
                             'wins', 0, 'losses', 0, 'cleared', false,
-                            'str', 15, 'stam', 15, 'mood', 50, 'cond', 1, 'gymGap', 0, 'bbqGap', 0, 'houDate', -1, 'houLeft', 3, 'balls', 5, 'ballAt', 0,
+                            'str', 15, 'stam', 15, 'mood', 50, 'cond', 1, 'gymGap', 0, 'bbqGap', 0, 'houDate', -1, 'houLeft', 3, 'balls', 5, 'ballAt', 0, 'mics', 5, 'micAt', 0, 'pumpBest', 0,
                             'up', jsonb_build_object('shoes', 0, 'snack', 0, 'sneak', 0))
 $$;
 
@@ -280,7 +283,9 @@ begin
                             'list', coalesce(jsonb_agg(to_jsonb(t) order by t.v desc, t.at asc), '[]'::jsonb))
   into res from (
     select name as id, money, wins, losses, best_pts as "bestPts", week, cleared, updated_at_ms as at,
-           case m when 'wins' then wins when 'bestPts' then best_pts else money end as v
+           case m when 'wins' then wins when 'bestPts' then best_pts
+                  when 'pumpBest' then coalesce((data->>'pumpBest')::int, 0) else money end as v,
+           coalesce((data->>'pumpBest')::int, 0) as "pumpBest"     -- v가 9번째 열이어야 아래 order by 9가 맞아요
     from public.rk_users
     order by 9 desc, updated_at_ms asc
     limit n) t;
@@ -321,7 +326,7 @@ begin
   if now() < ends then return jsonb_build_object('ok', true, 'closed', false, 'endsAt', cfg->>'ends_at'); end if;
 
   select coalesce(jsonb_agg(jsonb_build_object('id', name, 'money', money, 'wins', wins, 'losses', losses,
-           'bestPts', best_pts, 'week', week, 'cleared', cleared, 'plays', coalesce((data->>'plays')::int, 0))
+           'bestPts', best_pts, 'pumpBest', coalesce((data->>'pumpBest')::int, 0), 'week', week, 'cleared', cleared, 'plays', coalesce((data->>'plays')::int, 0))
            order by money desc, wins desc, updated_at_ms asc), '[]'::jsonb)
     into players from public.rk_users where season_key = cfg->>'key';
   select count(*) into mc from public.rk_matches where season_key = cfg->>'key';

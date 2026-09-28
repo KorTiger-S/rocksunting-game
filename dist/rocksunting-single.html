@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .lgin:focus-visible{outline:3px solid var(--ring);outline-offset:1px}
 .linkbtn{background:none;border:0;padding:4px;color:var(--muted);text-decoration:underline;font-size:13px}
 .lgmsg{min-height:20px;color:var(--ring);font-size:14px;margin:4px 0}
-.rtabs{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.rtabs{display:flex;gap:6px;justify-content:center;margin:6px 0;flex-wrap:wrap}
 .rtabs .go{min-width:0;padding:6px 10px;font-size:14px}
 .rtabs .go.on{background:var(--ring);color:#fff}
 .chipbtn{cursor:pointer;font:inherit;color:inherit}
@@ -149,6 +149,51 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 @keyframes dangerFlash{0%{background-position:0 0}100%{background-position:72px 0}}
 @keyframes dangerShake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,2px) rotate(-.6deg)}50%{transform:translate(3px,-2px) rotate(.6deg)}75%{transform:translate(-2px,-3px) rotate(-.4deg)}}
 @keyframes angryPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-3deg);filter:drop-shadow(0 0 12px rgba(226,51,77,.85))}}
+
+/* 소리새 펌프 (시즌2) */
+.newtag{display:inline-block;vertical-align:middle;margin-left:6px;padding:1px 8px;border-radius:99px;background:var(--gold);color:#3a2c00;font-family:var(--font);font-size:12px;font-weight:700}
+.songs{display:grid;gap:8px}
+.song{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-shadow:2px 2px 0 var(--line)}
+.song b{display:block;font-family:var(--display);font-weight:400;font-size:20px;line-height:1.2}
+.song small{color:var(--muted);font-size:13px}
+.song .stars{margin-left:auto;color:var(--gold);font-weight:700;white-space:nowrap}
+.song.sel{background:var(--ring);color:#fff}
+.song.sel small,.song.sel .stars{color:#fff}
+.pgopt{border:2px dashed var(--line);border-radius:12px;padding:8px 12px;font-size:14px}
+.pgopt summary{cursor:pointer;font-weight:700}
+.pgrow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
+.pgrow .go{min-width:44px;padding:4px 10px}
+.pgrow .val{min-width:84px;text-align:center;font-weight:700}
+#pumpWrap{max-width:900px;margin:0 auto;padding:12px 16px 24px}
+#pgStage{position:relative;margin:0 auto;border:3px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:4px 4px 0 var(--line);background:#070a18;touch-action:none}
+#pgCv{aspect-ratio:auto;width:100%}
+#pgRow{display:flex;flex-direction:column;align-items:center;gap:10px}
+#pgRow.side{flex-direction:row;align-items:flex-start;justify-content:center;gap:16px}
+/* 발판: 실제 펌프 발판처럼 3×3 칸의 네 모서리 + 가운데만 어두운 타일이에요 */
+#pgPad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,76px);width:100%;max-width:340px;padding:4px;background:#ececec;border:3px solid var(--line);border-radius:10px;box-shadow:3px 3px 0 var(--line)}
+#pgRow.side #pgPad{width:240px;grid-template-rows:repeat(3,72px);flex:none}
+#pgPad button{position:relative;margin:3px;padding:2px;border:0;border-radius:3px;background:#141416;touch-action:none;overflow:hidden;--c:#fff}
+#pgPad button[data-l="1"]{grid-area:1/1;--c:#ff3d5a}
+#pgPad button[data-l="3"]{grid-area:1/3;--c:#ff3d5a}
+#pgPad button[data-l="2"]{grid-area:2/2;--c:#ffc82e}
+#pgPad button[data-l="0"]{grid-area:3/1;--c:#2f9bff}
+#pgPad button[data-l="4"]{grid-area:3/3;--c:#2f9bff}
+#pgPad button::before{content:"";position:absolute;inset:0;opacity:.35;background:radial-gradient(var(--c) 1px,transparent 1.4px) 0 0/6px 6px;-webkit-mask-image:linear-gradient(135deg,#000,transparent 70%);mask-image:linear-gradient(135deg,#000,transparent 70%)}
+#pgPad svg{position:relative;width:100%;height:100%;display:block;pointer-events:none;filter:drop-shadow(0 0 3px var(--c))}
+#pgPad .k{position:absolute;left:5px;top:3px;display:none;font:700 12px/1 var(--font);color:#fff;opacity:.75;pointer-events:none}
+@media (pointer:fine){#pgPad .k{display:block}}
+#pgPad button.on{background:#30303a;box-shadow:inset 0 0 0 3px var(--c),0 0 14px var(--c)}
+#pgPad button.on svg{filter:drop-shadow(0 0 6px var(--c)) brightness(1.5)}
+.pggrade{font-family:var(--display);font-size:84px;line-height:1;margin:2px 0;color:var(--muted)}
+.pggrade.gS{color:var(--gold);text-shadow:0 0 18px rgba(232,169,28,.55)}
+.pggrade.gA{color:var(--ok)}
+.pggrade.gB{color:#2a86e0}
+.pggrade.gF{color:var(--ring)}
+.dialog .pgbadge{min-height:20px;margin:0;font-weight:700;color:var(--ring);letter-spacing:1px}
+#pumpWrap .gtop{flex-wrap:nowrap}
+#pumpWrap .gtop h2{font-size:18px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pumpWrap .gtop .go{flex:none}
+.pgdev{padding:6px 10px;border-radius:8px;background:#fff4c9;color:#3a2c00!important;font-weight:700}
 </style>
 </head>
 <body>
@@ -177,6 +222,47 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
       </div>
       <div class="acts">
         <button class="go" id="acceptBtn">내기 받기</button>
+      </div>
+    </div>
+    <div class="card chall" id="pumpCard">
+      <h2 id="pgH2">??? <span class="newtag">시즌2</span></h2>
+      <div id="pgLock">
+        <p>시즌2 · 준비 중이에요. 관리자 번호를 아는 사람만 입장할 수 있어요.</p>
+        <div class="acts" style="margin-top:10px">
+          <input class="lgin" id="pgCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="관리자 번호" autocomplete="off" style="width:150px;margin:0;padding:8px" aria-label="관리자 번호 4자리">
+          <button class="go alt" id="pgUnlock">입장</button>
+        </div>
+        <p class="lgmsg" id="pgLockMsg"></p>
+      </div>
+      <div id="pgOpen" hidden style="display:grid;gap:12px">
+      <p>오락실 펌프처럼 5개 발판 <b>↙ ↖ ● ↗ ↘</b>을 밟아서 리듬을 맞춰요. 호우의 목표 점수를 넘기면 판돈 2배!</p>
+        <div class="balls" id="mics" role="img"><span>🎤</span><span>🎤</span><span>🎤</span><span>🎤</span><span>🎤</span></div>
+        <p id="micNote"></p>
+        <div class="songs" id="pgSongs"></div>
+        <p id="pgInfo"></p>
+        <p id="pgBody"></p>
+        <ul class="rules">
+          <li>노트가 위쪽 발판에 닿는 순간 맞춰 밟아요. 키보드는 <b>Z Q S E C</b>(숫자패드 <b>1 7 5 9 3</b>), 모바일은 화면 아래 발판을 터치! (<b>Esc</b>: 일시정지)</li>
+          <li>길게 늘어난 노트(롱노트)는 끝까지 누르고 있어야 해요. 게이지가 0이 되면 <b>STAGE BREAK</b>, 판돈은 호우 차지예요.</li>
+          <li>호우의 목표 점수 이상이면 <b>판돈 2배</b>, <b>S 랭크</b>(950,000점 이상)면 판돈의 절반을 더 얹어 줘요. 호우는 <b>3,000원</b>까지만 받아요.</li>
+          <li>도전할 때마다 <b>🎤 마이크</b>가 1개씩 사라져요. 최대 5개이고, <b>30분마다 1개</b>씩 다시 채워져요.</li>
+        </ul>
+        <details class="pgopt">
+          <summary>옵션 (속도 · 싱크)</summary>
+          <div class="pgrow"><span>속도</span><button class="go ghost" id="pgSpdM">-</button><span class="val" id="pgSpdV"></span><button class="go ghost" id="pgSpdP">+</button></div>
+          <div class="pgrow"><span>싱크</span><button class="go ghost" id="pgOffM">-10</button><span class="val" id="pgOffV"></span><button class="go ghost" id="pgOffP">+10</button></div>
+          <p class="tip" style="text-align:left;margin:0">판정에 계속 <b>느림</b>이 뜨면 +쪽으로, <b>빠름</b>이 뜨면 -쪽으로 맞춰 보세요. 블루투스 이어폰을 쓰면 +쪽으로 크게 밀어야 할 수 있어요.</p>
+        </details>
+        <div class="stepper">
+          <button class="go ghost" id="pgBm">-100</button>
+          <span class="amt" id="pgBetV">1,000원</span>
+          <button class="go ghost" id="pgBp">+100</button>
+          <button class="go ghost" id="pgBb">+500</button>
+        </div>
+        <div class="acts">
+          <button class="go" id="pgStart">노래 시작</button>
+        </div>
+        <button class="linkbtn" id="pgRelock" style="justify-self:start">🔒 다시 잠그기</button>
       </div>
     </div>
     <div class="card chall" id="duelCard">
@@ -250,6 +336,38 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
   </div>
   <p class="tip">조작: 마우스 또는 방향키 + 클릭/Space. 프리킥은 조준 → 공 맞히는 위치 → 파워 게이지 순서로 진행해요. 각 단계에서 Backspace(모바일은 뒤로 버튼)로 이전 단계로 돌아갈 수 있어요. <span style="opacity:.6" id="verTip"></span></p>
 </div>
+<div id="pumpWrap" hidden>
+  <div class="gtop">
+    <h2 id="pgTitle">소리새 펌프</h2>
+    <button class="go ghost" id="pgPauseBtn" style="margin-left:auto">⏸ 일시정지</button>
+  </div>
+  <div id="pgRow">
+    <div id="pgStage"><canvas id="pgCv" width="480" height="720" aria-label="소리새 펌프 플레이 화면"></canvas></div>
+    <div id="pgPad" hidden>
+      <button data-l="1" aria-label="왼쪽 위 발판 (Q)"></button><button data-l="3" aria-label="오른쪽 위 발판 (E)"></button><button data-l="2" aria-label="가운데 발판 (S)"></button><button data-l="0" aria-label="왼쪽 아래 발판 (Z)"></button><button data-l="4" aria-label="오른쪽 아래 발판 (C)"></button>
+    </div>
+  </div>
+</div>
+<div class="ov ovfix" id="pgPause" hidden role="dialog" aria-labelledby="pgPT">
+  <div class="card dialog">
+    <h2 id="pgPT">일시정지</h2>
+    <p>이어하면 3초 카운트다운 뒤에 다시 시작해요.</p>
+    <div class="btns"><button class="go" id="pgResume">이어하기</button><button class="go ghost" id="pgGiveUp">포기하기</button></div>
+    <p class="tip">포기하면 판돈은 호우에게 넘어가요.</p>
+  </div>
+</div>
+<div class="ov ovfix" id="pgResult" hidden role="dialog" aria-labelledby="pgRT">
+  <div class="card dialog">
+    <h2 id="pgRT"></h2>
+    <img id="pgRImg" alt="">
+    <div class="pggrade" id="pgRG"></div>
+    <p class="pgbadge" id="pgRB"></p>
+    <table class="sumtab" id="pgRTab"></table>
+    <p id="pgRSay" style="color:var(--ink);font-weight:700"></p>
+    <p id="pgRX"></p>
+    <div class="btns"><button class="go" id="pgRBack">학교로 돌아가기</button></div>
+  </div>
+</div>
 <div class="ov ovfix" id="splash" aria-label="시작 화면: 롹순팅이 학교에 등교한다. Enter를 누르면 계속돼요.">
   <canvas id="spCv" width="800" height="480"></canvas>
 </div>
@@ -298,7 +416,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
   <div class="card dialog">
     <h2>🏆 랭킹</h2>
     <p class="tip" id="rkSeason" style="margin-top:0"></p>
-    <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="wins">승리</button><button class="go ghost" data-m="bestPts">최고 점수</button></div>
+    <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="wins">승리</button><button class="go ghost" data-m="bestPts">최고 점수</button><button class="go ghost" data-m="pumpBest" hidden>펌프 최고점</button></div>
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go" id="rkClose">닫기</button></div>
@@ -405,7 +523,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.8.1';
+const APP_VERSION='1.8.2';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -439,6 +557,7 @@ const LEGACY_KEY='rocksunting-freekick-v1';
 const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,wins:0,losses:0,cleared:false,
   str:25,stam:25,mood:50,cond:1,gymGap:0,bbqGap:0,   /* 근력·체력·기분(0~100), 컨디션(0~4=매우나쁨~매우좋음). 신규 가입은 허약하게 시작 */
   balls:5,ballAt:0,   /* 프리킥 도전 횟수(축구공 5개): 남은 개수 + 다음 공이 충전되기 시작한 시각(epoch 분). 30분마다 1개 충전 */
+  mics:5,micAt:0,pumpBest:0,   /* 소리새 펌프(시즌2): 마이크 5개(도전 횟수, 30분마다 1개 충전) + 다음 마이크 충전 시작 시각(epoch 분) + 클리어한 최고 점수 */
   houDate:-1,houLeft:3,   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
   news:'월요일 아침, 오늘도 학교에서 살아남자.'});
 const MEM={};
@@ -470,7 +589,8 @@ function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}
 function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,
   str:S.str==null?25:S.str,stam:S.stam==null?25:S.stam,mood:S.mood==null?50:S.mood,cond:S.cond==null?1:S.cond,gymGap:S.gymGap||0,bbqGap:S.bbqGap||0,
   houDate:S.houDate==null?-1:S.houDate,houLeft:S.houLeft==null?3:S.houLeft,
-  balls:S.balls==null?5:S.balls,ballAt:S.ballAt||0};}
+  balls:S.balls==null?5:S.balls,ballAt:S.ballAt||0,
+  mics:S.mics==null?5:S.mics,micAt:S.micAt||0,pumpBest:S.pumpBest||0};}
 const PIN_RE=/^\d{4}$/;
 function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
   const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;
@@ -638,6 +758,16 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  /* 시즌2(소리새 펌프) 오픈용 내역: APP_VERSION을 2.0.0으로 올릴 때 팝업으로 나가요. 그 전까지는 아무 영향이 없어요. */
+  '2.0.0':{sub:'시즌2 시작! 새 게임 "소리새 펌프"가 왔어요 🎤',items:[
+    '🎮 허브에 "호우와 소리새 펌프"가 생겼어요. 오락실 펌프처럼 5개 발판(↙ ↖ ● ↗ ↘)을 노트가 닿는 순간 맞춰 밟아요.',
+    '⌨ 키보드는 Z Q S E C(숫자패드 1 7 5 9 3), 모바일은 화면 아래 발판을 터치해요. 길게 늘어난 롱노트는 끝까지 눌러야 해요.',
+    '🎵 곡 3개(쉬움·보통·어려움)를 직접 만든 합성 음악으로 즐겨요. 곡마다 호우의 목표 점수가 있고, 넘기면 판돈 2배! S 랭크(95만 점)면 판돈의 절반을 더 받아요.',
+    '🎤 프리킥의 축구공처럼 마이크 5개가 있어요. 도전할 때마다 1개씩 쓰고 30분마다 1개 충전돼요.',
+    '💪 몸 관리가 연결돼요. 체력이 높을수록 시작 게이지가 많고, 컨디션이 좋을수록 판정이 넉넉해져요.',
+    '⚙ 옵션에서 노트 속도와 싱크(소리·화면 어긋남)를 맞출 수 있어요.',
+    '🏆 랭킹에 "펌프 최고점" 탭이 생겼어요.'
+  ]},
   '1.8.1':{sub:'허브가 한결 단순해졌어요',items:[
     '🧹 "오늘의 다른 선택"(오늘은 패스 · 매점 알바 · 호우의 아재개그) 메뉴를 없앴어요.'
   ]},
@@ -770,10 +900,10 @@ $('#pcGo').addEventListener('click',submitPinChange);
 'use strict';
 /* ---------- 랭킹 ---------- */
 let rankMetric='money';
-const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점'};
+const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
 function localTop(metric){
   const out=[];
-  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
+  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
   out.sort((a,b)=>b.v-a.v);return out.slice(0,10);
 }
 async function renderRank(){
@@ -871,7 +1001,13 @@ const SFX={
   lose(){[392,370,349].forEach((f,i)=>tone(f,.28,'sawtooth',.05,i*.28));tone(330,.7,'sawtooth',.05,.84,262);},  /* 슬픈 트롬본 */
   /* 몸 관리 */
   clank(){tone(220,.05,'square',.05);tone(880,.06,'triangle',.04,.05);tone(180,.09,'square',.05,.1);},          /* 쇠질하기: 아령 부딪는 소리 */
-  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);}                                /* 난지바베큐: 고기 굽는 소리 */
+  sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);},                               /* 난지바베큐: 고기 굽는 소리 */
+  /* 소리새 펌프 */
+  stomp(){tone(170,.07,'sine',.1,0,65);noise(.035,.05,0,3200,1800,1);},                                          /* 발판을 밟는 소리 */
+  pgmiss(){tone(140,.1,'sawtooth',.03,0,85);},                                                                   /* 노트를 놓쳤을 때 */
+  pgok(){tone(NT.G5,.06,'triangle',.04);tone(NT.C6,.14,'triangle',.04,.05);},                                    /* 롱노트를 끝까지 눌렀을 때 */
+  pgcount(f){tone(f||660,.1,'square',.045);},                                                                    /* 3-2-1 카운트다운 */
+  pggo(){tone(NT.C6,.08,'square',.05);tone(NT.G6,.22,'square',.05,.07);}
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
@@ -884,7 +1020,7 @@ function cheer(){sfx('crowd');}
      note  : 음 하나씩(멜로디/베이스/아르페지오)   chord : 코드 이름(C, Am …)을 화음으로   kick/snare/hat : x 가 있는 칸에서 북
    새 곡은 BGMT에 추가하고, 어떤 장면에서 틀지는 wantBgm()에서 정해요. */
 const BGM={on:lsGet('rk:bgm')!=='0',name:null,tg:null,step:0,next:0,timer:0,unlocked:false};
-const CHORDS={C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3']};
+const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3']};
 const NOTE_SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11},NF={};
 function nf(n){
   if(NF[n])return NF[n];
@@ -992,6 +1128,7 @@ function wantBgm(){
     if(st.status==='done'&&!DU.anim&&DU.shown===st.hist.length)return null;   /* 승부가 끝나면 팡파르만 */
     return 'duel';
   }
+  if(mode==='pump')return null;   /* 소리새 펌프는 곡 자체가 음악이라(pump.js가 직접 재생) 배경음악은 쉬어요 */
   return mode==='hub'?'hub':'match';
 }
 function bgmSync(){if(!BGM.unlocked)return;bgmPlay(BGM.on?wantBgm():null);}
@@ -1013,6 +1150,7 @@ const KMAP={KeyW:'ArrowUp',KeyA:'ArrowLeft',KeyS:'ArrowDown',KeyD:'ArrowRight'};
 let mode='hub';
 function setKey(code,down){if(down&&!held[code])pressed[code]=true;held[code]=down;}
 window.addEventListener('keydown',e=>{
+  if(mode==='pump'){pumpKeyDown(e);return;}   /* 소리새 펌프는 Z Q S E C를 그대로 받아요 (pump.js) */
   let code=e.code;
   if(mode==='cut'&&code==='KeyS'){pressed.SkipCut=true;e.preventDefault();return;}
   code=KMAP[code]||code;
@@ -1020,7 +1158,7 @@ window.addEventListener('keydown',e=>{
   if(mode!=='hub'&&code==='Escape'){askQuit();return;}
   if(!e.repeat)setKey(code,true);else held[code]=true;
 });
-window.addEventListener('keyup',e=>{held[KMAP[e.code]||e.code]=false;});
+window.addEventListener('keyup',e=>{if(mode==='pump'){pumpKeyUp(e);return;}held[KMAP[e.code]||e.code]=false;});
 window.addEventListener('blur',()=>{Object.keys(held).forEach(k=>held[k]=false);mouse.down=false;});
 const cv=$('#cv'),ctx=cv.getContext('2d');
 ['#pad','#cv','.stagewrap'].forEach(s=>{const el=document.querySelector(s);if(el){el.addEventListener('contextmenu',e=>e.preventDefault());el.addEventListener('selectstart',e=>e.preventDefault());}});
@@ -1996,7 +2134,7 @@ function drawKick(c){
 let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
 function renderHub(){
-  renderDuelCard();
+  renderDuelCard();renderPumpCard();
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
@@ -2178,7 +2316,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
+const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgBm:'tick',pgBp:'tick',pgBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
   gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
@@ -2525,6 +2663,645 @@ function duDraw(c,a){
   if(txt){
     c.font="34px 'Black Han Sans','Noto Sans KR',sans-serif";c.textAlign='center';c.textBaseline='middle';
     c.lineWidth=6;c.strokeStyle='#232a45';c.strokeText(txt,240,262);c.fillStyle=col;c.fillText(txt,240,262);
+  }
+}
+
+'use strict';
+/* ---------- 소리새 펌프: 곡 + 채보 데이터 ----------
+   곡은 audio.js의 배경음악처럼 8분음표 한 칸씩 적은 악보(BGMT)예요. 별도 소리 파일이 없어요.
+   채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
+     level 1 : 멜로디 중 4분음표 자리(짝수 칸)만 노트  → 쉬움
+     level 2 : 멜로디 음마다 노트                         → 보통
+     level 3 : 멜로디 + 베이스 음(한 박 단위)까지 노트, 점프(동시 두 발판)가 자주 나와요 → 어려움
+   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄 추가하면 돼요. */
+/* ---------- 시즌2 잠금 ----------
+   허브에는 제목이 "???"로 가려진 카드만 보이고, 관리자 번호(숫자 4자리)를 입력해야 플레이할 수 있어요.
+   번호는 소스에 남기지 않고 확인값(PUMP_KEY)만 남겨요. 바꾸려면: node dev/pump_key.js 새번호
+   ※ 브라우저에서 도는 코드라 '가벼운 잠금'이에요. 소스를 뜯어보는 사람까지 막지는 못해요.
+   모두에게 열 때: PUMP_PUBLIC=true (잠금 없이 바로 보임) + 버전을 2.0.0으로 올려요(README '시즌2 오픈 절차') */
+const PUMP_PUBLIC=false;
+const PUMP_KEY='2e0rybdu1xw';
+const pgUnlocked=()=>PUMP_PUBLIC||lsGet('rk:pumpkey')===PUMP_KEY;
+const PG_LANES=5;   /* 0=↙ 1=↖ 2=● 3=↗ 4=↘  (화면 왼쪽→오른쪽 순서, 펌프 발판과 같아요) */
+
+/* form 항목 'A:main' = 멜로디 변주 A를 4마디, 드럼 세트 main으로. 총 8~10개 × 4마디 = 32~40마디
+   'A:main:1' 처럼 셋째 칸을 쓰면 그 구간만 progs[1](코드)·basses[1](베이스)를 써요. */
+function pgBuild(o){
+  const L={lead:[],bass:[],pad:[],kick:[],snare:[],hat:[]};
+  o.form.forEach(f=>{
+    const p=f.split(':'),lead=o.lead[p[0]],kd=o.drums[p[1]],pr=(o.progs&&o.progs[+p[2]||0])||o.prog,bs=(o.basses&&o.basses[+p[2]||0])||o.bass;
+    for(let b=0;b<4;b++){
+      L.lead.push(lead[b]);L.bass.push(bs[b]);L.pad.push(pr[b]+' . . . . . . .');
+      L.kick.push(kd.kick);L.snare.push(kd.snare);L.hat.push(kd.hat);
+    }
+  });
+  const e=L.lead.length-1;   /* 마지막 마디: 으뜸음 한 번 울리고 끝 */
+  L.lead[e]=o.end;L.bass[e]=o.endBass+' . . . . . . .';L.pad[e]=o.endChord+' . . . . . . .';
+  L.kick[e]='x . . . . . . .';L.snare[e]='. . . . . . . .';L.hat[e]='. . . . . . . .';
+  BGMT[o.id]=trk({bpm:o.bpm,len:L.lead.length*8,L:[
+    {n:'lead',t:'note',wave:o.wave,vol:o.leadVol,d:1.3,seq:bars(...L.lead)},
+    {n:'bass',t:'note',wave:'triangle',vol:o.bassVol,d:1.4,seq:bars(...L.bass)},
+    {n:'pad',t:'chord',wave:'sine',vol:.03,d:7,att:.1,seq:bars(...L.pad)},
+    {n:'kick',t:'kick',vol:o.kickVol,seq:bars(...L.kick)},
+    {n:'snare',t:'snare',vol:.05,seq:bars(...L.snare)},
+    {n:'hat',t:'hat',vol:.02,seq:bars(...L.hat)}
+  ]});
+}
+const PGDR_SOFT={kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'. . x . . . x .'};
+/* 1) 등굣길 뜀박질 — 쉬움 (C-G-Am-F, 등굣길 테마) */
+pgBuild({id:'pg1',bpm:112,wave:'square',leadVol:.04,bassVol:.09,kickVol:.16,
+  prog:['C','G','Am','F'],
+  lead:{
+    A:['E5 . G5 . E5 . C5 .','D5 . G5 . B5 . G5 .','C5 . E5 . A5 . E5 .','A5 . F5 . C5 . A4 .'],
+    B:['G5 . E5 G5 C6 . G5 .','B5 . G5 B5 D6 . B5 .','A5 . E5 A5 C6 . A5 .','F5 . A5 C6 . A5 F5 .'],
+    C:['E5 . . . G5 . . .','D5 . . . B5 . . .','C5 . . . E5 . . .','A5 . . . C6 . . .']},
+  bass:['C3 . C3 . G3 . C3 .','G2 . G2 . D3 . G2 .','A2 . A2 . E3 . A2 .','F2 . F2 . C3 . F2 .'],
+  drums:{main:{kick:'x . . . x . . .',snare:'. . . . . . . .',hat:'. x . x . x . x'},
+         beat:{kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'. x . x . x . x'},
+         soft:{kick:'x . . . . . . .',snare:'. . . . . . . .',hat:'. . . . . . . .'}},
+  form:['A:main','A:main','B:beat','B:beat','C:soft','A:beat','B:beat','B:beat'],
+  end:'C6 . . . . . . .',endChord:'C',endBass:'C3'});
+/* 2) 매점 러시 — 보통 (Am-F-C-G, 킥오프 테마) */
+pgBuild({id:'pg2',bpm:138,wave:'square',leadVol:.035,bassVol:.06,kickVol:.18,
+  prog:['Am','F','C','G'],
+  lead:{
+    A:['A5 . C6 . E6 . C6 .','A5 . C6 . F6 . C6 .','G5 . C6 . E6 . C6 .','G5 . B5 . D6 . B5 .'],
+    B:['E6 . D6 C6 . A5 . C6','C6 . A5 F5 . A5 . C6','E6 . D6 C6 . G5 . C6','D6 . B5 G5 . B5 D6 .'],
+    C:['A5 C6 E6 . A6 . E6 C6','A5 C6 F6 . A6 . F6 C6','G5 C6 E6 . G6 . E6 C6','G5 B5 D6 . G6 . D6 B5'],
+    D:['E6 . . . D6 . . .','C6 . . . A5 . . .','G5 . . . E6 . . .','D6 . . . B5 . . .']},
+  bass:['A2 . A2 A2 . A2 A2 .','F2 . F2 F2 . F2 F2 .','C3 . C3 C3 . C3 C3 .','G2 . G2 G2 . G2 G2 .'],
+  drums:{main:{kick:'x . x . x . x .',snare:'. . x . . . x .',hat:'. x . x . x . x'},soft:PGDR_SOFT},
+  form:['A:main','B:main','A:main','B:main','C:main','C:main','D:soft','C:main'],
+  end:'A5 . . . . . . .',endChord:'Am',endBass:'A2'});
+/* 3) 운명의 페널티킥 — 어려움 (Em-C-G-D, 대결 테마) */
+pgBuild({id:'pg3',bpm:158,wave:'sawtooth',leadVol:.028,bassVol:.05,kickVol:.2,
+  prog:['Em','C','G','D'],
+  lead:{
+    A:['B5 . E6 . G6 . E6 B5','G5 . C6 . E6 . C6 G5','B5 . D6 . G6 . D6 B5','A5 . D6 . F#6 . D6 A5'],
+    B:['G6 F#6 E6 . B5 . E6 .','E6 D6 C6 . G5 . C6 .','D6 C6 B5 . G5 . B5 .','F#6 E6 D6 . A5 . D6 .'],
+    C:['E6 G6 B6 G6 E6 G6 B6 .','C6 E6 G6 E6 C6 E6 G6 .','D6 G6 B6 G6 D6 G6 B6 .','D6 F#6 A6 F#6 D6 F#6 A6 .'],
+    D:['E6 . . . . . B5 .','C6 . . . . . G5 .','B5 . . . . . D6 .','A5 . . . . . F#6 .']},
+  bass:['E2 . E2 E2 . E2 E3 .','C2 . C2 C2 . C2 C3 .','G2 . G2 G2 . G2 G3 .','D2 . D2 D2 . D2 D3 .'],
+  drums:{main:{kick:'x . x . x . x .',snare:'. . x . . . x .',hat:'x x x x x x x x'},soft:PGDR_SOFT},
+  form:['A:main','A:main','B:main','B:main','D:soft','C:main','C:main','B:main','C:main','C:main'],
+  end:'E6 . . . . . . .',endChord:'Em',endBass:'E2'});
+
+/* 4) 비창 3악장 — 쉬움 (Cm-Fm-G, 베토벤 피아노 소나타 8번 「비창」 3악장의 분위기를 살린 칩튠 편곡)
+   베토벤의 원곡(1799)은 저작권이 없는 곡이지만, 멜로디는 원곡을 그대로 옮기지 않고 이 게임에 맞게 새로 지었어요. */
+pgBuild({id:'pg4',bpm:144,wave:'square',leadVol:.036,bassVol:.09,kickVol:.17,
+  prog:['Cm','Fm','G','Cm'],
+  progs:[['Cm','Fm','G','Cm'],['Ab','Fm','G','Cm']],
+  lead:{
+    A:['G4 . C5 . Eb5 . D5 C5','C5 . F5 . Ab5 . G5 F5','D5 . G5 . B5 . A5 G5','Eb5 . D5 . C5 . . .'],
+    B:['C5 D5 Eb5 . G5 . Eb5 .','F5 G5 Ab5 . C6 . Ab5 .','B5 . D6 . G5 . B5 .','C6 . G5 Eb5 C5 . . .'],
+    C:['G5 . . . Eb5 . . .','Ab5 . . . F5 . . .','B5 . . . D6 . . .','C6 . . . . . . .'],
+    D:['Eb5 . Ab5 . C6 . Bb5 Ab5','C5 . F5 . Ab5 . G5 F5','D5 . G5 . B5 . A5 G5','G5 . Eb5 . C5 . . .']},
+  bass:['C3 . C3 . G3 . C3 .','F2 . F2 . C3 . F2 .','G2 . G2 . D3 . G2 .','C3 . C3 . G3 . C3 .'],
+  basses:[['C3 . C3 . G3 . C3 .','F2 . F2 . C3 . F2 .','G2 . G2 . D3 . G2 .','C3 . C3 . G3 . C3 .'],['Ab2 . Ab2 . Eb3 . Ab2 .','F2 . F2 . C3 . F2 .','G2 . G2 . D3 . G2 .','C3 . C3 . G3 . C3 .']],
+  drums:{main:{kick:'x . . . x . . .',snare:'. . . . . . . .',hat:'. x . x . x . x'},
+         beat:{kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'. x . x . x . x'},
+         soft:{kick:'x . . . . . . .',snare:'. . . . . . . .',hat:'. . . . . . . .'}},
+  form:['A:main:0','A:main:0','B:beat:0','D:beat:1','C:soft:0','A:beat:0','B:beat:0','D:beat:1'],
+  end:'C5 . . . . . . .',endChord:'Cm',endBass:'C3'});
+
+/* 곡 목록. target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
+const PGSONGS=[
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',level:1,stars:2,target:650000,approach:2.0,seed:101},
+  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',level:1,stars:3,target:700000,approach:1.9,seed:404},
+  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',level:2,stars:5,target:750000,approach:1.7,seed:202},
+  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',level:3,stars:8,target:800000,approach:1.5,seed:303}
+];
+PGSONGS.forEach(s=>{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;s.secs=Math.round(s.len*s.spb);});
+
+/* ---------- 채보 자동 생성 ---------- */
+function pgRng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+/* 발판 밟는 순서 조각. 0=↙ 1=↖ 2=● 3=↗ 4=↘ */
+const PGPAT1=[[0,1,2,3,4],[4,3,2,1,0],[0,1,0,1],[4,3,4,3],[2,1,2,3],[0,1,2,1,0],[1,2,3,2,1],[2,3,2,1]];
+const PGPAT2=PGPAT1.concat([[1,3,1,3],[2,0,2,4],[3,2,1,0,1],[1,0,1,2,3]]);
+const PGPAT3=PGPAT2.concat([[0,3,0,3],[1,4,1,4],[0,1,4,3],[4,3,0,1]]);
+const PGJUMPS=[[0,4],[1,3],[0,3],[1,4]];
+const PGJUMP_P=[0,.12,.4];      /* level별 마디 첫 박에서 점프가 나올 확률 */
+const PGHOLD_P=[0,.7,.6,.5];    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
+const PGCHARTS={};
+function pgChart(sg){
+  if(PGCHARTS[sg.id])return PGCHARTS[sg.id];
+  const T=BGMT[sg.id],lead=T.L.find(l=>l.n==='lead').a,bass=T.L.find(l=>l.n==='bass').a,R=pgRng(sg.seed),lv=sg.level,spb=sg.spb;
+  const lib=lv===1?PGPAT1:lv===2?PGPAT2:PGPAT3,steps=[];
+  for(let s=0;s<T.len;s++){
+    const hasL=lead[s]!=='.',hasB=bass[s]!=='.';
+    const on=lv===1?(hasL&&s%2===0):lv===2?hasL:(hasL||(hasB&&s%4===0));
+    if(on)steps.push(s);
+  }
+  const notes=[];let pat=null,pi=0,last=2,curS=0;
+  const nextLane=()=>{
+    if(pat&&pi>=3&&curS%8===0)pat=null;   /* 마디가 바뀌면 새 흐름으로 */
+    if(!pat||pi>=pat.length){
+      const c=lib.filter(p=>p[0]!==last&&Math.abs(p[0]-last)<=2);
+      pat=c[Math.floor(R()*c.length)]||lib[0];pi=0;
+    }
+    return pat[pi++];
+  };
+  steps.forEach((s,i)=>{
+    curS=s;
+    const nx=i+1<steps.length?steps[i+1]:T.len,gap=nx-s,fin=i===steps.length-1;
+    const t=s*spb;
+    if(!fin&&s%8===0&&R()<PGJUMP_P[lv-1]){   /* 점프: 두 발판을 동시에 */
+      const j=PGJUMPS[Math.floor(R()*PGJUMPS.length)];
+      j.forEach(l=>notes.push({t,lane:l,hold:0,s}));
+      last=j[Math.floor(R()*2)];pat=null;return;
+    }
+    const lane=(lv>=2&&R()<.06)?last:nextLane();   /* 가끔 같은 발판을 한 번 더 */
+    let hold=0;
+    if(!fin&&gap>=4&&R()<PGHOLD_P[lv])hold=(gap-1)*spb;
+    notes.push({t,lane,hold,s});last=lane;
+  });
+  const out={notes,total:0,taps:0,holds:0,end:0};
+  notes.forEach(n=>{if(n.hold){out.holds++;out.total+=2;}else{out.taps++;out.total++;}out.end=Math.max(out.end,n.t+n.hold);});
+  return PGCHARTS[sg.id]=out;
+}
+
+'use strict';
+/* ---------- 소리새 펌프 (시즌2 · v2.0.0~) ----------
+   호우와 하는 5패널 리듬 내기예요. 오락실 펌프처럼 노트가 화면 아래에서 위로 올라오고, 위쪽 발판(↙ ↖ ● ↗ ↘)에 닿는 순간 맞춰 밟아요.
+   - 곡·채보: pump-data.js (악보는 Web Audio로 합성, 채보는 악보에서 자동 생성)
+   - 시계: 곡이 흐르는 AudioContext 시간(AC.currentTime)을 기준으로 삼아서, 화면·소리·판정이 어긋나지 않아요.
+     탭이 가려지면 AudioContext가 멈추면서 게임도 같이 멈춰요.
+   - 판돈은 시작할 때 미리 빼고 저장해요. (중간에 새로고침해서 되돌리는 부정행위 방지: 프리킥과 같아요)
+   - 도전 횟수: 마이크 🎤 5개, 시작할 때마다 1개씩 쓰고 30분마다 1개 충전 (프리킥의 축구공과 같은 방식)
+   - 몸 관리 연동: 체력 → 시작 게이지, 컨디션 → 판정 폭 */
+const MIC_MAX=5,MIC_MIN=30;
+const micMin=()=>Math.floor(Date.now()/60000);
+function micTick(){   /* 지난 시간만큼 마이크를 채워요. 개수가 늘었으면 true */
+  const now=micMin();let b=S.mics==null?MIC_MAX:clamp(Math.floor(S.mics),0,MIC_MAX),up=false;
+  if(b<MIC_MAX){
+    let at=Math.min(S.micAt>0?S.micAt:now,now);
+    const gain=Math.floor((now-at)/MIC_MIN);
+    if(gain>0){b=Math.min(MIC_MAX,b+gain);at+=gain*MIC_MIN;up=true;}
+    S.micAt=b>=MIC_MAX?0:at;
+  }else S.micAt=0;
+  S.mics=b;return up;
+}
+function micUse(){
+  micTick();if(S.mics<=0)return false;
+  if(S.mics>=MIC_MAX)S.micAt=micMin();
+  S.mics--;return true;
+}
+const micWaitSec=()=>Math.max(0,Math.ceil(((S.micAt+MIC_MIN)*60000-Date.now())/1000));
+function renderMics(){
+  const b=S.mics==null?MIC_MAX:S.mics;
+  $('#mics').setAttribute('aria-label',`소리새 펌프 도전 횟수 ${b}/${MIC_MAX}`);
+  [...$('#mics').children].forEach((el,i)=>el.classList.toggle('used',i>=b));
+  const w=micWaitSec(),t=`${Math.floor(w/60)}:${String(w%60).padStart(2,'0')}`;
+  $('#micNote').textContent=b>=MIC_MAX?'도전 횟수가 가득 찼어요!':b<=0?`마이크가 다 떨어졌어요. 다음 마이크까지 ${t}`:`다음 마이크까지 ${t} (30분마다 1개 충전)`;
+}
+setInterval(()=>{
+  if(!pgUnlocked()||!USER||mode!=='hub')return;
+  if(micTick()){save();renderHub();sfx('ping');toast('🎤 마이크가 하나 충전됐어요!');}else renderMics();
+},1000);
+
+/* ---------- 옵션 (이 기기에 기억) ---------- */
+const PG_SPEEDS=[1,1.5,2,2.5,3];   /* 노트가 올라오는 속도 배율 */
+let PGO={song:0,spd:1,off:0};       /* off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
+try{const o=JSON.parse(lsGet('rk:pump')||'null');if(o&&typeof o==='object')PGO=Object.assign(PGO,o);}catch(e){}
+function pgOptFix(){
+  PGO.song=clamp(Math.floor(+PGO.song)||0,0,PGSONGS.length-1);
+  PGO.spd=clamp(Math.floor(+PGO.spd)||0,0,PG_SPEEDS.length-1);
+  PGO.off=clamp(Math.round((+PGO.off||0)/10)*10,-200,200);
+}
+pgOptFix();
+const pgOptSave=()=>lsSet('rk:pump',JSON.stringify(PGO));
+const pgLife0=()=>Math.round(40+clamp(S.stam==null?25:S.stam,0,100)*.3);      /* 체력 25% → 48, 100% → 70 */
+const pgWinScale=()=>[.9,.95,1,1.05,1.1][clamp(S.cond==null?2:S.cond,0,4)];   /* 컨디션이 좋을수록 판정이 넉넉해요 */
+
+/* ---------- 허브 카드 ---------- */
+let pgBetV=1000;
+const pgBetMax=()=>Math.min(3000,S.money);
+(function buildSongList(){
+  const box=$('#pgSongs');
+  PGSONGS.forEach((s,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='song';
+    const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
+    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★'.repeat(Math.ceil(s.stars/2))+' '+s.stars;
+    d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
+    b.addEventListener('click',()=>{PGO.song=i;pgOptSave();renderPumpCard();});
+    box.appendChild(b);
+  });
+})();
+function renderPumpCard(){
+  const open=pgUnlocked();
+  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!open;
+  $('#pgH2').firstChild.textContent=open?'호우와 소리새 펌프 ':'??? ';
+  $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
+  if(!open)return;
+  micTick();renderMics();pgOptFix();
+  [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
+  const sg=PGSONGS[PGO.song],ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
+  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
+  $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
+  $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
+  $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
+  pgBetV=clamp(pgBetV,1000,Math.max(1000,pgBetMax()));
+  $('#pgBetV').textContent=fmt(pgBetV)+'원';
+  const can=S.money>=1000&&S.mics>0;
+  $('#pgStart').disabled=!can;$('#pgBm').disabled=pgBetV<=1000||!can;$('#pgBp').disabled=pgBetV+100>pgBetMax();$('#pgBb').disabled=pgBetV+500>pgBetMax();
+}
+$('#pgBm').addEventListener('click',()=>{pgBetV=Math.max(1000,pgBetV-100);renderPumpCard();});
+$('#pgBp').addEventListener('click',()=>{pgBetV=Math.min(pgBetMax(),pgBetV+100);renderPumpCard();});
+$('#pgBb').addEventListener('click',()=>{pgBetV=Math.min(pgBetMax(),pgBetV+500);renderPumpCard();});
+$('#pgSpdM').addEventListener('click',()=>{PGO.spd--;pgOptSave();renderPumpCard();});
+$('#pgSpdP').addEventListener('click',()=>{PGO.spd++;pgOptSave();renderPumpCard();});
+$('#pgOffM').addEventListener('click',()=>{PGO.off-=10;pgOptSave();renderPumpCard();});
+$('#pgOffP').addEventListener('click',()=>{PGO.off+=10;pgOptSave();renderPumpCard();});
+$('#pgStart').addEventListener('click',pumpStart);
+function pgTryUnlock(){
+  const v=$('#pgCode').value.trim(),m=$('#pgLockMsg');
+  if(!PIN_RE.test(v)){m.textContent='숫자 4자리를 입력해 주세요.';sfx('error');return;}
+  if(pinHash('rk-pump',v)!==PUMP_KEY){m.textContent='번호가 맞지 않아요.';$('#pgCode').value='';sfx('error');return;}
+  lsSet('rk:pumpkey',PUMP_KEY);$('#pgCode').value='';m.textContent='';
+  sfx('welcome');toast('🔓 시즌2 입장! (이 기기에 기억돼요)');renderHub();
+}
+$('#pgUnlock').addEventListener('click',pgTryUnlock);
+$('#pgCode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();pgTryUnlock();}});
+$('#pgCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);$('#pgLockMsg').textContent='';});
+$('#pgRelock').addEventListener('click',()=>{lsDel('rk:pumpkey');toast('다시 잠갔어요.');renderHub();});
+
+/* ---------- 게임 상태 ---------- */
+let PG=null,PGH=720,PGC=null;
+const PGW=480,PGRY=120;   /* 캔버스 논리 크기(가로 480, 세로는 화면에 맞춰 바뀜) · 발판(판정선) y */
+const PGX=[52,146,240,334,428];
+const PGCOL=['#3aa0ff','#ff4d6d','#ffd23f','#ff4d6d','#3aa0ff'];
+const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ ● ↗ ↘ (위쪽 화살표를 돌려서 그려요) */
+const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
+const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
+const PGKEYS={KeyZ:0,KeyQ:1,KeyS:2,KeyE:3,KeyC:4,Numpad1:0,Numpad7:1,Numpad5:2,Numpad9:3,Numpad3:4};
+const pgClock=()=>AC?AC.currentTime:performance.now()/1000;
+const pgNow=()=>PG.paused?PG.frozen:pgClock()-PG.t0-PG.off;
+const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
+
+function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
+function pgNewGame(sg,bet,before){
+  const ch=pgChart(sg),lanes=[[],[],[],[],[]],sc=pgWinScale();
+  const notes=ch.notes.map(n=>({t:n.t,lane:n.lane,hold:n.hold,res:-1,hs:0}));   /* hs: 0 대기 · 1 누르는 중 · 2 성공 · 3 실패 */
+  notes.forEach(n=>lanes[n.lane].push(n));
+  lanes.forEach(a=>a.sort((x,y)=>x.t-y.t));
+  return{sg,bet,before,notes,lanes,ptr:[0,0,0,0,0],hold:[null,null,null,null,null],held:[false,false,false,false,false],pressAt:[0,0,0,0,0],
+    total:ch.total,endT:ch.end+1.2,cnt:[0,0,0,0,0],ok:0,ng:0,wsum:0,done:0,combo:0,maxCombo:0,life:pgLife0(),life0:pgLife0(),
+    W:{perfect:.06*sc,great:.10*sc,good:.14*sc,bad:.18*sc},approach:sg.approach/PG_SPEEDS[PGO.spd],
+    state:'count',paused:false,frozen:0,pauseAt:0,resumeAt:0,grace:0,pop:null,fx:[],missAt:0,comboAt:0,cd:99,go:false,err:0,settled:false,
+    t0:0,off:0,step:0,nextT:0,timer:0,tg:null,ptrs:{}};
+}
+function pumpStart(){
+  if(!pgUnlocked()||!USER||mode!=='hub')return;
+  micTick();pgOptFix();
+  const sg=PGSONGS[PGO.song],bet=Math.min(pgBetV,pgBetMax());
+  if(S.money<1000||bet<1000){sfx('deny');return;}
+  if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
+  const before=S.money;S.money-=bet;save();
+  PG=pgNewGame(sg,bet,before);
+  mode='pump';showPump(true);pgResize();
+  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name}`;
+  $('#pgResult').hidden=true;$('#pgPause').hidden=true;
+  pgBegin();
+  const g=PG;
+  (function loop(){
+    if(PG!==g)return;
+    requestAnimationFrame(loop);
+    try{pgUpdate();pgDraw();g.err=0;}catch(e){console.error(e);if(++g.err>=5)pgAbort();}
+  })();
+}
+function pgBegin(){
+  const g=PG,a=actx(),lead=Math.max(3.2,g.approach+1.2);
+  const lat=a?clamp((a.baseLatency||0)+(a.outputLatency||0),0,.3):0;   /* 소리가 스피커까지 가는 시간만큼 판정 시계를 늦춰요 */
+  g.off=lat+PGO.off/1000;
+  g.t0=pgClock()+lead;g.nextT=g.t0;
+  if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
+}
+function pgSched(){   /* 곡의 다음 몇 칸을 미리 예약해 둬요 (배경음악과 같은 방식) */
+  const g=PG;if(!g||!g.tg||g.paused||g.state==='end')return;
+  const T=BGMT[g.sg.id];
+  while(g.step<T.len&&g.nextT<AC.currentTime+.3){bstep(T,g.step,g.nextT,g.sg.spb,g.tg);g.step++;g.nextT+=g.sg.spb;}
+}
+function pgStopAudio(g){
+  clearInterval(g.timer);
+  const tg=g.tg;g.tg=null;if(!tg||!AC)return;
+  if(AC.state==='running'){const t=AC.currentTime;try{tg.gain.cancelScheduledValues(t);tg.gain.setTargetAtTime(0,t,.2);}catch(e){}setTimeout(()=>{try{tg.disconnect();}catch(e){}},1500);}
+  else{try{tg.disconnect();}catch(e){}AC.resume().catch(()=>{});}   /* 일시정지 중에 나갔다면 예약해 둔 소리가 새어 나오지 않게 끊고 시계를 되살려요 */
+}
+
+/* ---------- 입력 ---------- */
+function pumpKeyDown(e){
+  const g=PG;if(!g)return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.code==='Escape'){e.preventDefault();if(!e.repeat)pgTogglePause();return;}
+  if(e.code==='Enter'&&g.state==='end'&&!$('#pgResult').hidden){e.preventDefault();pgExit();return;}
+  const l=PGKEYS[e.code];if(l===undefined)return;
+  e.preventDefault();if(e.repeat)return;
+  pgPress(l);
+}
+function pumpKeyUp(e){const l=PGKEYS[e.code];if(l!==undefined&&PG){e.preventDefault();pgRelease(l);}}
+function pgPress(l){
+  const g=PG;if(!g||g.paused||g.state==='end')return;
+  g.held[l]=true;g.pressAt[l]=performance.now();sfx('stomp');
+  if(g.state!=='play')return;
+  const now=pgNow(),n=g.lanes[l][g.ptr[l]];
+  if(!n)return;
+  const d=now-n.t;
+  if(d<-g.W.bad)return;   /* 아직 너무 일러요: 헛발은 벌점이 없어요 */
+  const ad=Math.abs(d),k=ad<=g.W.perfect?0:ad<=g.W.great?1:ad<=g.W.good?2:3;
+  g.ptr[l]++;n.res=k;
+  if(n.hold){
+    if(k<3){n.hs=1;g.hold[l]=n;}
+    else{n.hs=3;g.ng++;g.done++;}   /* BAD로 시작한 롱노트는 끝을 기대할 수 없어요 */
+  }
+  pgJudge(k,l,d);
+}
+function pgRelease(l){if(PG)PG.held[l]=false;}
+/* 발판 그림: 위쪽 화살표를 돌려서 겹화살표(테두리+안쪽 쉐브론)로, 가운데는 팔각 패드로 그려요 */
+const PGKEYNAME=['Z','Q','S','E','C'],PGPADANG=[135+90,-45,0,45,135];   /* ↙ ↖ ● ↗ ↘ */
+const PGPADS=[];
+document.querySelectorAll('#pgPad [data-l]').forEach(b=>{
+  const l=+b.dataset.l,col=['#2f9bff','#ff3d5a','#ffc82e','#ff3d5a','#2f9bff'][l];
+  const oct=r=>[0,1,2,3,4,5,6,7].map(i=>{const a=Math.PI/8+i*Math.PI/4;return (Math.cos(a)*r).toFixed(1)+','+(Math.sin(a)*r).toFixed(1);}).join(' ');
+  b.innerHTML=(l===2
+    ?`<svg viewBox="-50 -50 100 100"><polygon points="${oct(46)}" fill="#0c0c0e" stroke="${col}" stroke-width="5" stroke-linejoin="round"/><polygon points="${oct(35)}" fill="none" stroke="${col}" stroke-width="2.5"/><polygon points="${oct(24)}" fill="#1a1608" stroke="${col}" stroke-width="3"/><circle r="7" fill="${col}"/></svg>`
+    :`<svg viewBox="-50 -50 100 100"><g transform="rotate(${PGPADANG[l]})"><path d="M0-42L40 0H17V40H-17V0H-40Z" fill="#0c0c0e" stroke="${col}" stroke-width="5" stroke-linejoin="round"/><path d="M0-27L24-3H9V28H-9V-3H-24Z" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/><path d="M-9 14L0 6L9 14M-9 24L0 16L9 24" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`)
+    +`<span class="k">${PGKEYNAME[l]}</span>`;
+  PGPADS[l]=b;
+});
+/* 화면 아래 발판(모바일)·PC 옆 발판 클릭 + 캔버스 위쪽 발판을 마우스로 누르는 것도 지원해요 */
+document.querySelectorAll('#pgPad [data-l]').forEach(b=>{
+  const l=+b.dataset.l,up=()=>{pgRelease(l);b.classList.remove('on');};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(_){}b.classList.add('on');pgPress(l);});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,up));
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+});
+function pgCvLane(e){
+  const r=$('#pgCv').getBoundingClientRect(),x=(e.clientX-r.left)*PGW/r.width,y=(e.clientY-r.top)*PGH/r.height;
+  if(y>PGRY+70)return -1;
+  const l=Math.round((x-PGX[0])/94);return l>=0&&l<5?l:-1;
+}
+$('#pgCv').addEventListener('pointerdown',e=>{
+  if(!PG)return;const l=pgCvLane(e);if(l<0)return;
+  e.preventDefault();PG.ptrs[e.pointerId]=l;pgPress(l);
+});
+['pointerup','pointercancel'].forEach(ev=>$('#pgCv').addEventListener(ev,e=>{
+  if(!PG)return;const l=PG.ptrs[e.pointerId];if(l===undefined)return;delete PG.ptrs[e.pointerId];pgRelease(l);
+}));
+$('#pgCv').addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('resize',()=>{if(PG)pgResize();});
+function pgResize(){
+  const cv=$('#pgCv');if($('#pumpWrap').hidden)return;
+  const coarse=touchy(),pad=$('#pgPad'),row=$('#pgRow');
+  const lay=coarse?'below':window.innerWidth>=860?'side':'none';   /* 발판: 모바일은 화면 아래, PC는 넓으면 옆(키 안내 겸용), 좁으면 숨김 */
+  pad.hidden=lay==='none';row.classList.toggle('side',lay==='side');
+  const top=$('#pumpWrap .gtop').offsetHeight+14,padH=lay==='below'?pad.offsetHeight+14:0;
+  const w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520),availH=window.innerHeight-top-padH-40;
+  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),560,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 */
+  const sc=Math.min(2,window.devicePixelRatio||1);
+  $('#pgStage').style.width=w+'px';
+  cv.width=Math.round(PGW*sc);cv.height=Math.round(PGH*sc);
+  PGC=cv.getContext('2d');PGC.setTransform(sc,0,0,sc,0,0);
+}
+
+/* ---------- 일시정지 ---------- */
+function pgTogglePause(){
+  const g=PG;if(!g||g.state==='end')return;
+  if(g.paused&&g.resumeAt)return;   /* 이어하기 카운트다운 중 */
+  if(g.paused)pgResume();else pgPause();
+}
+function pgPause(){
+  const g=PG;if(!g||g.paused||g.state==='end')return;
+  g.frozen=pgNow();g.pauseAt=pgClock();g.paused=true;g.resumeAt=0;
+  g.held=[false,false,false,false,false];
+  /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
+     이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
+  if(g.tg){try{g.tg.disconnect();}catch(e){}g.tg=null;}
+  $('#pgPause').hidden=false;
+}
+function pgResume(){
+  const g=PG;if(!g||!g.paused||g.resumeAt)return;
+  $('#pgPause').hidden=true;g.resumeAt=performance.now()+3000;g.cd=99;
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&PG&&mode==='pump')pgPause();});
+window.addEventListener('blur',()=>{if(PG&&mode==='pump'){PG.held=[false,false,false,false,false];pgPause();}});
+$('#pgPauseBtn').addEventListener('click',pgTogglePause);
+$('#pgResume').addEventListener('click',pgResume);
+$('#pgGiveUp').addEventListener('click',()=>{$('#pgPause').hidden=true;pgFinish(true,true);});
+
+/* ---------- 판정 · 진행 ---------- */
+function pgJudge(k,l,d){
+  const g=PG;
+  g.cnt[k]++;g.wsum+=PGWT[k];g.done++;
+  if(k<=2){g.combo++;if(g.combo>g.maxCombo)g.maxCombo=g.combo;g.comboAt=performance.now();}
+  else g.combo=0;
+  g.life=clamp(g.life+PGLIFE[k],0,100);
+  g.pop={k,at:performance.now(),d};g.fx.push({l,k,at:performance.now()});
+  if(k===4){g.missAt=performance.now();sfx('pgmiss');}
+  if(g.life<=0)pgFinish(true);
+}
+function pgUpdate(){
+  const g=PG;if(!g)return;
+  if(g.paused){
+    if(g.resumeAt){
+      const left=g.resumeAt-performance.now(),n=Math.ceil(left/1000);
+      if(n!==g.cd&&n>0){g.cd=n;sfx('pgcount',n===1?880:660);}
+      if(left<=0){
+        g.t0+=pgClock()-g.pauseAt;g.resumeAt=0;g.paused=false;
+        if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 */
+          g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
+          g.step=Math.max(0,Math.ceil((g.frozen+g.off)/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
+        }
+        g.grace=g.frozen+1;   /* 롱노트를 누르던 중이었다면 다시 누를 시간을 줘요 */
+      }
+    }
+    return;
+  }
+  if(g.state==='end')return;
+  const now=pgNow();
+  if(now<0){const n=Math.ceil(-now);if(n<=3&&n!==g.cd){g.cd=n;sfx('pgcount',n===1?880:660);}}
+  else if(!g.go){g.go=true;sfx('pggo');}
+  if(g.state==='count'&&now>=-g.W.bad)g.state='play';
+  if(g.state!=='play')return;
+  /* 지나가 버린 노트는 MISS */
+  for(let l=0;l<5;l++){
+    const a=g.lanes[l];
+    while(g.state==='play'&&g.ptr[l]<a.length&&a[g.ptr[l]].t<now-g.W.bad){
+      const n=a[g.ptr[l]++];n.res=4;
+      if(n.hold){n.hs=3;g.ng++;g.done++;}
+      pgJudge(4,l,0);
+    }
+  }
+  /* 롱노트: 끝까지 누르고 있으면 성공, 도중에 떼면 실패 */
+  for(let l=0;l<5&&g.state==='play';l++){
+    const h=g.hold[l];if(!h)continue;
+    const end=h.t+h.hold;
+    if(now>=end||(!g.held[l]&&now>=end-.12)){
+      g.hold[l]=null;h.hs=2;g.ok++;g.wsum+=1;g.done++;g.fx.push({l,k:0,at:performance.now()});sfx('pgok');
+    }else if(!g.held[l]&&now>g.grace){
+      g.hold[l]=null;h.hs=3;g.ng++;g.done++;g.combo=0;g.life=clamp(g.life-4,0,100);
+      g.pop={k:4,at:performance.now(),d:0,txt:'NG'};g.missAt=performance.now();sfx('pgmiss');
+      if(g.life<=0)pgFinish(true);
+    }
+  }
+  if(g.state==='play'&&g.done>=g.total&&now>g.endT)pgFinish(false);
+}
+function pgScore(g){return g.total?Math.round(900000*g.wsum/g.total+100000*Math.min(1,g.maxCombo/g.total)):0;}
+const pgGrade=s=>s>=950000?'S':s>=850000?'A':s>=700000?'B':s>=550000?'C':'D';
+const HOU_WIN=['헉… 발이 내 목청보다 정확하잖아! 판돈 가져가~','오호, 음정은 밀당인데 박자는 네가 이겼네!','소리새 사장님한테 스카우트되겠는데?'];
+const HOU_BIG=['이 정도면 반칙이야… 절대음감이 발에 있나 봐!','아니, 이게 사람 발이야? 메트로놈이야?'];
+const HOU_LOSE=['내 노래엔 이 정도 리듬은 있어야지~ 판돈은 접수!','박자가 밀당 중이었나 봐. 내가 이긴 걸로 할게!','한 번 더 하면 이길 수 있을 걸? …아마도.'];
+const HOU_FAIL=['어라, 게이지가 다 닳았네… 쉬엄쉬엄 하자.','숨 고르고 다시 오자. 노래방도 쉬어 가며 부르는 거야.'];
+/* 곡이 끝났거나(실패 포함) 포기했을 때: 정산하고 결과 화면을 띄워요 */
+function pgFinish(failed,quit){
+  const g=PG;if(!g||g.state==='end')return;
+  g.state='end';g.held=[false,false,false,false,false];pgStopAudio(g);
+  const score=pgScore(g),grade=failed?'F':pgGrade(score),win=!failed&&score>=g.sg.target,bonus=Math.round(g.bet*.5/100)*100;
+  const delta=win?2*g.bet+(grade==='S'?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+S랭크 보너스)만 더해요 */
+  g.settled=true;g.score=score;g.grade=grade;g.win=win;
+  S.fatigue=Math.max(0,(S.fatigue||0)-1);
+  S.money=Math.max(0,S.money+delta);
+  if(win)S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);else S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);
+  if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
+  S.plays=(S.plays||0)+1;
+  const weekend=advanceDay();
+  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
+  save();
+  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money,week:S.week});
+  sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
+  const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
+  const title=quit?'포기…':failed?'STAGE BREAK…':win&&grade==='S'?'완승! S 랭크':win?'내기 승리!':'호우에게 졌다…';
+  const say=(quit||failed)?HOU_FAIL:win?(grade==='S'?HOU_BIG:HOU_WIN):HOU_LOSE;
+  setTimeout(()=>{
+    if(PG!==g)return;
+    $('#pgRT').textContent=title;
+    $('#pgRImg').src=IMGDATA[failed?'panic':grade==='S'?'excited':win?'happy':'frustrated'];
+    $('#pgRG').textContent=grade;$('#pgRG').className='pggrade g'+grade;
+    $('#pgRB').textContent=allP?'ALL PERFECT!':fc?'FULL COMBO!':'';
+    const rows=[['점수',fmt(score)+'점'],['최대 콤보',g.maxCombo+' / '+g.total]].concat(PGJN.map((n,i)=>[n,c[i]]));
+    if(g.ok+g.ng)rows.push(['롱노트',`성공 ${g.ok} · 실패 ${g.ng}`]);
+    rows.push(['호우 목표',fmt(g.sg.target)+'점']);
+    let h=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+    h+=`<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(g.bet)}원</td></tr>`+(win&&grade==='S'?`<tr><td>S 랭크 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
+       `<tr><td>소지금</td><td>${fmt(g.before)} → ${fmt(S.money)}원</td></tr>`;
+    $('#pgRTab').innerHTML=h;
+    $('#pgRSay').textContent='호우: '+pick(say);
+    $('#pgRX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
+    $('#pgResult').hidden=false;
+  },failed?500:1500);
+}
+function pgAbort(){   /* 화면 그리기에서 오류가 반복되면 판돈을 돌려주고 허브로 */
+  const g=PG;if(!g)return;
+  if(!g.settled){S.money+=g.bet;save();}
+  g.state='end';pgStopAudio(g);toast('오류가 나서 판돈을 돌려줬어요.');pgExit();
+}
+function pgExit(){
+  const g=PG;if(!g)return;
+  if(g.state!=='end'){g.state='end';pgStopAudio(g);}
+  PG=null;$('#pgResult').hidden=true;$('#pgPause').hidden=true;
+  showPump(false);toHub();
+}
+$('#pgRBack').addEventListener('click',pgExit);
+
+/* ---------- 그리기 ---------- */
+function pgNoteShape(c,lane,x,y,s){
+  c.translate(x,y);c.beginPath();
+  if(lane===2){c.arc(0,0,s*.8,0,6.2832);return;}
+  c.rotate(PGANG[lane]);
+  c.moveTo(0,-s);c.lineTo(s*.98,s*.02);c.lineTo(s*.46,s*.02);c.lineTo(s*.46,s*.92);c.lineTo(-s*.46,s*.92);c.lineTo(-s*.46,s*.02);c.lineTo(-s*.98,s*.02);c.closePath();
+}
+function pgDrawNote(c,lane,x,y,s,gray,alpha){
+  c.save();c.globalAlpha=alpha;pgNoteShape(c,lane,x,y,s);
+  c.fillStyle=gray?'#6f758c':PGCOL[lane];c.fill();c.lineWidth=3.5;c.strokeStyle=gray?'#2c3046':'#fff';c.lineJoin='round';c.stroke();c.restore();
+  c.save();c.globalAlpha=alpha*.4;pgNoteShape(c,lane,x,y,s*.5);c.fillStyle='#fff';c.fill();c.restore();
+}
+function pgText(c,t,x,y,size,col,align,font){
+  c.font=`${size}px ${font||"'Black Han Sans','Noto Sans KR',sans-serif"}`;c.textAlign=align||'center';c.textBaseline='middle';
+  c.lineWidth=Math.max(3,size/8);c.strokeStyle='rgba(6,8,20,.85)';c.lineJoin='round';c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);
+}
+function pgDraw(){
+  const g=PG,c=PGC;if(!g||!c)return;
+  const now=pgNow(),H=PGH,perf=performance.now(),TR=H-PGRY-10,ap=g.approach;
+  PGPADS.forEach((b,l)=>b.classList.toggle('on',g.held[l]));   /* 키보드로 눌러도 발판이 같이 눌려 보여요 */
+  /* 배경: 박자에 맞춰 살짝 번쩍여요 */
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#161c3d');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,PGW,H);
+  const q=now*g.sg.bpm/60,env=now>=0?Math.pow(1-(q-Math.floor(q)),2.5):0;
+  c.fillStyle=`rgba(140,170,255,${.05*env})`;c.fillRect(0,0,PGW,H);
+  for(let l=0;l<5;l++){
+    const x=PGX[l]-44,press=g.held[l]?1:Math.max(0,1-(perf-g.pressAt[l])/220);
+    c.fillStyle='rgba(255,255,255,.035)';c.fillRect(x,PGRY-46,88,H);
+    if(press>0){const lg=c.createLinearGradient(0,PGRY,0,PGRY+260);lg.addColorStop(0,PGCOL[l]);lg.addColorStop(1,'rgba(0,0,0,0)');c.globalAlpha=.28*press;c.fillStyle=lg;c.fillRect(x,PGRY-46,88,306);c.globalAlpha=1;}
+  }
+  c.fillStyle='rgba(255,255,255,.08)';for(let i=0;i<=5;i++)c.fillRect(PGX[0]-47+i*94-(i===5?3:0),PGRY-46,2,H);
+  /* 발판(판정선) */
+  for(let l=0;l<5;l++){
+    const press=g.held[l]?1:Math.max(0,1-(perf-g.pressAt[l])/220),s=34*(1+.09*env+.06*press);
+    c.save();pgNoteShape(c,l,PGX[l],PGRY,s);
+    c.fillStyle=`rgba(255,255,255,${.07+.5*press})`;c.fill();c.lineWidth=3.5;c.strokeStyle=PGCOL[l];c.globalAlpha=.55+.45*press;c.stroke();c.restore();
+    if(g.hold[l]){c.save();c.globalAlpha=.5+.3*Math.sin(perf/60);pgNoteShape(c,l,PGX[l],PGRY,s*1.25);c.lineWidth=4;c.strokeStyle='#fff';c.stroke();c.restore();}
+  }
+  /* 노트: 롱노트 몸통 → 머리 순서로 그려서 화살표가 위에 오게 */
+  const yOf=t=>PGRY+(t-now)/ap*TR;
+  const vis=g.notes.filter(n=>{const y=yOf(n.t),y2=n.hold?yOf(n.t+n.hold):y;return y2>-50&&y<H+50&&(n.res<0||n.res===4||n.hs===1||n.hs===3);});
+  vis.forEach(n=>{
+    if(!n.hold)return;
+    const gray=n.res===4||n.hs===3,yh=n.hs===1?Math.max(PGRY,yOf(n.t)):yOf(n.t),yt=yOf(n.t+n.hold);
+    if(yt<=yh)return;
+    c.save();c.globalAlpha=gray?.35:n.hs===1?1:.8;
+    const lg=c.createLinearGradient(PGX[n.lane]-22,0,PGX[n.lane]+22,0);const col=gray?'#6f758c':PGCOL[n.lane];lg.addColorStop(0,col);lg.addColorStop(.5,'#fff');lg.addColorStop(1,col);
+    c.fillStyle=lg;c.fillRect(PGX[n.lane]-22,yh,44,yt-yh);c.lineWidth=3;c.strokeStyle=gray?'#2c3046':'#fff';c.strokeRect(PGX[n.lane]-22,yh,44,yt-yh);c.restore();
+  });
+  vis.forEach(n=>{
+    const gray=n.res===4||n.hs===3,y=n.hs===1?PGRY:yOf(n.t);
+    pgDrawNote(c,n.lane,PGX[n.lane],y,32,gray,gray?.4:1);
+  });
+  /* 판정 이펙트 */
+  g.fx=g.fx.filter(f=>perf-f.at<420);
+  g.fx.forEach(f=>{
+    const a=(perf-f.at)/420,x=PGX[f.l];
+    c.save();c.globalAlpha=(1-a)*(f.k>=3?.5:.9);c.strokeStyle=PGJC[f.k];c.lineWidth=5*(1-a)+1;c.beginPath();c.arc(x,PGRY,34+a*70,0,6.2832);c.stroke();
+    if(f.k===0){for(let i=0;i<8;i++){const an=i/8*6.2832+.4,r1=40+a*60,r2=r1+16*(1-a);c.beginPath();c.moveTo(x+Math.cos(an)*r1,PGRY+Math.sin(an)*r1);c.lineTo(x+Math.cos(an)*r2,PGRY+Math.sin(an)*r2);c.stroke();}}
+    c.restore();
+  });
+  /* 판정 글자 + 콤보 */
+  if(g.pop){
+    const age=(perf-g.pop.at)/1000;
+    if(age<.75){
+      const sc=1+.4*Math.max(0,1-age*7),al=1-Math.max(0,(age-.45)/.3);
+      c.save();c.globalAlpha=al;c.translate(PGW/2,PGRY+92);c.scale(sc,sc);pgText(c,g.pop.txt||PGJN[g.pop.k],0,0,30,PGJC[g.pop.k]);c.restore();
+      if(g.pop.k>=1&&g.pop.k<=3&&Math.abs(g.pop.d)>.02){c.save();c.globalAlpha=al*.9;pgText(c,g.pop.d<0?'빠름':'느림',PGW/2,PGRY+122,14,g.pop.d<0?'#7fd4ff':'#ffb27f',null,"'Noto Sans KR',sans-serif");c.restore();}
+    }
+  }
+  if(g.combo>=2){
+    const age=(perf-g.comboAt)/1000,sc=1+.25*Math.max(0,1-age*8);
+    c.save();c.globalAlpha=.92;c.translate(PGW/2,PGRY+178);c.scale(sc,sc);pgText(c,String(g.combo),0,0,46,'#fff');c.restore();
+    pgText(c,'COMBO',PGW/2,PGRY+212,15,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
+  }
+  /* HUD */
+  c.fillStyle='rgba(6,8,20,.55)';c.fillRect(0,0,PGW,PGRY-36);
+  c.fillStyle='rgba(255,255,255,.14)';c.fillRect(0,0,PGW,4);c.fillStyle='#ffd23f';c.fillRect(0,0,PGW*clamp(now/g.endT,0,1),4);
+  const face=g.life<25?'panic':perf-g.missAt<900?'frustrated':g.combo>=30?'excited':g.combo>=10?'happy':'resolve',im=IM[face];
+  c.save();c.beginPath();c.arc(38,42,27,0,6.2832);c.clip();
+  if(im&&im.complete&&im.naturalWidth){const sz=54,sw=im.naturalWidth,sh=im.naturalHeight,s=Math.min(sw,sh);c.drawImage(im,(sw-s)/2,sh*.02,s,s,11,15,sz,sz);}else{c.fillStyle='#f4f1ee';c.fillRect(11,15,54,54);}
+  c.restore();c.beginPath();c.arc(38,42,27,0,6.2832);c.lineWidth=3;c.strokeStyle='#e2334d';c.stroke();
+  pgText(c,g.sg.name,76,22,15,'#dfe6ff','left',"'Noto Sans KR',sans-serif");
+  pgText(c,String(pgScore(g)).padStart(7,'0'),PGW-14,38,32,'#fff','right');
+  pgText(c,'호우 목표 '+fmt(g.sg.target),PGW-14,64,12,pgScore(g)>=g.sg.target?'#7bed9f':'#9aa3c2','right',"'Noto Sans KR',sans-serif");
+  const lx=76,lw=PGW-lx-150;
+  c.fillStyle='rgba(255,255,255,.16)';c.fillRect(lx,50,lw,12);
+  const lf=g.life/100;c.fillStyle=g.life>50?'#3ddc84':g.life>25?'#ffd23f':'#ff5a5a';c.fillRect(lx,50,lw*lf,12);
+  c.lineWidth=2;c.strokeStyle='#fff';c.strokeRect(lx,50,lw,12);
+  pgText(c,'LIFE',lx,76,11,'#9aa3c2','left',"'Noto Sans KR',sans-serif");
+  /* 카운트다운 / GO */
+  if(now<0&&!g.paused){
+    const n=Math.ceil(-now);
+    pgText(c,g.sg.name,PGW/2,H*.42-70,28,'#fff');
+    pgText(c,`BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
+    pgText(c,'Z  Q  S  E  C  (숫자패드 1 7 5 9 3) · Esc 일시정지',PGW/2,H*.5+110,13,'#9aa3c2',null,"'Noto Sans KR',sans-serif");
+    if(n<=3){const fr=n+now,sc=1+.5*fr;c.save();c.globalAlpha=.4+.6*(1-fr);c.translate(PGW/2,H*.5);c.scale(sc,sc);pgText(c,String(n),0,0,96,'#ffd23f');c.restore();}
+  }else if(now<.7&&!g.paused){c.save();c.globalAlpha=1-now/.7;pgText(c,'GO!',PGW/2,H*.5,80,'#7bed9f');c.restore();}
+  if(g.paused){
+    c.fillStyle='rgba(6,8,20,.55)';c.fillRect(0,0,PGW,H);
+    if(g.resumeAt){const n=Math.max(1,Math.ceil((g.resumeAt-perf)/1000));pgText(c,String(n),PGW/2,H*.5,110,'#ffd23f');}
   }
 }
 

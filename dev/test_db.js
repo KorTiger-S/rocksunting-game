@@ -49,6 +49,14 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await save('히포우', 3600, { balls: -3 });
   d = (await load('히포우')).data;
   ok(d.balls === 0, '도전 횟수는 음수가 될 수 없음');
+  ok(d.mics === 5 && d.micAt === 0 && d.pumpBest === 0, '소리새 펌프 도전 횟수(마이크)는 값을 안 보내면 가득(5개), 최고점은 0으로 시작');
+  await save('히포우', 3700, { mics: 99, micAt: 29000001, pumpBest: 987654 });
+  d = (await load('히포우')).data;
+  ok(d.mics === 5 && d.micAt === 29000001 && d.pumpBest === 987654, '마이크는 0~5개로 보정되고 충전 시각·펌프 최고점이 저장됨');
+  await save('히포우', 3710, { mics: -2, pumpBest: 9e9 });
+  d = (await load('히포우')).data;
+  ok(d.mics === 0 && d.pumpBest === 1000000, '마이크는 음수가 될 수 없고 펌프 최고점은 100만 점이 상한');
+  await save('히포우', 3720, { mics: 5, pumpBest: 0 });
   await save('히포우', 4000, { money: 1000, note: 'x'.repeat(9000) });
   d = (await load('히포우')).data;
   ok(d.money === 1000 && !('note' in d), '허용되지 않은 필드는 버리고 저장');
@@ -85,8 +93,12 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   t = await rpc('top', { metric: 'wins' });
   ok(t.list.every(x => x.wins === 0), '승리 스코어는 save()로 보낸 전적을 반영하지 않음(1:1 대결에서만 올라감)');
   t = await rpc('top', { metric: 'bestPts' }); ok(t.list[0].id === '짱구' && t.list[0].bestPts === 900, '최고점 랭킹 1위');
+  await save('짱구', 2, { money: 7000, wins: 9, bestPts: 900, pumpBest: 812345 });
+  await save('철수', 2, { money: 30000, wins: 1, bestPts: 100, pumpBest: 903210 });
+  t = await rpc('top', { metric: 'pumpBest' });
+  ok(t.list[0].id === '철수' && t.list[0].v === 903210 && t.list[0].pumpBest === 903210 && t.list[1].id === '짱구', '소리새 펌프 최고점 랭킹');
   t = await rpc('top', { metric: 'money', limit: 3 });
-  ok(t.list.every((x, i, a) => !i || a[i - 1].money >= x.money), '랭킹이 내림차순으로 정렬됨');
+  ok(t.list[0].id === '철수' && t.list[0].pumpBest === 903210 && t.list.every((x, i, a) => !i || a[i - 1].money >= x.money), '랭킹이 내림차순으로 정렬됨(다른 지표로 봐도 펌프 최고점 열은 같이 옴)');
   ok(!JSON.stringify(t).includes('pin'), '랭킹 응답에 비밀번호 정보 없음');
 
   // ----- 시즌 -----
@@ -132,6 +144,8 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   ok(cl.next.number === 2 && cl.next.key !== SEASON, '다음 시즌(시즌2)이 시작됨');
   r = await load('철수');
   ok(r.data.money === 10000 && r.data.wins === 0 && r.data.week === 1 && r.data.up.shoes === 0 && r.season === cl.next.key, '마감 뒤 모든 플레이어 기록이 초기화됨');
+  ok(r.data.pumpBest === 0 && r.data.mics === 5 && r.data.micAt === 0, '마감 뒤 소리새 펌프 최고점·마이크도 초기화됨');
+  ok(cl.players.find(x => x.id === '철수').pumpBest === 903210, '시즌 스냅샷에 펌프 최고점이 들어감');
   ok((await rpc('top', { metric: 'money' })).list.every(x => x.money === 10000 && x.wins === 0), '랭킹도 초기화됨');
   ok((await load('철수')).data.plays === 0 && (await load('짱구')).name === '짱구', '계정(ID)은 유지됨');
   r = await save('철수', Date.now() + 1000, { money: 99999, wins: 9 });   // 예전 시즌 기록을 들고 온 오래된 화면
