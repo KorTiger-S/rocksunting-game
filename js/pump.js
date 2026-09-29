@@ -86,7 +86,7 @@ function renderPumpCard(){
   const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
   [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
-  $('#pgIntroBtn').hidden=!sg.intro;
+  $('#pgIntroBtn').hidden=!sg.intro;if(sg.intro)$('#pgIntroBtn').textContent=INTROS[sg.intro].btn;
   $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
@@ -158,7 +158,7 @@ function pumpStart(){
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
   if(S.money<1000||bet<1000){sfx('deny');return;}
-  if(sg.intro&&S.mics>0&&lsGet('rk:intro:'+sg.id)!=='1'){lsSet('rk:intro:'+sg.id,'1');jgPlay(pumpStart);return;}   /* 인트로가 있는 곡은 이 기기에서 처음 한 번 인트로부터 */
+  if(sg.intro&&S.mics>0&&lsGet('rk:intro:'+sg.id)!=='1'){lsSet('rk:intro:'+sg.id,'1');jgPlay(sg.intro,pumpStart);return;}   /* 인트로가 있는 곡은 이 기기에서 처음 한 번 인트로부터 */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);

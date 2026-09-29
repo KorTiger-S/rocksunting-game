@@ -411,7 +411,7 @@ html.pgplay #pumpWrap{touch-action:none}
     <div class="btns"><button class="go" id="pgRBack">학교로 돌아가기</button></div>
   </div>
 </div>
-<div class="ov ovfix" id="jgIntro" hidden aria-label="ㅈㄱ의 카드 모험 인트로 애니메이션. 화면을 누르면 다음 장면으로 넘어가요.">
+<div class="ov ovfix" id="jgIntro" hidden aria-label="곡 인트로 애니메이션. 화면을 누르면 다음 장면으로 넘어가요.">
   <canvas id="jgCv" width="800" height="480"></canvas>
   <button class="go ghost" id="jgSkip" type="button">건너뛰기 ▶▶</button>
 </div>
@@ -570,7 +570,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.8.12';
+const APP_VERSION='1.8.13';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -1055,7 +1055,10 @@ const SFX={
   pggo(){tone(NT.C6,.08,'square',.05);tone(NT.G6,.22,'square',.05,.07);},
   /* ㅈㄱ의 카드 모험 인트로 */
   sparkle(){[1568,1976,2349,2637,3136].forEach((f,i)=>tone(f,.2,'triangle',.03,i*.06));},                        /* 카드가 반짝일 때 */
-  chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);}                                /* 파이리 울음소리 "파이~!" */
+  chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);},                               /* 파이리 울음소리 "파이~!" */
+  /* 등굣길 뜀박질 인트로 */
+  alarm(){for(let i=0;i<8;i++)tone(i%2?1760:2093,.07,'square',.035,i*.11);},                                    /* 자명종 따르릉 */
+  chomp(){tone(320,.05,'square',.06);noise(.09,.09,.02,1600,450,.8);tone(170,.14,'square',.05,.07,110);}          /* 주스가 앙! 무는 소리 */
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
@@ -1198,7 +1201,7 @@ function bgmPlay(name){
 /* 지금 장면에 맞는 곡 (null이면 조용히) */
 function wantBgm(){
   if(!$('#splash').hidden||!$('#login').hidden)return 'title';
-  if(typeof JG!=='undefined'&&JG.on)return 'jg';   /* ㅈㄱ의 카드 모험 인트로 (js/jgintro.js) */
+  if(typeof JG!=='undefined'&&JG.on)return jgBgm();   /* 곡 인트로 애니메이션 (js/jgintro.js) */
   if(STORY){const p=STORY.pages[STORY.i];return (p&&p.bgm)||STORY.bgm||'hub';}
   if(!$('#duel').hidden){
     const st=DU.st;if(!st||st.status==='waiting')return 'hub';
@@ -3015,7 +3018,7 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
 const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
 const PG_BETMAX=[1000,2000,3000,4000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
-  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
   {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
@@ -3183,7 +3186,7 @@ function renderPumpCard(){
   const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
   [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
-  $('#pgIntroBtn').hidden=!sg.intro;
+  $('#pgIntroBtn').hidden=!sg.intro;if(sg.intro)$('#pgIntroBtn').textContent=INTROS[sg.intro].btn;
   $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
@@ -3255,7 +3258,7 @@ function pumpStart(){
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
   if(S.money<1000||bet<1000){sfx('deny');return;}
-  if(sg.intro&&S.mics>0&&lsGet('rk:intro:'+sg.id)!=='1'){lsSet('rk:intro:'+sg.id,'1');jgPlay(pumpStart);return;}   /* 인트로가 있는 곡은 이 기기에서 처음 한 번 인트로부터 */
+  if(sg.intro&&S.mics>0&&lsGet('rk:intro:'+sg.id)!=='1'){lsSet('rk:intro:'+sg.id,'1');jgPlay(sg.intro,pumpStart);return;}   /* 인트로가 있는 곡은 이 기기에서 처음 한 번 인트로부터 */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
@@ -3647,13 +3650,14 @@ window.addEventListener('keydown',e=>{
 $('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
 
 'use strict';
-/* ---------- ㅈㄱ의 카드 모험 인트로 ----------
-   소리새 펌프에서 'ㅈㄱ의 카드 모험'을 이 기기에서 처음 시작할 때 노래 전에 보여주는 짧은 애니메이션이에요(pumpStart).
-   허브 카드의 '🎬 ㅈㄱ와 파이리 이야기 보기'로 언제든 다시 볼 수 있어요.
-   장면(JGS)마다 길이(d)·자막(cap)·효과음 시각(ev)·그리기(draw)가 있어요. 화면을 누르거나 Enter/Space면 다음 장면,
-   건너뛰기 버튼이나 Esc면 바로 끝나요. 음악은 audio.js의 BGMT.jg (wantBgm이 JG.on일 때 틀어요).
+/* ---------- 곡 인트로 애니메이션 (엔진 + 'ㅈㄱ의 카드 모험' 이야기) ----------
+   소리새 펌프에서 인트로가 있는 곡(PGSONGS의 intro)을 이 기기에서 처음 시작할 때 노래 전에 보여줘요(pumpStart).
+   곡을 고르면 나오는 '🎬 … 이야기 보기' 버튼으로 언제든 다시 볼 수 있어요.
+   인트로는 INTROS[키] = {scenes, bgm, btn}. 장면마다 길이(d)·자막(cap)·효과음 시각(ev)·그리기(draw)·음악(bgm, 없으면 인트로의 bgm)이 있어요.
+   화면을 누르거나 Enter/Space면 다음 장면, 건너뛰기 버튼이나 Esc면 바로 끝나요. 음악은 wantBgm()이 jgBgm()으로 골라요.
+   다른 곡 인트로: 'ㅈㄱ의 카드 모험'은 이 파일, '등굣길 뜀박질'은 lateintro.js
    파이리·카드·뽑기 기계·친구들 그림은 모두 이 파일에서 도형으로 직접 그려요. */
-const JG={on:false,t:0,i:0,raf:0,last:0,done:null,ctx:$('#jgCv').getContext('2d')};
+const JG={on:false,t:0,i:0,raf:0,last:0,done:null,set:null,ctx:$('#jgCv').getContext('2d')};
 const JG_CH=Object.assign({},CH['ㅈㄱ']);
 const JG_LAB=Object.assign({},JG_CH,{coat:'#f4f6ef',vest:'#3b7de0',glasses:true});   /* 연구복(흰 가운) 입은 박사 ㅈㄱ */
 
@@ -3860,27 +3864,29 @@ const JGS=[
       TX(c,JG.done?'노래 시작!':'THE END',400,100,16,'#f4f6ef','center');c.restore();}
   }}
 ];
+const INTROS={jg:{scenes:JGS,bgm:'jg',btn:'🎬 ㅈㄱ와 파이리 이야기 보기'}};
+function jgBgm(){const sc=JG.set.scenes[JG.i];return (sc&&sc.bgm)||JG.set.bgm;}
 function jgFrame(now){
   if(!JG.on)return;
   JG.raf=requestAnimationFrame(jgFrame);
   const dt=Math.min(.05,(now-JG.last)/1000),t0=JG.t;JG.last=now;JG.t+=dt;
-  const sc=JGS[JG.i];
-  (sc.ev||[]).forEach(e=>{if(e[0]>=t0&&e[0]<JG.t)sfx(e[1]);});
+  const sc=JG.set.scenes[JG.i];
+  (sc.ev||[]).forEach(e=>{if(e[0]>=t0&&e[0]<JG.t){if(typeof e[1]==='function')e[1]();else sfx(e[1]);}});   /* 효과음 이름 또는 함수(예: 라털의 burp) */
   if(JG.t>=sc.d){jgNext(false);return;}
   const c=JG.ctx;
   try{c.save();sc.draw(c,JG.t,JG.t/sc.d);c.restore();jgCap(c,sc.cap,JG.t);}catch(e){console.error(e);}
 }
 function jgNext(tap){
   if(tap)sfx('tick');
-  JG.i++;JG.t=0;if(JG.i>=JGS.length)jgEnd();
+  JG.i++;JG.t=0;if(JG.i>=JG.set.scenes.length)jgEnd();
 }
-/* done: 인트로가 끝나거나 건너뛰면 부를 함수(노래 시작). 없으면 다시 보기라 닫기만 해요 */
-function jgPlay(done){
-  if(JG.on)return;
-  JG.on=true;JG.i=0;JG.t=0;JG.done=done||null;JG.last=performance.now();
+/* key: INTROS의 키. done: 인트로가 끝나거나 건너뛰면 부를 함수(노래 시작). 없으면 다시 보기라 닫기만 해요 */
+function jgPlay(key,done){
+  if(JG.on||!INTROS[key])return;
+  JG.on=true;JG.set=INTROS[key];JG.i=0;JG.t=0;JG.done=done||null;JG.last=performance.now();
   $('#jgSkip').textContent=done?'건너뛰고 노래 시작 ▶▶':'닫기 ✕';
   $('#jgIntro').hidden=false;
-  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)JG.i=JGS.length-1;}catch(e){}
+  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)JG.i=JG.set.scenes.length-1;}catch(e){}
   JG.raf=requestAnimationFrame(jgFrame);bgmSync();
 }
 function jgEnd(){
@@ -3895,7 +3901,148 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();jgEnd();}
   else if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();e.stopPropagation();jgNext(true);}
 },true);
-$('#pgIntroBtn').addEventListener('click',()=>jgPlay(null));
+$('#pgIntroBtn').addEventListener('click',()=>{const sg=pgPick(PGO.song,PGO.diff);if(sg.intro)jgPlay(sg.intro);});
+
+'use strict';
+/* ---------- '등굣길 뜀박질' 인트로: 지각 · 두발 검사 · 담 넘기 ----------
+   엔진은 jgintro.js(INTROS, jgPlay). 롹순팅은 표정 그림(IMGDATA), 라털 선생님은 hub.js의 RATAL_IMG 초상화를 써요.
+   두발 규정: 여학생 단발은 귀밑 3cm, 남학생 반삭발은 3cm를 넘으면 안 돼요. */
+const LT_RATAL=new Image();LT_RATAL.src=RATAL_IMG;
+const LT_SSI=Object.assign({},CH['씨붕']),LT_JUS=Object.assign({},CH['주스']);
+const ltRock=(c,x,y,s,face,o,t)=>kid(c,x,y,s,Object.assign({face},o||{},{ph:o&&o.run?(t||0)*12:0}));   /* 다리는 뛸 때만 움직여요 */
+/* 머리 둘레에 그림을 덧그릴 때 쓰는 머리 중심·반지름 (kid()의 머리는 발밑에서 52×s 위, 반지름 15×s) */
+const ltHead=(x,y,s)=>({hx:x,hy:y-52*s,r:15*s});
+function ltImgHead(c,img,x,y,s){
+  if(!img.complete||!img.naturalWidth)return;
+  const {hx,hy}=ltHead(x,y,s),r=18*s;
+  c.save();c.beginPath();c.arc(hx,hy,r,0,7);c.clip();c.drawImage(img,hx-r*1.35,hy-r*1.2,r*2.7,r*2.7);c.restore();
+  c.lineWidth=2;c.strokeStyle='#232a45';c.beginPath();c.arc(hx,hy,r,0,7);c.stroke();
+}
+/* 여학생: 앞머리를 일자로 자른 짧은 단발(귀밑 3cm) */
+function ltGirl(c,x,y,s,t){
+  kid(c,x,y,s,{hair:'#1c1a1a',coat:'#232a45',vest:'#6d1f31',ph:t});
+  const {hx,hy,r}=ltHead(x,y,s);c.fillStyle='#1c1a1a';
+  c.beginPath();c.arc(hx,hy-r*.05,r*1.12,Math.PI,0);c.lineTo(hx+r*1.12,hy+r*.72);c.lineTo(hx+r*.72,hy+r*.72);c.lineTo(hx+r*.72,hy-r*.3);
+  c.lineTo(hx-r*.72,hy-r*.3);c.lineTo(hx-r*.72,hy+r*.72);c.lineTo(hx-r*1.12,hy+r*.72);c.closePath();c.fill();
+}
+/* 남학생: 아주 짧은 반삭발(3cm) */
+function ltBoy(c,x,y,s,t){
+  kid(c,x,y,s,{hair:'#5b5b5b',ph:t});
+  const {hx,hy,r}=ltHead(x,y,s);c.fillStyle='rgba(40,40,40,.35)';
+  for(let i=0;i<14;i++){const a=Math.PI+i/13*Math.PI;c.fillRect(hx+Math.cos(a)*r*.9-1,hy-r*.2+Math.sin(a)*r*.9-1,2,2);}
+}
+/* 자: 세로로 대고 눈금 + 3cm 표시 */
+function ltRuler(c,x,y0,y1){
+  c.fillStyle='#ffd23f';rr(c,x-6,y0,12,y1-y0,2);c.fill();c.strokeStyle='#8a6a10';c.lineWidth=1.5;c.stroke();
+  for(let y=y0+4,i=0;y<y1;y+=5,i++){c.beginPath();c.moveTo(x-6,y);c.lineTo(x-(i%2?2:0),y);c.stroke();}
+}
+function ltSweat(c,x,y,t,n){
+  for(let i=0;i<(n||3);i++){const q=(t*1.6+i/(n||3))%1;c.save();c.globalAlpha=1-q;c.fillStyle='#6ab7ff';
+    const px=x+(i%2?1:-1)*(10+q*30),py=y-q*20+q*q*40;c.beginPath();c.moveTo(px,py-6);c.quadraticCurveTo(px+4,py,px,py+3);c.quadraticCurveTo(px-4,py,px,py-6);c.fill();c.restore();}
+}
+function ltStreet(c,off){
+  const g=c.createLinearGradient(0,0,0,300);g.addColorStop(0,'#9fd6f5');g.addColorStop(1,'#e6f6fd');c.fillStyle=g;c.fillRect(0,0,W,300);
+  const cols=['#e8b7a0','#c9d7a8','#f2d9a2','#b8c9e0','#e0b7c9'];
+  for(let i=-1;i<7;i++){const x=((i*170-off)%1190+1190)%1190-170,h=110+(i*37%3)*25;
+    c.fillStyle=cols[(i+10)%5];c.fillRect(x,300-h,140,h);c.fillStyle='#8a5a3a';c.beginPath();c.moveTo(x-10,300-h);c.lineTo(x+70,300-h-40);c.lineTo(x+150,300-h);c.closePath();c.fill();
+    c.fillStyle='#9fc9e0';c.fillRect(x+20,300-h+25,32,26);c.fillRect(x+88,300-h+25,32,26);}
+  c.fillStyle='#b9b4a8';c.fillRect(0,300,W,40);c.fillStyle='#6b6b6b';c.fillRect(0,340,W,H-340);
+  c.fillStyle='#e8e2d0';for(let x=-((off*1.2)%120);x<W;x+=120)c.fillRect(x,405,60,6);
+}
+function ltWall(c,x0,x1,top){
+  c.fillStyle='#b5654b';c.fillRect(x0,top,x1-x0,372-top);
+  c.strokeStyle='rgba(60,25,15,.35)';c.lineWidth=2;
+  for(let y=top,r=0;y<372;y+=22,r++){c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.stroke();
+    for(let x=x0+(r%2?22:0);x<x1;x+=44){c.beginPath();c.moveTo(x,y);c.lineTo(x,Math.min(372,y+22));c.stroke();}}
+  c.fillStyle='#8f8f8f';c.fillRect(x0-6,top-10,x1-x0+12,12);
+}
+const LTS=[
+  {d:4.2,bgm:'match',cap:'아침에 눈을 떠 보니… 등교 시간이 한참 지나 있었다!',ev:[[0,'alarm'],[1.6,'alarm']],
+   draw(c,t,p){
+    jgRoom(c,0);
+    c.fillStyle='#6d8fc9';rr(c,60,300,230,60,8);c.fill();c.fillStyle='#fff';rr(c,70,286,70,26,8);c.fill();c.fillStyle='#e8b7a0';rr(c,140,292,150,40,10);c.fill();
+    const sh=Math.sin(t*50)*3;c.save();c.translate(700+sh,270);
+    c.fillStyle='#e2334d';c.beginPath();c.arc(0,0,26,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(0,0,20,0,7);c.fill();
+    c.strokeStyle='#232a45';c.lineWidth=3;c.beginPath();c.moveTo(0,0);c.lineTo(0,-14);c.moveTo(0,0);c.lineTo(12,6);c.stroke();
+    c.fillStyle='#e2334d';c.beginPath();c.arc(-18,-24,8,0,7);c.arc(18,-24,8,0,7);c.fill();c.restore();
+    TX(c,'8:50',700,222,22,'#e2334d','center','#fff');
+    const up=p>.35;ltRock(c,380,372,2.4,up?'panic':'surprise',{arms:up?'up':undefined});
+    if(up)jgBubble(c,430,150,'으악!! 지각이다!!',22);
+  }},
+  {d:4.4,bgm:'match',cap:'땀을 뻘뻘 흘리며 머대부고로 달렸다. 같이 지각한 씨붕도 함께!',ev:[[.2,'whoosh'],[2.2,'whoosh']],
+   draw(c,t,p){
+    ltStreet(c,t*260);
+    kid(c,300,380,2.2,Object.assign({},LT_SSI,{run:true,ph:t*11}));ltSweat(c,300,380-52*2.2,t,3);
+    ltRock(c,470,380,2.3,'panic',{run:true},t);ltSweat(c,470,380-52*2.3,t+.3,4);
+  }},
+  {d:4.8,bgm:'match',cap:'씨붕: "먼저 가… 난 걸음이 느려…"',ev:[[1.8,'whoosh']],
+   draw(c,t,p){
+    ltStreet(c,300);
+    kid(c,260,380,2.2,Object.assign({},LT_SSI,{arms:undefined}));ltSweat(c,260,380-52*2.2,t,2);
+    jgBubble(c,270,170,'먼저 가… 난 걸음이 느려…',19);
+    const q=jgEase((p-.4)/.6);ltRock(c,470+q*420,380,2.3,q>0?'resolve':'worn',{run:q>0},t);
+  }},
+  {d:6.4,bgm:'ratal',cap:'정문에 도착하니 학생들이 줄지어 서 있었다. 라털 선생님이 자를 대고 머리 길이를 재고 있었다!',ev:[[.3,'whistle'],[2.4,'tick'],[3.4,()=>burp()]],
+   draw(c,t,p){
+    bgField(c);
+    c.fillStyle='#8f8f8f';c.fillRect(40,150,40,222);c.fillRect(720,150,40,222);c.fillStyle='#6d1f31';rr(c,30,130,60,26,4);c.fill();rr(c,710,130,60,26,4);c.fill();
+    TX(c,'정문',60,143,14,'#f4f6ef','center');TX(c,'정문',740,143,14,'#f4f6ef','center');
+    ltBoy(c,150,372,1.9,0);ltGirl(c,240,372,1.9,0);ltBoy(c,330,372,1.9,0);
+    ltGirl(c,470,372,2.1,0);
+    const {hx,hy,r}=ltHead(470,372,2.1);ltRuler(c,hx+r*1.35,hy-r*1.1,hy+r*1.25);
+    c.strokeStyle='#e2334d';c.lineWidth=2;c.setLineDash([4,3]);c.beginPath();c.moveTo(hx+r*.7,hy+r*.72);c.lineTo(hx+r*1.35,hy+r*.72);c.stroke();c.setLineDash([]);
+    TX(c,'귀밑 3cm',hx+r*1.35,hy-r*1.1-16,15,'#e2334d','center','#fff');
+    kid(c,650,372,2.4,{coat:'#2f3a56',vest:'#c4372f',ph:0});ltImgHead(c,LT_RATAL,650,372,2.4);
+    c.strokeStyle='#2f3a56';c.lineWidth=12;c.lineCap='round';c.beginPath();c.moveTo(650-11*2.4,372-33*2.4);c.lineTo(hx+r*1.35+10,hy+r*.1);c.stroke();   /* 자를 댄 팔 */
+    c.fillStyle='#f2c9a5';c.beginPath();c.arc(hx+r*1.35+10,hy+r*.1,8,0,7);c.fill();
+    TX(c,'라털',650,372-76*2.4,17,'#fff','center','rgba(0,0,0,.6)');
+    if(p>.35)jgBubble(c,590,110,'귀밑 3cm! 반삭발도 3cm! 넘으면 이발소행이다. 바우!',17);
+  }},
+  {d:4.2,bgm:'sad',cap:'아차… 오늘이 두발 검사 날이었지. 까맣게 잊고 있었다. 하아…',ev:[[.4,'aww']],
+   draw(c,t,p){
+    const g=c.createRadialGradient(400,210,40,400,210,460);g.addColorStop(0,'#4a5a8a');g.addColorStop(1,'#1b1f3b');c.fillStyle=g;c.fillRect(0,0,W,H);
+    faceImg(c,'sad',400,200,120);
+    ltSweat(c,520,110,t*.5,1);
+    c.save();c.globalAlpha=clamp((p-.2)*3,0,1);jgBubble(c,610,300,'하아…',26);c.restore();
+    c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=3;for(let i=0;i<3;i++){const q=(t*.6+i/3)%1;c.beginPath();c.arc(260-q*40,300-q*30,8+q*16,0,Math.PI);c.stroke();}
+  }},
+  {d:5.2,bgm:'match',cap:'학교 뒷문 쪽으로 돌아가 넘어갈 만한 담을 찾았다. 슬금슬금… 영차!',ev:[[1.9,'kick'],[3.6,'whoosh']],
+   draw(c,t,p){
+    const g=c.createLinearGradient(0,0,0,300);g.addColorStop(0,'#9fd6f5');g.addColorStop(1,'#e6f6fd');c.fillStyle=g;c.fillRect(0,0,W,300);
+    c.fillStyle='#cbbfa9';c.fillRect(0,90,W,90);for(let i=0;i<12;i++){c.fillStyle='#9fc9e0';c.fillRect(20+i*68,105,40,18);c.fillRect(20+i*68,140,40,18);}
+    c.fillStyle='#6bb56f';c.fillRect(0,300,W,H-300);
+    let x,y,arms,behind=false;
+    if(p<.35){x=120+jgEase(p/.35)*260;y=372;}
+    else if(p<.65){const q=jgEase((p-.35)/.3);x=380+q*20;y=372-q*182;arms='up';}
+    else{const q=jgEase((p-.65)/.35);x=400+q*120;y=190+q*182;arms='up';behind=q>.3;}
+    if(behind){ltRock(c,x,y,2.2,'excited',{arms},t);ltWall(c,300,W,210);}
+    else{ltWall(c,300,W,210);ltRock(c,x,y,2.2,p<.35?'doubt':'resolve',{arms,run:p<.35},t);}
+    c.fillStyle='#f4f6ef';rr(c,560,262,150,34,4);c.fill();c.strokeStyle='#6d1f31';c.lineWidth=3;c.stroke();TX(c,'머대부고 뒷담',635,280,17,'#6d1f31','center');
+  }},
+  {d:4.4,bgm:'match',cap:'담을 넘는 데 성공! …그런데 담 안쪽에서 기다리던 주스가 앙! 하고 물었다!',ev:[[.5,'thud'],[2.1,'chomp'],[2.2,'deny']],
+   draw(c,t,p){
+    const bite=p>.47,sh=bite&&p<.6?Math.sin(t*70)*6:0;c.save();c.translate(sh,0);
+    bgField(c);ltWall(c,0,180,150);
+    const land=jgEase(p/.12);ltRock(c,330,190+land*182,2.3,bite?'panic':'happy',{arms:bite?'up':undefined},t);
+    const q=jgEase((p-.3)/.17);kid(c,690-q*260,372,2.3,Object.assign({},LT_JUS,{arms:q<1?undefined:'up',run:q>0&&q<1,ph:t*12}));
+    if(bite){TX(c,'앙!',400,150,70,'#e2334d','center','#fff');
+      c.strokeStyle='#e2334d';c.lineWidth=3;for(let i=0;i<4;i++){c.beginPath();c.moveTo(356+i*6,300);c.lineTo(358+i*6,308);c.stroke();}}
+    c.restore();
+  }},
+  {d:5.4,bgm:'match',cap:'주스: "내가 왜 빌런이야…" (볼멘소리)',ev:[[.3,'pgmiss'],[3.4,'win']],
+   draw(c,t,p){
+    bgField(c);ltWall(c,0,180,150);
+    ltRock(c,300,372,2.3,'frustrated',{},t);
+    c.strokeStyle='#e2334d';c.lineWidth=3;for(let i=0;i<4;i++){c.beginPath();c.moveTo(326+i*6,330);c.lineTo(328+i*6,338);c.stroke();}
+    kid(c,500,372,2.3,Object.assign({},LT_JUS,{arms:'cross'}));
+    jgBubble(c,520,170,'내가 왜 빌런이야…',22);
+    if(p>.6){const a=jgEase((p-.6)/.15);c.save();c.globalAlpha=a;
+      c.fillStyle='rgba(20,24,44,.9)';rr(c,200,30,400,86,16);c.fill();c.strokeStyle='#ffd23f';c.lineWidth=3;c.stroke();
+      TX(c,'등굣길 뜀박질',400,64,40,'#ffd23f','center','#232a45');
+      TX(c,JG.done?'노래 시작!':'THE END',400,100,16,'#f4f6ef','center');c.restore();}
+  }}
+];
+INTROS.late={scenes:LTS,bgm:'match',btn:'🎬 지각생 롹순팅 이야기 보기'};
 
 'use strict';
 /* ---------- 메인 루프 ---------- */

@@ -84,7 +84,10 @@ const SFX={
   pggo(){tone(NT.C6,.08,'square',.05);tone(NT.G6,.22,'square',.05,.07);},
   /* ㅈㄱ의 카드 모험 인트로 */
   sparkle(){[1568,1976,2349,2637,3136].forEach((f,i)=>tone(f,.2,'triangle',.03,i*.06));},                        /* 카드가 반짝일 때 */
-  chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);}                                /* 파이리 울음소리 "파이~!" */
+  chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);},                               /* 파이리 울음소리 "파이~!" */
+  /* 등굣길 뜀박질 인트로 */
+  alarm(){for(let i=0;i<8;i++)tone(i%2?1760:2093,.07,'square',.035,i*.11);},                                    /* 자명종 따르릉 */
+  chomp(){tone(320,.05,'square',.06);noise(.09,.09,.02,1600,450,.8);tone(170,.14,'square',.05,.07,110);}          /* 주스가 앙! 무는 소리 */
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
@@ -227,7 +230,7 @@ function bgmPlay(name){
 /* 지금 장면에 맞는 곡 (null이면 조용히) */
 function wantBgm(){
   if(!$('#splash').hidden||!$('#login').hidden)return 'title';
-  if(typeof JG!=='undefined'&&JG.on)return 'jg';   /* ㅈㄱ의 카드 모험 인트로 (js/jgintro.js) */
+  if(typeof JG!=='undefined'&&JG.on)return jgBgm();   /* 곡 인트로 애니메이션 (js/jgintro.js) */
   if(STORY){const p=STORY.pages[STORY.i];return (p&&p.bgm)||STORY.bgm||'hub';}
   if(!$('#duel').hidden){
     const st=DU.st;if(!st||st.status==='waiting')return 'hub';
