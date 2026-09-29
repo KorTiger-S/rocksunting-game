@@ -51,7 +51,6 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .go.alt{background:var(--board)}
 .go.ghost{background:var(--card);color:var(--ink)}
 .note{padding:12px 14px;border:2px dashed var(--line);border-radius:12px;background:var(--card);font-size:15px}
-.note.win{background:#fff4c9;color:#3a2c00;border-style:solid;font-weight:700}
 .chall{padding:16px;display:grid;gap:12px}
 .chall h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.2}
 .chall p{margin:0;color:var(--muted);font-size:14px}
@@ -112,7 +111,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .plus{color:var(--ok)}.minus{color:var(--ring)}
 .btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 .tip{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
-#toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:20;padding:0 12px}
+#toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:80;padding:0 12px}
 #toast div{background:var(--line);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500}
 #pad{position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));display:none;justify-content:space-between;padding:0 14px;pointer-events:none;z-index:15}
 @media (pointer:coarse){#pad.on{display:flex}}

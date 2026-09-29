@@ -17,7 +17,6 @@ function goLoginForm(){
 }
 function enterGuest(){
   USER={id:'Guest',guest:true};S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;
-  S.news='게스트로 시작했다. 이번 기록은 저장되지 않고 랭킹에도 오르지 않는다.';
   $('#login').hidden=true;mode='hub';
   renderHub();updateUserChip();setSync('idle');
   sfx('chime');toast('Guest로 시작해요. 기록은 저장되지 않아요.');
@@ -52,7 +51,7 @@ function finishLogin(cloud){
   if(!local&&!cEx){showNew(id);return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
-  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=stale?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
+  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;if(stale)news='새 시즌이 시작되어 모든 기록이 초기화됐어요. 처음부터 다시!';}
   else{data=mergeData(local.data);name=local.name||id;at=lAt;}
   enter(name,data,at,news);
 }
@@ -61,19 +60,19 @@ function showNew(id){
   const raw=lsGet(LEGACY_KEY),done=lsGet('rk:legacyDone');let leg=null;
   try{if(raw&&!done)leg=JSON.parse(raw);}catch(e){}
   LG.legacy=leg;$('#lgImport').hidden=!leg;$('#lgLegacy').hidden=!leg;
-  if(leg)$('#lgLegacy').textContent=`이 기기에 이전에 하던 기록이 있어요. (소지금 ${fmt(leg.money||0)}원, ${leg.week||1}주차) 이 ID로 가져올 수 있어요.`;
+  if(leg)$('#lgLegacy').textContent=`이 기기에 이전에 하던 기록이 있어요. (소지금 ${fmt(leg.money||0)}원) 이 ID로 가져올 수 있어요.`;
 }
 function createUser(useLegacy){
   const id=LG.id;let data=DEF();
-  if(useLegacy&&LG.legacy){data=mergeData(LG.legacy);data.news='이전 기록을 가져왔다. 이어서 시작!';lsSet('rk:legacyDone','1');}
+  if(useLegacy&&LG.legacy){data=mergeData(LG.legacy);lsSet('rk:legacyDone','1');}
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
-  sfx('welcome');toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
+  sfx('welcome');toast(news||(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`),news?5000:2600);
   maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){

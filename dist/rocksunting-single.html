@@ -60,7 +60,6 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .go.alt{background:var(--board)}
 .go.ghost{background:var(--card);color:var(--ink)}
 .note{padding:12px 14px;border:2px dashed var(--line);border-radius:12px;background:var(--card);font-size:15px}
-.note.win{background:#fff4c9;color:#3a2c00;border-style:solid;font-weight:700}
 .chall{padding:16px;display:grid;gap:12px}
 .chall h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.2}
 .chall p{margin:0;color:var(--muted);font-size:14px}
@@ -121,7 +120,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .plus{color:var(--ok)}.minus{color:var(--ring)}
 .btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 .tip{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
-#toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:20;padding:0 12px}
+#toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:80;padding:0 12px}
 #toast div{background:var(--line);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500}
 #pad{position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));display:none;justify-content:space-between;padding:0 14px;pointer-events:none;z-index:15}
 @media (pointer:coarse){#pad.on{display:flex}}
@@ -226,13 +225,12 @@ html.pgplay #pumpWrap{touch-action:none}
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
   </div>
 </header>
 
 <div id="hub">
   <section id="main" style="display:grid;gap:14px;align-content:start">
-    <div class="note" id="note"></div>
     <div class="note" id="chat"></div>
     <div class="glist" id="gameList">
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
@@ -367,7 +365,6 @@ html.pgplay #pumpWrap{touch-action:none}
         <h2 id="sT"></h2>
         <img id="sImg" alt="">
         <table class="sumtab" id="sTab"></table>
-        <p id="sX"></p>
         <div class="btns"><button class="go" id="sBtn">학교로 돌아가기</button></div>
       </div>
     </div>
@@ -411,7 +408,6 @@ html.pgplay #pumpWrap{touch-action:none}
     <p class="pgbadge" id="pgRB"></p>
     <table class="sumtab" id="pgRTab"></table>
     <p id="pgRSay" style="color:var(--ink);font-weight:700"></p>
-    <p id="pgRX"></p>
     <div class="btns"><button class="go" id="pgRBack">학교로 돌아가기</button></div>
   </div>
 </div>
@@ -574,7 +570,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='1.8.11';
+const APP_VERSION='1.8.12';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -597,7 +593,6 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rand=(a,b)=>a+Math.random()*(b-a);
 const fmt=n=>Math.floor(n).toLocaleString('ko-KR');
 const FACES=['base','angry','surprise','panic','happy','sad','tired','doubt','resolve','excited','frustrated','worn'];
-const DAYS=['월','화','수','목','금'];
 const CONDS=['매우나쁨','나쁨','보통','좋음','매우좋음'];   /* 컨디션 5단계 (0~4) */
 function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*v);}
 
@@ -605,12 +600,11 @@ function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();r
 'use strict';
 /* ---------- save ---------- */
 const LEGACY_KEY='rocksunting-freekick-v1';
-const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,day:0,week:1,wins:0,losses:0,cleared:false,
+const DEF=()=>({fatigue:0,hosp:0,bestPts:0,plays:0,money:10000,wins:0,losses:0,cleared:false,
   str:25,stam:25,mood:50,cond:1,gymGap:0,bbqGap:0,   /* 근력·체력·기분(0~100), 컨디션(0~4=매우나쁨~매우좋음). 신규 가입은 허약하게 시작 */
   balls:5,ballAt:0,   /* 프리킥 도전 횟수(축구공 5개): 남은 개수 + 다음 공이 충전되기 시작한 시각(epoch 분). 30분마다 1개 충전 */
   mics:5,micAt:0,pumpBest:0,   /* 소리새 펌프(시즌2): 마이크 5개(도전 횟수, 30분마다 1개 충전) + 다음 마이크 충전 시작 시각(epoch 분) + 클리어한 최고 점수 */
-  houDate:-1,houLeft:3,   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
-  news:'월요일 아침, 오늘도 학교에서 살아남자.'});
+  houDate:-1,houLeft:3});   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
 const MEM={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return MEM[k]===undefined?null:MEM[k];}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
@@ -637,7 +631,7 @@ function renderSeason(){
 }
 function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
-function cloudData(){return{money:S.money,day:S.day,week:S.week,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,
+function cloudData(){return{money:S.money,fatigue:S.fatigue||0,hosp:S.hosp||0,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,
   str:S.str==null?25:S.str,stam:S.stam==null?25:S.stam,mood:S.mood==null?50:S.mood,cond:S.cond==null?1:S.cond,gymGap:S.gymGap||0,bbqGap:S.bbqGap||0,
   houDate:S.houDate==null?-1:S.houDate,houLeft:S.houLeft==null?3:S.houLeft,
   balls:S.balls==null?5:S.balls,ballAt:S.ballAt||0,
@@ -688,10 +682,12 @@ async function api(action,params){   /* backend/schema.sql 의 rk_<action> 함�
 }
 let pushT=null,pushBusy=false,dirty=false;
 function cloudSoon(){if(!cloudUrl()||!USER)return;dirty=true;clearTimeout(pushT);pushT=setTimeout(cloudPush,900);}
-function adoptCloud(r){
+/* 서버 기록으로 바꿔 끼우고, 왜 기록이 바뀌었는지(새 시즌 초기화 / 다른 기기 기록) 알림으로 알려 줘요 */
+function adoptCloud(r,msg){
   if(mode!=='hub'){pendingCloud=r;return;}
   const d=mergeData(r.data),newSeason=!!(r.season&&r.season!==USER.season);
-  d.news=newSeason?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':'다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
+  d.updatedAt=r.updatedAt;
+  toast(newSeason?'새 시즌이 시작되어 모든 기록이 초기화됐어요. 처음부터 다시!':msg||'다른 기기의 더 최신 기록을 불러왔어요.',5000);
   if(r.season)USER.season=r.season;
   S=d;putLocal();renderHub();maybeLoan();
 }
@@ -702,11 +698,10 @@ async function cloudPush(){
     if(OFFLINE_BASE!==null){
       const r0=await api('load',{id:USER.id,pin:USER.pin});
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
-      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0);toast('오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
+      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0,'오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const was=USER.season;
     const r=await api('save',{id:USER.id,pin:USER.pin,season:USER.season||LEGACY_SEASON,updatedAt:S.updatedAt,data:cloudData()});
-    if(r.conflict&&r.data){adoptCloud(r);toast(r.season&&r.season!==was?'새 시즌이 시작되어 기록이 초기화됐어요.':'다른 기기의 더 최신 기록을 불러왔어요.');}
+    if(r.conflict&&r.data)adoptCloud(r);
     setSync('ok');
   }catch(e){
     if(e.message==='bad_pin'||e.message==='locked'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}
@@ -738,7 +733,6 @@ function goLoginForm(){
 }
 function enterGuest(){
   USER={id:'Guest',guest:true};S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;
-  S.news='게스트로 시작했다. 이번 기록은 저장되지 않고 랭킹에도 오르지 않는다.';
   $('#login').hidden=true;mode='hub';
   renderHub();updateUserChip();setSync('idle');
   sfx('chime');toast('Guest로 시작해요. 기록은 저장되지 않아요.');
@@ -773,7 +767,7 @@ function finishLogin(cloud){
   if(!local&&!cEx){showNew(id);return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
-  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;news=stale?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':`기록을 불러왔다. ${data.week}주차 ${DAYS[data.day]}요일부터 이어서!`;}
+  if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;if(stale)news='새 시즌이 시작되어 모든 기록이 초기화됐어요. 처음부터 다시!';}
   else{data=mergeData(local.data);name=local.name||id;at=lAt;}
   enter(name,data,at,news);
 }
@@ -782,19 +776,19 @@ function showNew(id){
   const raw=lsGet(LEGACY_KEY),done=lsGet('rk:legacyDone');let leg=null;
   try{if(raw&&!done)leg=JSON.parse(raw);}catch(e){}
   LG.legacy=leg;$('#lgImport').hidden=!leg;$('#lgLegacy').hidden=!leg;
-  if(leg)$('#lgLegacy').textContent=`이 기기에 이전에 하던 기록이 있어요. (소지금 ${fmt(leg.money||0)}원, ${leg.week||1}주차) 이 ID로 가져올 수 있어요.`;
+  if(leg)$('#lgLegacy').textContent=`이 기기에 이전에 하던 기록이 있어요. (소지금 ${fmt(leg.money||0)}원) 이 ID로 가져올 수 있어요.`;
 }
 function createUser(useLegacy){
   const id=LG.id;let data=DEF();
-  if(useLegacy&&LG.legacy){data=mergeData(LG.legacy);data.news='이전 기록을 가져왔다. 이어서 시작!';lsSet('rk:legacyDone','1');}
+  if(useLegacy&&LG.legacy){data=mergeData(LG.legacy);lsSet('rk:legacyDone','1');}
   enter(id,data,0,null,true);
 }
 function enter(name,data,at,news,isNew){
-  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;if(news)S.news=news;
+  USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;
   OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
-  sfx('welcome');toast(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`);
+  sfx('welcome');toast(news||(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`),news?5000:2600);
   maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){
@@ -954,7 +948,7 @@ let rankMetric='money';
 const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
 function localTop(metric){
   const out=[];
-  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
+  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,v:d[metric]||0});}catch(e){}});
   out.sort((a,b)=>b.v-a.v);return out.slice(0,10);
 }
 async function renderRank(){
@@ -972,7 +966,7 @@ $('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
-function toast(m){const t=$('#toast');t.innerHTML='';const d=document.createElement('div');d.textContent=m;t.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove();},2600);}
+function toast(m,ms=2600){const t=$('#toast');t.innerHTML='';const d=document.createElement('div');d.textContent=m;t.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove();},ms);}
 
 
 'use strict';
@@ -1773,27 +1767,20 @@ function settle(){
   if(win){S.wins++;S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);}   /* 이기면 기분이 조금 좋아져요 */
   else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}    /* 지면 기분이 조금 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
-  const weekend=advanceDay();
-  sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
+  dayStats();
+  sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');
+  if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.injured?'부상':M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money,week:S.week});
+  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.injured?'부상':M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money});
   $('#sT').textContent=M.injured?'부상으로 기권…':M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
   $('#sImg').src=IMGDATA[M.injured?'panic':big?'excited':win?'happy':'frustrated'];
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
     `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;
-  $('#sX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
   $('#ovSet').hidden=false;
 }
-function advanceDay(){
-  S.day++;
-  dayStats();
-  if(S.day>=5){S.day=0;S.week++;S.news=`${S.week-1}주차가 끝났다. 주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`;return true;}
-  S.news=`${DAYS[S.day]}요일이 밝았다.`;return false;
-}
-/* 매일 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
-   쇠질하기·난지바베큐를 한 날은 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(오늘 했음)이 돼요. */
+/* 한 판(경기·쇠질·바베큐)마다 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
+   쇠질하기·난지바베큐를 했을 땐 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(방금 했음)이 돼요. */
 function dayStats(){
   S.gymGap=(S.gymGap==null?0:S.gymGap)+1;
   if(S.gymGap>=3)S.str=clamp((S.str==null?25:S.str)-4,0,100);
@@ -1801,7 +1788,7 @@ function dayStats(){
   if(S.bbqGap>=3)S.stam=clamp((S.stam==null?25:S.stam)-4,0,100);
   rollCondition();
 }
-/* 컨디션은 그날그날 랜덤이지만, 기분이 아주 나쁘면(<20) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요.
+/* 컨디션은 판마다 랜덤이지만, 기분이 아주 나쁘면(<20) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요.
    예전엔 기분<30에서부터 나쁜 쪽으로 쏠려서, 신규 유저가 몇 판만 져도(패배 -6씩) 금방 컨디션 매우나쁨(자빠질 위험)에
    빠지는 악순환이 있었어요. 기준을 <20으로 낮춰서 진짜 연패가 이어질 때만 이 페널티가 붙게 했어요. */
 function rollCondition(){
@@ -2235,11 +2222,10 @@ document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>op
 document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
   renderDuelCard();renderPumpCard();
-  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
+  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   renderStats();
-  $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   betV=clamp(betV,1000,Math.max(1000,betMax()));
   $('#betV').textContent=fmt(betV)+'원';
@@ -2279,7 +2265,7 @@ setInterval(()=>{
   if(!USER||mode!=='hub')return;
   if(ballTick()){save();renderHub();sfx('ping');toast('⚽ 도전 횟수가 하나 충전됐어요!');}else renderBalls();
 },1000);
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 한 판을 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
@@ -2300,26 +2286,26 @@ function gymAction(){
   const before=Math.round(clamp(S.str==null?25:S.str,0,100));
   S.str=clamp((S.str==null?25:S.str)+10,0,100);S.gymGap=-1;
   spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
-  dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
+  dayAction(-GYM_COST,false);
 }
 function bbqAction(){
   if(S.money<BBQ_COST)return;
   const before=Math.round(clamp(S.stam==null?25:S.stam,0,100));
   S.stam=clamp((S.stam==null?25:S.stam)+12,0,100);S.bbqGap=-1;
   spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
-  dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
+  dayAction(-BBQ_COST,false);
 }
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
   const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='소리새에 가서 노래를 불렀다. 컨디션이 좋아졌다!';
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);
   spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
   const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 라볶이를 사 먹었다. 기분이 좋아졌다!';
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);
   spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
@@ -2328,14 +2314,12 @@ $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
-function dayAction(msg,gain,job){
+function dayAction(gain,job){
   if(gain)S.money+=gain;
   if(job)S.fatigue=(S.fatigue||0)+1;else S.fatigue=Math.max(0,(S.fatigue||0)-1);
   chatCur=randChat();
-  const wkd=advanceDay();S.news=msg+' '+S.news;if(wkd)setTimeout(()=>sfx('bell'),300);
+  dayStats();
   if(job&&S.fatigue>=3){hospitalize();return;}
-  if(job&&S.fatigue===2)S.news+=' 몸이 무겁다… 알바를 또 하면 쓰러질지도 모른다.';
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';sfx('bigwin');}
   save();renderHub();
 }
 const VISIT=[
@@ -2350,13 +2334,11 @@ const VISIT=[
 function hospitalize(){
   const before=S.money,fee=Math.min(8000,Math.max(2000,Math.round(S.money*.35/100)*100)),paid=Math.min(S.money,fee),short=fee-paid;
   S.money-=paid;const afterFee=S.money;S.fatigue=0;S.hosp=(S.hosp||0)+1;
-  const dBefore=S.day,wk=S.week;advanceDay();const w2=S.week;advanceDay();
-  const weekend=S.week>wk;const v=pick(VISIT);if(weekend)setTimeout(()=>sfx('bell'),700);
-  S.news=`과로로 이틀 입원했다. 병원비 ${fmt(paid)}원이 나갔다.`+(weekend?` 주말이 지나 새 주가 시작됐다. (${S.week}주차 ${DAYS[S.day]}요일)`:` (${DAYS[S.day]}요일)`);
+  dayStats();dayStats();const v=pick(VISIT);
   const pages=[
     {img:'worn',sfx:'siren',title:'과로로 쓰러졌다…',text:'매점 알바를 쉬지 않고 이어서 하다가, 계산대 앞에서 그대로 쓰러지고 말았다.'},
     {img:'sad',title:'병원에서 눈을 떴다',who:v.n,text:v.t},
-    {img:'frustrated',sfx:'deny',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+` 이틀을 병원에서 보냈다.`+(weekend?' 그 사이 주말이 지나 새 주가 시작됐다.':'')+' 알바는 쉬엄쉬엄 하자.'}
+    {img:'frustrated',sfx:'deny',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+' 알바는 쉬엄쉬엄 하자.'}
   ];
   save();
   showStory(pages,()=>{chatCur=randChat();renderHub();maybeLoan();},'sad');
@@ -2383,7 +2365,7 @@ function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtoot
 function maybeLoan(){
   if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#challengeInfo').hidden||!$('#profile').hidden)return;
   const before=Math.max(0,S.money);
-  S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
+  S.money=LOAN;save();renderHub();
   showStory([
     {img:'sad',sfx:'deny',bgm:'sad',title:'소지금이 바닥났다…',text:'지갑이 텅 비었다. 주머니를 뒤집어 봐도 먼지뿐… 그때 복도 끝에서 라털 선생님이 다가왔다.'},
     {src:RATAL_IMG,bgm:'ratal',title:'라털 선생님',who:'라털',text:pick(RATAL_LINES),burp:true},
@@ -3483,11 +3465,11 @@ function pgFinish(failed,quit){
   if(win)S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);else S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);
   if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
   S.plays=(S.plays||0)+1;
-  const weekend=advanceDay();
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
+  dayStats();
+  if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money,week:S.week});
-  sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
+  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
+  sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
   const title=quit?'포기…':failed?'STAGE BREAK…':win&&grade==='S'?'완승! S 랭크':win?'내기 승리!':'호우에게 졌다…';
   const say=(quit||failed)?HOU_FAIL:win?(grade==='S'?HOU_BIG:HOU_WIN):HOU_LOSE;
@@ -3505,7 +3487,6 @@ function pgFinish(failed,quit){
        `<tr><td>소지금</td><td>${fmt(g.before)} → ${fmt(S.money)}원</td></tr>`;
     $('#pgRTab').innerHTML=h;
     $('#pgRSay').textContent='호우: '+pick(say);
-    $('#pgRX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
     $('#pgResult').hidden=false;
   },failed?500:1500);
 }

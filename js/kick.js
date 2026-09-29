@@ -404,27 +404,20 @@ function settle(){
   if(win){S.wins++;S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);}   /* 이기면 기분이 조금 좋아져요 */
   else{S.losses++;S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);}    /* 지면 기분이 조금 나빠져요 */
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
-  const weekend=advanceDay();
-  sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
+  dayStats();
+  sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');
+  if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.injured?'부상':M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money,week:S.week});
+  cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.injured?'부상':M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money});
   $('#sT').textContent=M.injured?'부상으로 기권…':M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
   $('#sImg').src=IMGDATA[M.injured?'panic':big?'excited':win?'happy':'frustrated'];
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
     `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;
-  $('#sX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
   $('#ovSet').hidden=false;
 }
-function advanceDay(){
-  S.day++;
-  dayStats();
-  if(S.day>=5){S.day=0;S.week++;S.news=`${S.week-1}주차가 끝났다. 주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`;return true;}
-  S.news=`${DAYS[S.day]}요일이 밝았다.`;return false;
-}
-/* 매일 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
-   쇠질하기·난지바베큐를 한 날은 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(오늘 했음)이 돼요. */
+/* 한 판(경기·쇠질·바베큐)마다 한 번: 쇠질/바베큐를 오래 쉬면 근력·체력이 떨어지고, 컨디션이 새로 굴러요.
+   쇠질하기·난지바베큐를 했을 땐 gymGap/bbqGap을 -1로 미리 낮춰 둬서, 여기서 +1되면 0(방금 했음)이 돼요. */
 function dayStats(){
   S.gymGap=(S.gymGap==null?0:S.gymGap)+1;
   if(S.gymGap>=3)S.str=clamp((S.str==null?25:S.str)-4,0,100);
@@ -432,7 +425,7 @@ function dayStats(){
   if(S.bbqGap>=3)S.stam=clamp((S.stam==null?25:S.stam)-4,0,100);
   rollCondition();
 }
-/* 컨디션은 그날그날 랜덤이지만, 기분이 아주 나쁘면(<20) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요.
+/* 컨디션은 판마다 랜덤이지만, 기분이 아주 나쁘면(<20) 나쁜 쪽으로, 아주 좋으면(≥75) 좋은 쪽으로 살짝 쏠려요.
    예전엔 기분<30에서부터 나쁜 쪽으로 쏠려서, 신규 유저가 몇 판만 져도(패배 -6씩) 금방 컨디션 매우나쁨(자빠질 위험)에
    빠지는 악순환이 있었어요. 기준을 <20으로 낮춰서 진짜 연패가 이어질 때만 이 페널티가 붙게 했어요. */
 function rollCondition(){

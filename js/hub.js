@@ -21,11 +21,10 @@ document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>op
 document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
   renderDuelCard();renderPumpCard();
-  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
+  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
   renderStats();
-  $('#note').textContent=S.news;$('#note').className='note'+(S.cleared?' win':'');
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   betV=clamp(betV,1000,Math.max(1000,betMax()));
   $('#betV').textContent=fmt(betV)+'원';
@@ -65,7 +64,7 @@ setInterval(()=>{
   if(!USER||mode!=='hub')return;
   if(ballTick()){save();renderHub();sfx('ping');toast('⚽ 도전 횟수가 하나 충전됐어요!');}else renderBalls();
 },1000);
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 하루를 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
+/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 한 판을 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
 const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
 const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
 $('#tteokIcon').src=TTEOK_IMG;
@@ -86,26 +85,26 @@ function gymAction(){
   const before=Math.round(clamp(S.str==null?25:S.str,0,100));
   S.str=clamp((S.str==null?25:S.str)+10,0,100);S.gymGap=-1;
   spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
-  dayAction('헬스장에서 쇠질을 했다. 근력이 올랐다!',-GYM_COST,false);
+  dayAction(-GYM_COST,false);
 }
 function bbqAction(){
   if(S.money<BBQ_COST)return;
   const before=Math.round(clamp(S.stam==null?25:S.stam,0,100));
   S.stam=clamp((S.stam==null?25:S.stam)+12,0,100);S.bbqGap=-1;
   spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
-  dayAction('난지 한강공원에서 바베큐를 구워 먹었다. 체력이 올랐다!',-BBQ_COST,false);
+  dayAction(-BBQ_COST,false);
 }
 function buyDrink(){
   if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
   const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);S.news='소리새에 가서 노래를 불렀다. 컨디션이 좋아졌다!';
+  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);
   spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
   save();renderHub();
 }
 function buyTteok(){
   if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
   const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);S.news='디델리에서 라볶이를 사 먹었다. 기분이 좋아졌다!';
+  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);
   spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
   save();renderHub();
 }
@@ -114,14 +113,12 @@ $('#bbqBtn').addEventListener('click',bbqAction);
 $('#drinkBtn').addEventListener('click',buyDrink);
 $('#tteokBtn').addEventListener('click',buyTteok);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
-function dayAction(msg,gain,job){
+function dayAction(gain,job){
   if(gain)S.money+=gain;
   if(job)S.fatigue=(S.fatigue||0)+1;else S.fatigue=Math.max(0,(S.fatigue||0)-1);
   chatCur=randChat();
-  const wkd=advanceDay();S.news=msg+' '+S.news;if(wkd)setTimeout(()=>sfx('bell'),300);
+  dayStats();
   if(job&&S.fatigue>=3){hospitalize();return;}
-  if(job&&S.fatigue===2)S.news+=' 몸이 무겁다… 알바를 또 하면 쓰러질지도 모른다.';
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';sfx('bigwin');}
   save();renderHub();
 }
 const VISIT=[
@@ -136,13 +133,11 @@ const VISIT=[
 function hospitalize(){
   const before=S.money,fee=Math.min(8000,Math.max(2000,Math.round(S.money*.35/100)*100)),paid=Math.min(S.money,fee),short=fee-paid;
   S.money-=paid;const afterFee=S.money;S.fatigue=0;S.hosp=(S.hosp||0)+1;
-  const dBefore=S.day,wk=S.week;advanceDay();const w2=S.week;advanceDay();
-  const weekend=S.week>wk;const v=pick(VISIT);if(weekend)setTimeout(()=>sfx('bell'),700);
-  S.news=`과로로 이틀 입원했다. 병원비 ${fmt(paid)}원이 나갔다.`+(weekend?` 주말이 지나 새 주가 시작됐다. (${S.week}주차 ${DAYS[S.day]}요일)`:` (${DAYS[S.day]}요일)`);
+  dayStats();dayStats();const v=pick(VISIT);
   const pages=[
     {img:'worn',sfx:'siren',title:'과로로 쓰러졌다…',text:'매점 알바를 쉬지 않고 이어서 하다가, 계산대 앞에서 그대로 쓰러지고 말았다.'},
     {img:'sad',title:'병원에서 눈을 떴다',who:v.n,text:v.t},
-    {img:'frustrated',sfx:'deny',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+` 이틀을 병원에서 보냈다.`+(weekend?' 그 사이 주말이 지나 새 주가 시작됐다.':'')+' 알바는 쉬엄쉬엄 하자.'}
+    {img:'frustrated',sfx:'deny',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+' 알바는 쉬엄쉬엄 하자.'}
   ];
   save();
   showStory(pages,()=>{chatCur=randChat();renderHub();maybeLoan();},'sad');
@@ -169,7 +164,7 @@ function burp(){beep(150,.14,'sawtooth',.09);setTimeout(()=>beep(95,.32,'sawtoot
 function maybeLoan(){
   if(!USER||mode!=='hub'||S.money>0||STORY||!$('#duel').hidden||!$('#wn').hidden||!$('#login').hidden||!$('#splash').hidden||!$('#pinChange').hidden||!$('#challengeInfo').hidden||!$('#profile').hidden)return;
   const before=Math.max(0,S.money);
-  S.money=LOAN;S.news='라털 선생님께 1만 원을 빌렸다. 이번엔 아껴 쓰자…';save();renderHub();
+  S.money=LOAN;save();renderHub();
   showStory([
     {img:'sad',sfx:'deny',bgm:'sad',title:'소지금이 바닥났다…',text:'지갑이 텅 비었다. 주머니를 뒤집어 봐도 먼지뿐… 그때 복도 끝에서 라털 선생님이 다가왔다.'},
     {src:RATAL_IMG,bgm:'ratal',title:'라털 선생님',who:'라털',text:pick(RATAL_LINES),burp:true},

@@ -7,8 +7,7 @@ const COLS = {
   money: { label: '소지금', fmt: p => won(p.money) },
   wins: { label: '전적', fmt: p => `${p.wins}승 ${p.losses}패` },
   bestPts: { label: '최고점', fmt: p => p.bestPts + '점' },
-  pumpBest: { label: '펌프 최고점', fmt: p => Number(p.pumpBest || 0).toLocaleString('ko-KR') + '점' },
-  week: { label: '진행', fmt: p => p.week + '주차' }
+  pumpBest: { label: '펌프 최고점', fmt: p => Number(p.pumpBest || 0).toLocaleString('ko-KR') + '점' }
 };
 // 기준이 되는 항목을 맨 앞에 두고, 나머지 항목을 뒤에 붙인 TOP 10 표
 function table(players, key) {
@@ -42,9 +41,9 @@ function renderReport(r) {
     '> 이 보고서는 시즌 마감 때 자동으로 만들어졌고, 마감 직후 모든 플레이어의 기록이 초기화되었어요.',
     ''
   ].join('\n');
-  const head = 'rank,id,money,wins,losses,best_pts,pump_best,week,cleared,plays';
+  const head = 'rank,id,money,wins,losses,best_pts,pump_best,cleared,plays';
   const csvCell = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
-  const csv = [head].concat(players.map((p, i) => [i + 1, p.id, p.money, p.wins, p.losses, p.bestPts, p.pumpBest || 0, p.week, p.cleared ? 'Y' : '', p.plays].map(csvCell).join(','))).join('\n') + '\n';
+  const csv = [head].concat(players.map((p, i) => [i + 1, p.id, p.money, p.wins, p.losses, p.bestPts, p.pumpBest || 0, p.cleared ? 'Y' : '', p.plays].map(csvCell).join(','))).join('\n') + '\n';
   return { name, title, md, csv };
 }
 
