@@ -150,6 +150,9 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .song .stars{margin-left:auto;color:var(--gold);font-weight:700;white-space:nowrap}
 .song.sel{background:var(--ring);color:#fff}
 .song.sel small,.song.sel .stars{color:#fff}
+.pgdiffs{grid-template-columns:repeat(3,1fr)}
+.pgdiffs .song{flex-direction:column;justify-content:center;text-align:center;gap:0;padding:8px 6px}
+.pgdiffs .song .stars{margin:0}
 .pgopt{border:2px dashed var(--line);border-radius:12px;padding:8px 12px;font-size:14px}
 .pgopt summary{cursor:pointer;font-weight:700}
 .pgrow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}

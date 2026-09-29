@@ -94,7 +94,7 @@ function cheer(){sfx('crowd');}
      note  : 음 하나씩(멜로디/베이스/아르페지오)   chord : 코드 이름(C, Am …)을 화음으로   kick/snare/hat : x 가 있는 칸에서 북
    새 곡은 BGMT에 추가하고, 어떤 장면에서 틀지는 wantBgm()에서 정해요. */
 const BGM={on:lsGet('rk:bgm')!=='0',name:null,tg:null,step:0,next:0,timer:0,unlocked:false};
-const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3']};
+const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3'],Dm:['D3','F3','A3'],A:['A3','C#4','E4'],Bb:['Bb3','D4','F4']};
 const NOTE_SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11},NF={};
 function nf(n){
   if(NF[n])return NF[n];

@@ -39,10 +39,11 @@ setInterval(()=>{
 
 /* ---------- 옵션 (이 기기에 기억) ---------- */
 const PG_SPEEDS=[1,1.5,2,2.5,3];   /* 노트가 올라오는 속도 배율 */
-let PGO={song:0,spd:1,off:0};       /* off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
+let PGO={song:0,diff:0,spd:1,off:0};   /* diff: 0 쉬움 · 1 보통 · 2 어려움 · off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
 try{const o=JSON.parse(lsGet('rk:pump')||'null');if(o&&typeof o==='object')PGO=Object.assign(PGO,o);}catch(e){}
 function pgOptFix(){
   PGO.song=clamp(Math.floor(+PGO.song)||0,0,PGSONGS.length-1);
+  PGO.diff=clamp(Math.floor(+PGO.diff)||0,0,PG_DIFFS.length-1);
   PGO.spd=clamp(Math.floor(+PGO.spd)||0,0,PG_SPEEDS.length-1);
   PGO.off=clamp(Math.round((+PGO.off||0)/10)*10,-200,200);
 }
@@ -53,16 +54,25 @@ const pgWinScale=()=>[.9,.95,1,1.05,1.1][clamp(S.cond==null?2:S.cond,0,4)];   /*
 
 /* ---------- 허브 카드 ---------- */
 let pgBetV=1000;
-const pgBetMax=()=>Math.min(3000,S.money);
+const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도별 상한(pump-data.js의 PG_BETMAX) */
 (function buildSongList(){
   const box=$('#pgSongs');
   PGSONGS.forEach((s,i)=>{
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
-    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★'.repeat(Math.ceil(s.stars/2))+' '+s.stars;
+    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
     b.addEventListener('click',()=>{PGO.song=i;pgOptSave();renderPumpCard();});
     box.appendChild(b);
+  });
+  /* 곡을 고른 다음 난이도를 골라요 */
+  const dbox=$('#pgDiffs');
+  PG_DIFFS.forEach((n,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='song';
+    const t=document.createElement('b'),st=document.createElement('span');t.textContent=n;st.className='stars';
+    b.appendChild(t);b.appendChild(st);
+    b.addEventListener('click',()=>{PGO.diff=i;pgOptSave();renderPumpCard();});
+    dbox.appendChild(b);
   });
 })();
 function renderPumpCard(){
@@ -73,8 +83,10 @@ function renderPumpCard(){
   if(!open)return;
   micTick();renderMics();pgOptFix();
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
-  const sg=PGSONGS[PGO.song],ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
-  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
+  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
+  $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
+  [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} · ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
+  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
   $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
@@ -143,13 +155,13 @@ function pgNewGame(sg,bet,before){
 function pumpStart(){
   if(!pgUnlocked()||!USER||mode!=='hub')return;
   micTick();pgOptFix();
-  const sg=PGSONGS[PGO.song],bet=Math.min(pgBetV,pgBetMax());
+  const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
   if(S.money<1000||bet<1000){sfx('deny');return;}
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
   mode='pump';showPump(true);pgResize();
-  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name}`;
+  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
   $('#pgResult').hidden=true;$('#pgPause').hidden=true;
   pgBegin();
   const g=PG;
@@ -474,7 +486,7 @@ function pgDraw(){
   c.save();c.beginPath();c.arc(38,42,27,0,6.2832);c.clip();
   if(im&&im.complete&&im.naturalWidth){const sz=54,sw=im.naturalWidth,sh=im.naturalHeight,s=Math.min(sw,sh);c.drawImage(im,(sw-s)/2,sh*.02,s,s,11,15,sz,sz);}else{c.fillStyle='#f4f1ee';c.fillRect(11,15,54,54);}
   c.restore();c.beginPath();c.arc(38,42,27,0,6.2832);c.lineWidth=3;c.strokeStyle='#e2334d';c.stroke();
-  pgText(c,g.sg.name,76,22,15,'#dfe6ff','left',"'Noto Sans KR',sans-serif");
+  pgText(c,`${g.sg.name} · ${PG_DIFFS[g.sg.diff]}`,76,22,15,'#dfe6ff','left',"'Noto Sans KR',sans-serif");
   pgText(c,String(pgScore(g)).padStart(7,'0'),PGW-14,38,32,'#fff','right');
   pgText(c,'호우 목표 '+fmt(g.sg.target),PGW-14,64,12,pgScore(g)>=g.sg.target?'#7bed9f':'#9aa3c2','right',"'Noto Sans KR',sans-serif");
   const lx=76,lw=PGW-lx-150;
@@ -486,7 +498,7 @@ function pgDraw(){
   if(now<0&&!g.paused){
     const n=Math.ceil(-now);
     pgText(c,g.sg.name,PGW/2,H*.42-70,28,'#fff');
-    pgText(c,`BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
+    pgText(c,`${PG_DIFFS[g.sg.diff]} ★${g.sg.stars} · BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
     pgText(c,'Z  Q  S  E  C  (숫자패드 1 7 5 9 3) · Esc 일시정지',PGW/2,H*.5+110,13,'#9aa3c2',null,"'Noto Sans KR',sans-serif");
     if(n<=3){const fr=n+now,sc=1+.5*fr;c.save();c.globalAlpha=.4+.6*(1-fr);c.translate(PGW/2,H*.5);c.scale(sc,sc);pgText(c,String(n),0,0,96,'#ffd23f');c.restore();}
   }else if(now<.7&&!g.paused){c.save();c.globalAlpha=1-now/.7;pgText(c,'GO!',PGW/2,H*.5,80,'#7bed9f');c.restore();}

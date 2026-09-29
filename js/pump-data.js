@@ -1,11 +1,11 @@
 'use strict';
 /* ---------- 소리새 펌프: 곡 + 채보 데이터 ----------
    곡은 audio.js의 배경음악처럼 8분음표 한 칸씩 적은 악보(BGMT)예요. 별도 소리 파일이 없어요.
-   채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
+   채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡마다 쉬움·보통·어려움 세 채보가 있고, 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
      level 1 : 멜로디 중 4분음표 자리(짝수 칸)만 노트  → 쉬움
      level 2 : 멜로디 음마다 노트                         → 보통
      level 3 : 멜로디 + 베이스 음(한 박 단위)까지 노트, 점프(동시 두 발판)가 자주 나와요 → 어려움
-   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄 추가하면 돼요. */
+   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 3개 포함) 추가하면 돼요. */
 /* ---------- 시즌2 잠금 ----------
    허브에는 제목이 "???"로 가려진 카드만 보이고, 관리자 번호(숫자 4자리)를 입력해야 플레이할 수 있어요.
    번호는 소스에 남기지 않고 확인값(PUMP_KEY)만 남겨요. 바꾸려면: node dev/pump_key.js 새번호
@@ -96,14 +96,100 @@ pgBuild({id:'pg4',bpm:144,wave:'square',leadVol:.036,bassVol:.09,kickVol:.17,
   form:['A:main:0','A:main:0','B:beat:0','D:beat:1','C:soft:0','A:beat:0','B:beat:0','D:beat:1'],
   end:'C5 . . . . . . .',endChord:'Cm',endBass:'C3'});
 
-/* 곡 목록. target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
+/* ---------- 클래식 명곡 (저작권이 끝난 곡) ----------
+   작곡가가 세상을 떠난 지 70년이 훨씬 넘은 곡들이라 곡 자체의 저작권이 없어요. 음반·현대 편곡·리믹스는 따라 하지 않고,
+   원곡의 주제 선율만 가져와 이 게임용 칩튠으로 새로 편곡했어요(중간부 일부는 게임용으로 새로 지었어요).
+   터키 행진곡·왕벌의 비행은 원곡이 16분음표로 달리는 곡이라, 한 칸 = 16분음표로 적고 bpm을 두 배로 잡았어요. */
+const PGDR_16={main:{kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'x . x . x . x .'},
+               soft:{kick:'x . . . . . . .',snare:'. . . . . . . .',hat:'. . . . x . . .'}};
+/* 5) 캉캉 — 오펜바흐 「천국과 지옥」 서곡 중 '지옥의 갤럽' (1858) */
+pgBuild({id:'pg5',bpm:160,wave:'square',leadVol:.036,bassVol:.08,kickVol:.18,
+  prog:['C','G','G','C'],
+  progs:[['C','G','G','C'],['C','F','C','G'],['C','G','C','G']],
+  lead:{
+    A:['C5 . . . D5 F5 E5 D5','G5 . G5 . G5 A5 E5 F5','D5 . D5 . D5 F5 E5 D5','C5 C6 B5 A5 G5 F5 E5 D5'],
+    E:['C5 . . . D5 F5 E5 D5','G5 . G5 . G5 A5 E5 F5','D5 . D5 . D5 F5 E5 D5','C5 G4 D5 E5 C5 . . .'],
+    B:['E5 . E5 . E5 . F5 G5','A5 . A5 . A5 . G5 F5','E5 . G5 . C6 . G5 E5','D5 . G4 . D5 . . .'],
+    C:['C5 E5 G5 C6 G5 E5 C5 E5','D5 F5 G5 B5 G5 F5 D5 F5','E5 G5 C6 E6 C6 G5 E5 G5','D5 G5 B5 D6 B5 G5 D5 B4']},
+  bass:['C3 . G2 . C3 . G2 .','G2 . D3 . G2 . D3 .','G2 . D3 . G2 . D3 .','C3 . G2 . C3 . G2 .'],
+  basses:[['C3 . G2 . C3 . G2 .','G2 . D3 . G2 . D3 .','G2 . D3 . G2 . D3 .','C3 . G2 . C3 . G2 .'],
+          ['C3 . G2 . C3 . G2 .','F2 . C3 . F2 . C3 .','C3 . G2 . C3 . G2 .','G2 . D3 . G2 . D3 .'],
+          ['C3 C3 G2 G2 C3 C3 G2 G2','G2 G2 D3 D3 G2 G2 D3 D3','C3 C3 G2 G2 C3 C3 G2 G2','G2 G2 D3 D3 G2 G2 D3 D3']],
+  drums:{main:{kick:'x . x . x . x .',snare:'. . x . . . x .',hat:'. x . x . x . x'},soft:PGDR_SOFT},
+  form:['A:main:0','E:main:0','B:soft:1','B:main:1','A:main:0','E:main:0','C:main:2','C:main:2','A:main:0'],
+  end:'C6 . . . . . . .',endChord:'C',endBass:'C3'});
+/* 6) 터키 행진곡 — 모차르트 피아노 소나타 11번 3악장 (1783). 한 칸 = 16분음표 */
+pgBuild({id:'pg6',bpm:184,wave:'square',leadVol:.034,bassVol:.08,kickVol:.15,
+  prog:['Am','Am','E','Am'],
+  progs:[['Am','Am','E','Am'],['Em','Em','Am','E'],['C','G','Am','E'],['A','E','A','E']],
+  lead:{
+    A:['B4 A4 G#4 A4 C5 . . .','D5 C5 B4 C5 E5 . . .','F5 E5 D#5 E5 B5 A5 G#5 A5','B5 A5 G#5 A5 C6 . A5 C6'],
+    B:['B5 . A5 . G5 . A5 .','B5 . A5 . G5 . A5 .','B5 . A5 . G5 . F#5 .','E5 . . . . . . .'],
+    C:['C6 . D6 . E6 . E6 .','F6 E6 D6 C6 B5 . . .','A5 . B5 . C6 . C6 .','D6 C6 B5 A5 G#5 . . .'],
+    D:['C#6 . D6 . E6 . E6 .','F#6 E6 D6 C#6 B5 . . .','C#6 . D6 . E6 . E6 .','F#6 E6 D6 C#6 B5 . A5 .']},
+  bass:['A2 . . . E3 . . .','A2 . . . E3 . . .','E2 . . . B2 . . .','A2 . . . E3 . . .'],
+  basses:[['A2 . . . E3 . . .','A2 . . . E3 . . .','E2 . . . B2 . . .','A2 . . . E3 . . .'],
+          ['E2 . . . B2 . . .','E2 . . . B2 . . .','A2 . . . E3 . . .','E2 . . . B2 . . .'],
+          ['C3 . . . G2 . . .','G2 . . . D3 . . .','A2 . . . E3 . . .','E2 . . . B2 . . .'],
+          ['A2 . A2 . E3 . A2 .','E2 . E2 . B2 . E2 .','A2 . A2 . E3 . A2 .','E2 . E2 . B2 . E2 .']],
+  drums:PGDR_16,
+  form:['A:main:0','B:main:1','A:main:0','B:main:1','C:main:2','C:main:2','D:main:3','D:main:3','A:main:0','B:main:1'],
+  end:'A5 . . . . . . .',endChord:'Am',endBass:'A2'});
+/* 7) 왕벌의 비행 — 림스키코르사코프 오페라 「술탄 황제 이야기」 (1900). 한 칸 = 16분음표, 반음씩 오르내리는 벌 소리 */
+pgBuild({id:'pg7',bpm:200,wave:'sawtooth',leadVol:.026,bassVol:.07,kickVol:.17,
+  prog:['Am','Am','Am','Am'],
+  progs:[['Am','Am','Am','Am'],['Dm','Dm','Dm','Dm'],['Am','Am','E','E'],['E','E','Am','Am']],
+  lead:{
+    I:['E6 D#6 D6 C#6 D6 C#6 C6 B5','C6 B5 A#5 A5 G#5 G5 F#5 F5','E5 F5 E5 D#5 D5 C#5 C5 B4','C5 B4 A#4 A4 G#4 A4 B4 C5'],
+    A:['A5 G#5 G5 F#5 F5 A#5 A5 G#5','A5 G#5 G5 F#5 F5 F#5 G5 G#5','A5 G#5 G5 F#5 F5 A#5 A5 G#5','A5 G#5 G5 F#5 F5 F#5 G5 G#5'],
+    B:['D6 C#6 C6 B5 A#5 D#6 D6 C#6','D6 C#6 C6 B5 A#5 B5 C6 C#6','D6 C#6 C6 B5 A#5 D#6 D6 C#6','D6 C#6 C6 B5 A#5 B5 C6 C#6'],
+    C:['A5 A#5 A5 G#5 A5 A#5 A5 G#5','A5 A#5 B5 C6 C#6 D6 D#6 E6','E6 D#6 D6 C#6 C6 B5 A#5 A5','G#5 G5 F#5 F5 E5 . E5 .']},
+  bass:['A2 . . . E3 . . .','A2 . . . E3 . . .','A2 . . . E3 . . .','A2 . . . E3 . . .'],
+  basses:[['A2 . . . E3 . . .','A2 . . . E3 . . .','A2 . . . E3 . . .','A2 . . . E3 . . .'],
+          ['D3 . . . A2 . . .','D3 . . . A2 . . .','D3 . . . A2 . . .','D3 . . . A2 . . .'],
+          ['A2 . . . E3 . . .','A2 . . . E3 . . .','E2 . . . B2 . . .','E2 . . . B2 . . .'],
+          ['E2 . . . B2 . . .','E2 . . . B2 . . .','A2 . . . E3 . . .','A2 . . . E3 . . .']],
+  drums:{main:{kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'x x x x x x x x'},soft:PGDR_16.soft},
+  form:['I:soft:3','A:main:0','A:main:0','B:main:1','A:main:0','C:main:2','B:main:1','A:main:0','C:main:2','A:main:0'],
+  end:'A5 . . . . . . .',endChord:'Am',endBass:'A2'});
+/* 8) 투우사의 노래 — 비제 오페라 「카르멘」 (1875) */
+pgBuild({id:'pg8',bpm:120,wave:'square',leadVol:.038,bassVol:.09,kickVol:.17,
+  prog:['F','F','C','F'],
+  progs:[['F','F','C','C'],['F','F','Bb','F'],['Dm','Dm','C','C'],['F','F','C','C']],
+  lead:{
+    A:['C5 . . D5 C5 . A4 .','A4 . A4 G4 A4 Bb4 A4 .','Bb4 . . G4 C5 . A4 .','F4 . D4 G4 C4 . . .'],
+    B:['C5 . . D5 C5 . A4 .','A4 . A4 G4 A4 Bb4 A4 .','D5 . . C5 Bb4 . A4 .','G4 . C5 . F4 . . .'],
+    C:['D5 . . . C5 . A4 .','D5 . . . C5 . A4 .','G4 . A4 . Bb4 . C5 .','D5 . E5 . F5 . G5 .'],
+    D:['A5 . . . . . G5 .','F5 . . . C5 . . .','G5 . . . . . F5 .','E5 . . . C5 . . .']},
+  bass:['F2 . C3 . F2 . C3 .','F2 . C3 . F2 . C3 .','C3 . G2 . C3 . G2 .','F2 . C3 . F2 . C3 .'],
+  basses:[['F2 . C3 . F2 . C3 .','F2 . C3 . F2 . C3 .','C3 . G2 . C3 . G2 .','C3 . G2 . C3 . G2 .'],
+          ['F2 . C3 . F2 . C3 .','F2 . C3 . F2 . C3 .','Bb2 . F2 . Bb2 . F2 .','F2 . C3 . F2 . C3 .'],
+          ['D3 . A2 . D3 . A2 .','D3 . A2 . D3 . A2 .','C3 . G2 . C3 . G2 .','C3 . G2 . C3 . G2 .'],
+          ['F2 . C3 . F2 . C3 .','F2 . C3 . F2 . C3 .','C3 . G2 . C3 . G2 .','C3 . G2 . C3 . G2 .']],
+  drums:{main:{kick:'x . . . x . . .',snare:'. . x . . . x .',hat:'. x . x . x . x'},soft:PGDR_SOFT},
+  form:['A:main:0','B:main:1','C:soft:2','D:main:3','A:main:0','B:main:1','C:main:2','D:main:3'],
+  end:'F5 . . . . . . .',endChord:'F',endBass:'F2'});
+
+/* 곡 목록. 곡마다 난이도 3개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움)가 있어요.
+   stars = 별 개수(1~10), target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
+const PG_DIFFS=['쉬움','보통','어려움'];
+const PG_BETMAX=[1000,2000,3000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
-  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',level:1,stars:2,target:650000,approach:2.0,seed:101},
-  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',level:1,stars:3,target:700000,approach:1.9,seed:404},
-  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',level:2,stars:5,target:750000,approach:1.7,seed:202},
-  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',level:3,stars:8,target:800000,approach:1.5,seed:303}
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6}]},
+  {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:4,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6}]},
+  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:720000,approach:1.7},{stars:7,target:750000,approach:1.5}]},
+  {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5}]},
+  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',seed:202,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:750000,approach:1.7},{stars:7,target:780000,approach:1.5}]},
+  {id:'pg6',name:'터키 행진곡',sub:'모차르트 · 피아노 소나타 11번',seed:606,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5}]},
+  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:800000,approach:1.5}]},
+  {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:8,target:760000,approach:1.6},{stars:10,target:800000,approach:1.4}]}
 ];
 PGSONGS.forEach(s=>{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;s.secs=Math.round(s.len*s.spb);});
+/* 곡 + 난이도 → 한 판에 쓰는 설정(level 1~3, 별·목표·속도). 채보는 곡 id + 난이도(key)마다 따로 만들어요. */
+function pgPick(si,di){
+  const s=PGSONGS[si],d=s.diffs[di];
+  return Object.assign({},s,d,{level:di+1,diff:di,key:s.id+':'+(di+1),seed:s.seed+di*1000});
+}
 
 /* ---------- 채보 자동 생성 ---------- */
 function pgRng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
@@ -116,7 +202,7 @@ const PGJUMP_P=[0,.12,.4];      /* level별 마디 첫 박에서 점프가 나�
 const PGHOLD_P=[0,.7,.6,.5];    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
 const PGCHARTS={};
 function pgChart(sg){
-  if(PGCHARTS[sg.id])return PGCHARTS[sg.id];
+  if(PGCHARTS[sg.key])return PGCHARTS[sg.key];
   const T=BGMT[sg.id],lead=T.L.find(l=>l.n==='lead').a,bass=T.L.find(l=>l.n==='bass').a,R=pgRng(sg.seed),lv=sg.level,spb=sg.spb;
   const lib=lv===1?PGPAT1:lv===2?PGPAT2:PGPAT3,steps=[];
   for(let s=0;s<T.len;s++){
@@ -149,5 +235,5 @@ function pgChart(sg){
   });
   const out={notes,total:0,taps:0,holds:0,end:0};
   notes.forEach(n=>{if(n.hold){out.holds++;out.total+=2;}else{out.taps++;out.total++;}out.end=Math.max(out.end,n.t+n.hold);});
-  return PGCHARTS[sg.id]=out;
+  return PGCHARTS[sg.key]=out;
 }
