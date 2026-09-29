@@ -1,11 +1,12 @@
 'use strict';
 /* ---------- 소리새 펌프: 곡 + 채보 데이터 ----------
    곡은 audio.js의 배경음악처럼 8분음표 한 칸씩 적은 악보(BGMT)예요. 별도 소리 파일이 없어요.
-   채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡마다 쉬움·보통·어려움 세 채보가 있고, 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
+   채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡마다 쉬움·보통·어려움·매우 어려움 네 채보가 있고, 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
      level 1 : 멜로디 중 4분음표 자리(짝수 칸)만 노트  → 쉬움
      level 2 : 멜로디 음마다 노트                         → 보통
      level 3 : 멜로디 + 베이스 음(한 박 단위)까지 노트, 점프(동시 두 발판)가 자주 나와요 → 어려움
-   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 3개 포함) 추가하면 돼요. */
+     level 4 : 멜로디 + 베이스 음 전부, 반 마디마다 점프, 롱노트는 줄이고 발판을 크게 건너뛰는 흐름까지 → 매우 어려움
+   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 4개 포함) 추가하면 돼요. */
 /* ---------- 시즌2 잠금 ----------
    허브에는 제목이 "???"로 가려진 카드만 보이고, 관리자 번호(숫자 4자리)를 입력해야 플레이할 수 있어요.
    번호는 소스에 남기지 않고 확인값(PUMP_KEY)만 남겨요. 바꾸려면: node dev/pump_key.js 새번호
@@ -17,27 +18,30 @@ const pgUnlocked=()=>PUMP_PUBLIC||lsGet('rk:pumpkey')===PUMP_KEY;
 const PG_LANES=5;   /* 0=↙ 1=↖ 2=● 3=↗ 4=↘  (화면 왼쪽→오른쪽 순서, 펌프 발판과 같아요) */
 
 /* form 항목 'A:main' = 멜로디 변주 A를 4마디, 드럼 세트 main으로. 총 8~10개 × 4마디 = 32~40마디
-   'A:main:1' 처럼 셋째 칸을 쓰면 그 구간만 progs[1](코드)·basses[1](베이스)를 써요. */
+   'A:main:1' 처럼 셋째 칸을 쓰면 그 구간만 progs[1](코드)·basses[1](베이스)·riffs[1](기타 리프)를 써요.
+   롹 편곡: leadGtr:true면 멜로디를 일렉기타로, riffs를 주면 파워코드 리프 파트가 더해져요(audio.js의 gtr). */
 function pgBuild(o){
-  const L={lead:[],bass:[],pad:[],kick:[],snare:[],hat:[]};
+  const L={lead:[],bass:[],pad:[],kick:[],snare:[],hat:[],riff:[]};
   o.form.forEach(f=>{
-    const p=f.split(':'),lead=o.lead[p[0]],kd=o.drums[p[1]],pr=(o.progs&&o.progs[+p[2]||0])||o.prog,bs=(o.basses&&o.basses[+p[2]||0])||o.bass;
+    const p=f.split(':'),lead=o.lead[p[0]],kd=o.drums[p[1]],pr=(o.progs&&o.progs[+p[2]||0])||o.prog,bs=(o.basses&&o.basses[+p[2]||0])||o.bass,rf=o.riffs&&o.riffs[+p[2]||0];
     for(let b=0;b<4;b++){
-      L.lead.push(lead[b]);L.bass.push(bs[b]);L.pad.push(pr[b]+' . . . . . . .');
+      L.lead.push(lead[b]);L.bass.push(bs[b]);L.pad.push(pr[b]+' . . . . . . .');if(rf)L.riff.push(rf[b]);
       L.kick.push(kd.kick);L.snare.push(kd.snare);L.hat.push(kd.hat);
     }
   });
   const e=L.lead.length-1;   /* 마지막 마디: 으뜸음 한 번 울리고 끝 */
   L.lead[e]=o.end;L.bass[e]=o.endBass+' . . . . . . .';L.pad[e]=o.endChord+' . . . . . . .';
   L.kick[e]='x . . . . . . .';L.snare[e]='. . . . . . . .';L.hat[e]='. . . . . . . .';
-  BGMT[o.id]=trk({bpm:o.bpm,len:L.lead.length*8,L:[
-    {n:'lead',t:'note',wave:o.wave,vol:o.leadVol,d:1.3,seq:bars(...L.lead)},
-    {n:'bass',t:'note',wave:'triangle',vol:o.bassVol,d:1.4,seq:bars(...L.bass)},
-    {n:'pad',t:'chord',wave:'sine',vol:.03,d:7,att:.1,seq:bars(...L.pad)},
+  const ly=[
+    o.leadGtr?{n:'lead',t:'gtr',vol:o.leadVol,d:o.leadD||1.3,seq:bars(...L.lead)}:{n:'lead',t:'note',wave:o.wave,vol:o.leadVol,d:1.3,seq:bars(...L.lead)},
+    {n:'bass',t:'note',wave:o.bassWave||'triangle',vol:o.bassVol,d:1.4,seq:bars(...L.bass)},
+    {n:'pad',t:'chord',wave:'sine',vol:o.padVol||.03,d:7,att:.1,seq:bars(...L.pad)},
     {n:'kick',t:'kick',vol:o.kickVol,seq:bars(...L.kick)},
-    {n:'snare',t:'snare',vol:.05,seq:bars(...L.snare)},
-    {n:'hat',t:'hat',vol:.02,seq:bars(...L.hat)}
-  ]});
+    {n:'snare',t:'snare',vol:o.snareVol||.05,seq:bars(...L.snare)},
+    {n:'hat',t:'hat',vol:o.hatVol||.02,seq:bars(...L.hat)}
+  ];
+  if(o.riffs){L.riff[e]=o.endRiff+' . . . . . . .';ly.push({n:'riff',t:'gtr',pc:true,vol:o.riffVol,d:o.riffD||.75,seq:bars(...L.riff)});}
+  BGMT[o.id]=trk({bpm:o.bpm,len:L.lead.length*8,L:ly});
 }
 const PGDR_SOFT={kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'. . x . . . x .'};
 /* 1) 등굣길 뜀박질 — 쉬움 (C-G-Am-F, 등굣길 테마) */
@@ -176,38 +180,58 @@ pgBuild({id:'pg8',bpm:120,wave:'square',leadVol:.038,bassVol:.09,kickVol:.17,
    ※ 작곡가 저작권이 남아 있을 수 있는 곡이에요. 친구들끼리 하는 게임이라 넣었고, 학교·유족이 원하지 않으면 빼야 해요. */
 const PGKB={G:'G2 . D3 . G2 . D3 .',C:'C3 . G2 . C3 . G2 .',D:'D3 . A2 . D3 . A2 .',Am:'A2 . E3 . A2 . E3 .'};
 const PG9_PROGS=[['G','G','C','D'],['G','Am','D','G'],['D','G','Am','D'],['G','C','D','G'],['C','G','G','D'],['G','C','D','G']];
-pgBuild({id:'pg9',bpm:112,wave:'square',leadVol:.04,bassVol:.09,kickVol:.17,
-  prog:PG9_PROGS[0],progs:PG9_PROGS,basses:PG9_PROGS.map(p=>p.map(c=>PGKB[c])),bass:PG9_PROGS[0].map(c=>PGKB[c]),
-  lead:{
+const PG9_LEAD={
     S1:['D4 . . . G4 . E4 .','D4 . B3 C4 D4 . D4 .','E4 . . F#4 G4 . E4 .','A4 . . . . . D4 .'],
     S2:['B4 . . C5 D5 . G4 .','A4 . . B4 C5 . E4 .','D4 . . E4 D4 . A4 .','G4 . . . . . . .'],
     S3:['A4 . . G4 F#4 D4 E4 F#4','G4 . A4 . B4 . B4 .','C5 . . B4 A4 . B4 C#5','D5 . . . . . D5 .'],
     S4:['D5 . . C5 B4 . B4 .','C5 . . C5 E4 . E4 .','F#4 . . G4 A4 . B4 .','G4 . . . . . G4 .'],
     S5:['C5 . . . C5 C5 C5 D5','E5 . D5 C5 B4 . B4 .','B4 . . C5 D5 D5 C5 B4','A4 . . . . . D5 D5'],
-    S6:['D5 . . . B4 B4 A4 G4','E5 . . . . . D4 C5','B4 . . . . . A4 .','G4 . . . . . . .']},
+    S6:['D5 . . . B4 B4 A4 G4','E5 . . . . . D4 C5','B4 . . . . . A4 .','G4 . . . . . . .']};
+pgBuild({id:'pg9',bpm:112,wave:'square',leadVol:.04,bassVol:.09,kickVol:.17,
+  prog:PG9_PROGS[0],progs:PG9_PROGS,basses:PG9_PROGS.map(p=>p.map(c=>PGKB[c])),bass:PG9_PROGS[0].map(c=>PGKB[c]),
+  lead:PG9_LEAD,
   drums:{soft:{kick:'x . . . x . . .',snare:'. . . . . . . .',hat:'. . x . . . x .'},
          beat:{kick:'x . . . x . . .',snare:'. . x . . . x .',hat:'. x . x . x . x'},
          rock:{kick:'x . . x x . . .',snare:'. . x . . . x .',hat:'x x x x x x x x'}},
   form:['S1:soft:0','S2:soft:1','S3:beat:2','S4:beat:3','S5:beat:4','S6:beat:5','S5:rock:4','S6:rock:5'],
   end:'G4 . . . . . . .',endChord:'G',endBass:'G2'});
 
-/* 곡 목록. 곡마다 난이도 3개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움)가 있어요.
-   stars = 별 개수(1~10), target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
-const PG_DIFFS=['쉬움','보통','어려움'];
-const PG_BETMAX=[1000,2000,3000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
+/* 10) 머대부고 교가 (롹 버전) — 교가 멜로디를 일렉기타 리드로 치고, 파워코드 리프·베이스·록 드럼을 얹어 빠르게(BPM 184) 편곡했어요.
+   도입 리프(R)와 기타 솔로(X·Y)는 이 게임용으로 새로 지었어요. 코드 진행은 교가(PG9_PROGS)를 그대로 따라가요. */
+const PGPC={G:'G2',C:'C3',D:'D3',Am:'A2'};   /* 코드 → 파워코드 근음 */
+const PG10_PROGS=PG9_PROGS.concat([['G','C','D','G']]);   /* [6]: 기타 솔로 구간 */
+const pg10Bar=pat=>c=>pat.replace(/X/g,PGPC[c]);
+pgBuild({id:'pg10',bpm:184,leadGtr:true,leadVol:.034,leadD:2,bassVol:.08,padVol:.012,kickVol:.22,snareVol:.08,hatVol:.024,riffVol:.04,riffD:.7,
+  prog:PG10_PROGS[0],progs:PG10_PROGS,
+  bass:PG10_PROGS[0].map(pg10Bar('X . X X . X X .')),basses:PG10_PROGS.map(p=>p.map(pg10Bar('X . X X . X X .'))),
+  riffs:PG10_PROGS.map(p=>p.map(pg10Bar('X X X X X X X X'))),
+  lead:Object.assign({
+    R:['G4 . D5 . G4 A4 B4 D5','G5 . D5 . B4 . G4 .','E5 . C5 . G4 A4 C5 E5','D5 . F#5 . A5 . F#5 D5'],
+    X:['G4 B4 D5 G5 D5 B4 G4 B4','C5 E5 G5 C6 G5 E5 C5 E5','D5 F#5 A5 D6 A5 F#5 D5 F#5','G5 D5 B4 D5 G5 . . .'],
+    Y:['B4 D5 G5 B5 A5 G5 D5 B4','C5 E5 G5 C6 B5 A5 G5 E5','F#5 A5 D6 . C6 A5 F#5 D5','G5 . D5 . G4 . . .']},PG9_LEAD),
+  drums:{drive:{kick:'x . . x x . . .',snare:'. . x . . . x .',hat:'x x x x x x x x'},
+         rock:{kick:'x . x x x . x x',snare:'. . x . . . x .',hat:'x x x x x x x x'}},
+  form:['R:rock:0','S1:drive:0','S2:drive:1','S3:drive:2','S4:drive:3','S5:rock:4','S6:rock:5','X:rock:6','Y:rock:6','S5:rock:4','S6:rock:5'],
+  end:'G5 . . . . . . .',endChord:'G',endBass:'G2',endRiff:'G2'});
+
+/* 곡 목록. 곡마다 난이도 4개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움 · [3]=매우 어려움)가 있어요.
+   stars = 별 개수(1~12), target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
+const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
+const PG_BETMAX=[1000,2000,3000,4000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
-  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6}]},
-  {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6}]},
-  {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:4,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6}]},
-  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:720000,approach:1.7},{stars:7,target:750000,approach:1.5}]},
-  {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5}]},
-  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',seed:202,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:750000,approach:1.7},{stars:7,target:780000,approach:1.5}]},
-  {id:'pg6',name:'터키 행진곡',sub:'모차르트 · 피아노 소나타 11번',seed:606,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5}]},
-  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:800000,approach:1.5}]},
-  {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:8,target:760000,approach:1.6},{stars:10,target:800000,approach:1.4}]}
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
+  {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
+  {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:8,target:780000,approach:1.45},{stars:11,target:820000,approach:1.3}]},
+  {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:4,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
+  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:720000,approach:1.7},{stars:7,target:750000,approach:1.5},{stars:9,target:790000,approach:1.35}]},
+  {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5},{stars:10,target:800000,approach:1.35}]},
+  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',seed:202,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:750000,approach:1.7},{stars:7,target:780000,approach:1.5},{stars:9,target:800000,approach:1.35}]},
+  {id:'pg6',name:'터키 행진곡',sub:'모차르트 · 피아노 소나타 11번',seed:606,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5},{stars:10,target:800000,approach:1.35}]},
+  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:800000,approach:1.5},{stars:10,target:820000,approach:1.3}]},
+  {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:8,target:760000,approach:1.6},{stars:10,target:800000,approach:1.4},{stars:12,target:830000,approach:1.25}]}
 ];
 PGSONGS.forEach(s=>{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;s.secs=Math.round(s.len*s.spb);});
-/* 곡 + 난이도 → 한 판에 쓰는 설정(level 1~3, 별·목표·속도). 채보는 곡 id + 난이도(key)마다 따로 만들어요. */
+/* 곡 + 난이도 → 한 판에 쓰는 설정(level 1~4, 별·목표·속도). 채보는 곡 id + 난이도(key)마다 따로 만들어요. */
 function pgPick(si,di){
   const s=PGSONGS[si],d=s.diffs[di];
   return Object.assign({},s,d,{level:di+1,diff:di,key:s.id+':'+(di+1),seed:s.seed+di*1000});
@@ -219,17 +243,19 @@ function pgRng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Ma
 const PGPAT1=[[0,1,2,3,4],[4,3,2,1,0],[0,1,0,1],[4,3,4,3],[2,1,2,3],[0,1,2,1,0],[1,2,3,2,1],[2,3,2,1]];
 const PGPAT2=PGPAT1.concat([[1,3,1,3],[2,0,2,4],[3,2,1,0,1],[1,0,1,2,3]]);
 const PGPAT3=PGPAT2.concat([[0,3,0,3],[1,4,1,4],[0,1,4,3],[4,3,0,1]]);
+const PGPAT4=PGPAT3.concat([[0,4,0,4],[1,3,0,4],[4,0,3,1],[0,2,4,2,0],[3,1,4,0]]);   /* 매우 어려움: 양 끝을 크게 건너뛰어요 */
 const PGJUMPS=[[0,4],[1,3],[0,3],[1,4]];
-const PGJUMP_P=[0,.12,.4];      /* level별 마디 첫 박에서 점프가 나올 확률 */
-const PGHOLD_P=[0,.7,.6,.5];    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
+const PGJUMP_P=[0,.12,.4,.6];   /* level별 마디 첫 박에서 점프가 나올 확률 (level 4는 반 마디 자리에서도 PGJUMP_HALF 확률로) */
+const PGJUMP_HALF=.25;
+const PGHOLD_P=[0,.7,.6,.5,.3];    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
 const PGCHARTS={};
 function pgChart(sg){
   if(PGCHARTS[sg.key])return PGCHARTS[sg.key];
   const T=BGMT[sg.id],lead=T.L.find(l=>l.n==='lead').a,bass=T.L.find(l=>l.n==='bass').a,R=pgRng(sg.seed),lv=sg.level,spb=sg.spb;
-  const lib=lv===1?PGPAT1:lv===2?PGPAT2:PGPAT3,steps=[];
+  const lib=lv===1?PGPAT1:lv===2?PGPAT2:lv===3?PGPAT3:PGPAT4,steps=[];
   for(let s=0;s<T.len;s++){
     const hasL=lead[s]!=='.',hasB=bass[s]!=='.';
-    const on=lv===1?(hasL&&s%2===0):lv===2?hasL:(hasL||(hasB&&s%4===0));
+    const on=lv===1?(hasL&&s%2===0):lv===2?hasL:lv===3?(hasL||(hasB&&s%4===0)):(hasL||hasB);
     if(on)steps.push(s);
   }
   const notes=[];let pat=null,pi=0,last=2,curS=0;
@@ -245,7 +271,7 @@ function pgChart(sg){
     curS=s;
     const nx=i+1<steps.length?steps[i+1]:T.len,gap=nx-s,fin=i===steps.length-1;
     const t=s*spb;
-    if(!fin&&s%8===0&&R()<PGJUMP_P[lv-1]){   /* 점프: 두 발판을 동시에 */
+    if(!fin&&((s%8===0&&R()<PGJUMP_P[lv-1])||(lv>=4&&s%8===4&&R()<PGJUMP_HALF))){   /* 점프: 두 발판을 동시에 */
       const j=PGJUMPS[Math.floor(R()*PGJUMPS.length)];
       j.forEach(l=>notes.push({t,lane:l,hold:0,s}));
       last=j[Math.floor(R()*2)];pat=null;return;

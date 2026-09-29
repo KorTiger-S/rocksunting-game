@@ -39,7 +39,7 @@ setInterval(()=>{
 
 /* ---------- 옵션 (이 기기에 기억) ---------- */
 const PG_SPEEDS=[1,1.5,2,2.5,3];   /* 노트가 올라오는 속도 배율 */
-let PGO={song:0,diff:0,spd:1,off:0};   /* diff: 0 쉬움 · 1 보통 · 2 어려움 · off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
+let PGO={song:0,diff:0,spd:1,off:0};   /* diff: 0 쉬움 · 1 보통 · 2 어려움 · 3 매우 어려움 · off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
 try{const o=JSON.parse(lsGet('rk:pump')||'null');if(o&&typeof o==='object')PGO=Object.assign(PGO,o);}catch(e){}
 function pgOptFix(){
   PGO.song=clamp(Math.floor(+PGO.song)||0,0,PGSONGS.length-1);
@@ -60,7 +60,7 @@ const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도�
   PGSONGS.forEach((s,i)=>{
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
-    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 별 개수 */
+    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
     b.addEventListener('click',()=>{PGO.song=i;pgOptSave();renderPumpCard();});
     box.appendChild(b);

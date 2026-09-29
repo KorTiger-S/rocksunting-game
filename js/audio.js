@@ -92,6 +92,7 @@ function cheer(){sfx('crowd');}
    승리/패배 팡파르나 종소리가 나는 동안에는 잠깐 작아져요(bgmDuck). 음악 켜기/끄기는 효과음과 따로 기억돼요.
    곡은 8분음표 한 칸씩 적은 악보예요. 한 마디 = 8칸, "." 은 쉼표, 음 이름(C5, F#4 …)은 그 음을 쳐요.
      note  : 음 하나씩(멜로디/베이스/아르페지오)   chord : 코드 이름(C, Am …)을 화음으로   kick/snare/hat : x 가 있는 칸에서 북
+     gtr   : 일렉기타(찌그러뜨린 톱니파). pc:true면 적힌 음을 근음으로 5도·옥타브를 얹은 파워코드
    새 곡은 BGMT에 추가하고, 어떤 장면에서 틀지는 wantBgm()에서 정해요. */
 const BGM={on:lsGet('rk:bgm')!=='0',name:null,tg:null,step:0,next:0,timer:0,unlocked:false};
 const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3'],Dm:['D3','F3','A3'],A:['A3','C#4','E4'],Bb:['Bb3','D4','F4']};
@@ -169,10 +170,30 @@ function bnote(dest,f,t0,d,wave,vol,att){
   g.gain.setValueAtTime(vol,t0+Math.max(at,d*.55));g.gain.exponentialRampToValueAtTime(.0001,t0+d);
   o.connect(g);g.connect(dest);o.start(t0);o.stop(t0+d+.03);
 }
+/* 일렉기타: 살짝 어긋난 톱니파 두 개 → 찌그러뜨리기(WaveShaper, tanh) → 높은 소리 깎기(lowpass).
+   파워코드(pc)는 근음·5도·옥타브를 함께 치고 짧게 끊어서(팜뮤트) 두둥두둥, 리드는 비브라토를 살짝 걸어요. */
+let GTRC=null;
+function gtrCurve(){if(GTRC)return GTRC;const n=2048,c=new Float32Array(n);for(let i=0;i<n;i++)c[i]=Math.tanh((i/(n-1)*2-1)*8);return GTRC=c;}
+function bgtr(dest,f,t0,d,vol,pc){
+  const a=AC,pre=a.createGain(),ws=a.createWaveShaper(),lp=a.createBiquadFilter(),g=a.createGain();
+  pre.gain.value=pc?.35:.6;ws.curve=gtrCurve();ws.oversample='2x';
+  lp.type='lowpass';lp.frequency.value=pc?1900:3000;lp.Q.value=.8;
+  g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(vol,t0+.004);
+  g.gain.setValueAtTime(vol,t0+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t0+d);
+  let vib=null;
+  if(!pc&&d>.25){vib=a.createOscillator();const vg=a.createGain();vib.frequency.value=5.5;vg.gain.setValueAtTime(0,t0);vg.gain.linearRampToValueAtTime(18,t0+Math.min(.25,d/2));vib.connect(vg);vib.start(t0);vib.stop(t0+d+.03);vib.vg=vg;}
+  (pc?[1,1.4983,2]:[1]).forEach(m=>[-7,7].forEach(ct=>{
+    const o=a.createOscillator();o.type='sawtooth';o.frequency.value=f*m;o.detune.value=ct;
+    if(vib)vib.vg.connect(o.detune);
+    o.connect(pre);o.start(t0);o.stop(t0+d+.03);
+  }));
+  pre.connect(ws);ws.connect(lp);lp.connect(g);g.connect(dest);
+}
 function bstep(T,i,t0,spb,dest){
   T.L.forEach(l=>{
     const k=l.a[i];if(k==='.'||!k)return;
     if(l.t==='note')bnote(dest,nf(k),t0,l.d*spb,l.wave,l.vol);
+    else if(l.t==='gtr')bgtr(dest,nf(k),t0,l.d*spb,l.vol,l.pc);
     else if(l.t==='chord'){const c=CHORDS[k];if(c)c.forEach(n=>bnote(dest,nf(n),t0,l.d*spb,l.wave,l.vol,l.att));}
     else if(l.t==='kick'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(130,t0);o.frequency.exponentialRampToValueAtTime(45,t0+.12);g.gain.setValueAtTime(l.vol,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+.18);o.connect(g);g.connect(dest);o.start(t0);o.stop(t0+.2);}
     else if(l.t==='snare'){bnoise(dest,t0,.12,l.vol,1700,.7);bnote(dest,190,t0,.07,'triangle',l.vol*.8);}

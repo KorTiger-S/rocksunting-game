@@ -163,7 +163,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .song .stars{margin-left:auto;color:var(--gold);font-weight:700;white-space:nowrap}
 .song.sel{background:var(--ring);color:#fff}
 .song.sel small,.song.sel .stars{color:#fff}
-.pgdiffs{grid-template-columns:repeat(3,minmax(0,1fr))}   /* minmax(0,…): 버튼 글자 때문에 좁은 폰에서 허브 전체가 가로로 넓어지지 않게 */
+.pgdiffs{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:520px){.pgdiffs{grid-template-columns:repeat(2,minmax(0,1fr))}}   /* minmax(0,…): 버튼 글자 때문에 좁은 폰에서 허브 전체가 가로로 넓어지지 않게 */
 .pgdiffs .song{flex-direction:column;justify-content:center;text-align:center;gap:0;padding:8px 6px}
 .pgdiffs .song .stars{margin:0;white-space:normal;font-size:13px;line-height:1.3}
 .pgopt{border:2px dashed var(--line);border-radius:12px;padding:8px 12px;font-size:14px}
