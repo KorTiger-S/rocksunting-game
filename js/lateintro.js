@@ -3,6 +3,8 @@
    엔진은 jgintro.js(INTROS, jgPlay). 롹순팅은 표정 그림(IMGDATA), 라털 선생님은 hub.js의 RATAL_IMG 초상화를 써요.
    두발 규정: 여학생 단발은 귀밑 3cm, 남학생 반삭발은 3cm를 넘으면 안 돼요. */
 const LT_RATAL=new Image();LT_RATAL.src=RATAL_IMG;
+const LT_RULE=new Image();LT_RULE.src='assets/intro/hair-rule.png';   /* 라털 선생님이 든 두발 규정 종이(실제 사진). 단일 파일 빌드에선 data URI로 바뀌어요 */
+const LT_RULE_AT=[1.1,2.1];   /* 정문 장면에서 규정 종이 사진을 화면 가득 띄우는 구간(초) */
 const LT_SSI=Object.assign({},CH['씨붕']),LT_JUS=Object.assign({},CH['주스']);
 const ltRock=(c,x,y,s,face,o,t)=>kid(c,x,y,s,Object.assign({face},o||{},{ph:o&&o.run?(t||0)*12:0}));   /* 다리는 뛸 때만 움직여요 */
 /* 머리 둘레에 그림을 덧그릴 때 쓰는 머리 중심·반지름 (kid()의 머리는 발밑에서 52×s 위, 반지름 15×s) */
@@ -77,7 +79,7 @@ const LTS=[
     jgBubble(c,270,170,'먼저 가… 난 걸음이 느려…',19);
     const q=jgEase((p-.4)/.6);ltRock(c,470+q*420,380,2.3,q>0?'resolve':'worn',{run:q>0},t);
   }},
-  {d:6.4,bgm:'ratal',cap:'정문에 도착하니 학생들이 줄지어 서 있었다. 라털 선생님이 자를 대고 머리 길이를 재고 있었다!',ev:[[.3,'whistle'],[2.4,'tick'],[3.4,()=>burp()]],
+  {d:7.4,bgm:'ratal',cap:'정문에 도착하니 학생들이 줄지어 서 있었다. 라털 선생님이 규정 종이를 들고, 자로 머리 길이를 재고 있었다!',ev:[[.3,'whistle'],[1.1,'page'],[2.6,'tick'],[3.6,()=>burp()]],
    draw(c,t,p){
     bgField(c);
     c.fillStyle='#8f8f8f';c.fillRect(40,150,40,222);c.fillRect(720,150,40,222);c.fillStyle='#6d1f31';rr(c,30,130,60,26,4);c.fill();rr(c,710,130,60,26,4);c.fill();
@@ -91,7 +93,16 @@ const LTS=[
     c.strokeStyle='#2f3a56';c.lineWidth=12;c.lineCap='round';c.beginPath();c.moveTo(650-11*2.4,372-33*2.4);c.lineTo(hx+r*1.35+10,hy+r*.1);c.stroke();   /* 자를 댄 팔 */
     c.fillStyle='#f2c9a5';c.beginPath();c.arc(hx+r*1.35+10,hy+r*.1,8,0,7);c.fill();
     TX(c,'라털',650,372-76*2.4,17,'#fff','center','rgba(0,0,0,.6)');
+    c.save();c.translate(686,296);c.rotate(.12);c.fillStyle='#fff';rr(c,-16,-22,32,44,2);c.fill();c.strokeStyle='#232a45';c.lineWidth=2;c.stroke();   /* 손에 든 규정 종이 */
+    c.fillStyle='#232a45';c.fillRect(-10,-16,20,3);c.fillStyle='#9aa3c2';c.fillRect(-10,-8,20,10);c.fillRect(-10,6,20,10);c.restore();
+    c.fillStyle='#f2c9a5';c.beginPath();c.arc(678,318,7,0,7);c.fill();
     if(p>.35)jgBubble(c,590,110,'귀밑 3cm! 반삭발도 3cm! 넘으면 이발소행이다. 바우!',17);
+    if(t>=LT_RULE_AT[0]&&t<LT_RULE_AT[1]&&LT_RULE.complete&&LT_RULE.naturalWidth){   /* 규정 종이를 약 1초 크게 보여줘요 */
+      const q=t-LT_RULE_AT[0],a=Math.min(1,q/.12,(LT_RULE_AT[1]-t)/.12),z=.9+.1*jgEase(q/.25),h=340*z,w=h*LT_RULE.naturalWidth/LT_RULE.naturalHeight;
+      c.save();c.globalAlpha=a;c.fillStyle='rgba(10,13,27,.7)';c.fillRect(0,0,W,H);
+      c.fillStyle='#fff';rr(c,400-w/2-8,200-h/2-8,w+16,h+16,6);c.fill();
+      c.drawImage(LT_RULE,400-w/2,200-h/2,w,h);c.restore();
+    }
   }},
   {d:4.2,bgm:'sad',cap:'아차… 오늘이 두발 검사 날이었지. 까맣게 잊고 있었다. 하아…',ev:[[.4,'aww']],
    draw(c,t,p){
