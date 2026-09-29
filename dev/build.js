@@ -41,6 +41,10 @@ js = js.replace(/assets\/faces\/([A-Za-z0-9_]+)\.jpg/g, (m, name) => {
   const b = fs.readFileSync(path.join(root, 'assets/faces', name + '.jpg'));
   return 'data:image/jpeg;base64,' + b.toString('base64');
 });
+js = js.replace(/assets\/intro\/([A-Za-z0-9_-]+)\.png/g, (m, name) => {   // 곡 인트로에 쓰는 사진 (예: 두발 규정 종이)
+  const b = fs.readFileSync(path.join(root, 'assets/intro', name + '.png'));
+  return 'data:image/png;base64,' + b.toString('base64');
+});
 if (url) {
   const marker = "const CLOUD_DEFAULT={url:'',key:''};";
   if (!js.includes(marker)) { console.error("CLOUD_DEFAULT 줄을 찾지 못했어요."); process.exit(1); }
