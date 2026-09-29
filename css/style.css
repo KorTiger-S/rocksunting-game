@@ -55,6 +55,19 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .chall{padding:16px;display:grid;gap:12px}
 .chall h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.2}
 .chall p{margin:0;color:var(--muted);font-size:14px}
+/* 허브 게임 목록: 제목만 한 줄씩 보여주고, "게임하기"를 누르면 그 게임의 상세 카드(.gdet)만 열려요 */
+.glist{display:grid;gap:10px}
+.grow{padding:12px 14px;display:flex;align-items:center;gap:12px}
+.grow .gi{font-size:30px;line-height:1;flex:none}
+.grow>div{flex:1;min-width:0}
+.grow h2{margin:0;font-family:var(--display);font-weight:400;font-size:21px;line-height:1.25}
+.grow p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.grow .go{flex:none}
+#soonList .list{gap:6px}
+.row.locked{padding:6px 12px;border:2px dashed var(--bar);border-radius:10px;color:var(--muted)}
+.row.locked h3{margin:0;font-size:14px;font-weight:700}
+.row.locked p{display:none}
+.gback{justify-self:start;margin:-6px 0 -4px -4px;text-decoration:none;font-weight:700;font-size:14px}
 .rules{margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
 .balls{display:flex;gap:6px;font-size:28px;line-height:1}
 .balls span{transition:filter .3s,opacity .3s}
