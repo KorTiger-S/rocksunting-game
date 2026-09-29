@@ -128,7 +128,7 @@ function pgHeard(){
 const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
-function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
+function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
 function pgNewGame(sg,bet,before){
   const ch=pgChart(sg),lanes=[[],[],[],[],[]],sc=pgWinScale();
   const notes=ch.notes.map(n=>({t:n.t,lane:n.lane,hold:n.hold,res:-1,hs:0}));   /* hs: 0 대기 · 1 누르는 중 · 2 성공 · 3 실패 */
@@ -237,6 +237,8 @@ $('#pgCv').addEventListener('pointerdown',e=>{
   if(!PG)return;const l=PG.ptrs[e.pointerId];if(l===undefined)return;delete PG.ptrs[e.pointerId];pgRelease(l);
 }));
 $('#pgCv').addEventListener('contextmenu',e=>e.preventDefault());
+/* touch-action을 제대로 안 지키는 브라우저(구형 iOS 사파리 등)를 위해 플레이 화면에서의 터치 스크롤·확대를 한 번 더 막아요 */
+$('#pumpWrap').addEventListener('touchmove',e=>{if(PG&&e.cancelable)e.preventDefault();},{passive:false});
 window.addEventListener('resize',()=>{if(PG)pgResize();});
 function pgResize(){
   const cv=$('#pgCv');if($('#pumpWrap').hidden)return;
@@ -245,7 +247,7 @@ function pgResize(){
   pad.hidden=lay==='none';row.classList.toggle('side',lay==='side');
   const top=$('#pumpWrap .gtop').offsetHeight+14,padH=lay==='below'?pad.offsetHeight+14:0;
   const w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520),availH=window.innerHeight-top-padH-40;
-  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),560,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 */
+  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),480,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 (작은 폰에서도 발판까지 한 화면에 들어오게 최소 480) */
   const sc=Math.min(2,window.devicePixelRatio||1);
   $('#pgStage').style.width=w+'px';
   cv.width=Math.round(PGW*sc);cv.height=Math.round(PGH*sc);
