@@ -1,11 +1,12 @@
 'use strict';
-/* ---------- ㅈㄱ의 카드 모험 인트로 ----------
-   소리새 펌프에서 'ㅈㄱ의 카드 모험'을 이 기기에서 처음 시작할 때 노래 전에 보여주는 짧은 애니메이션이에요(pumpStart).
-   허브 카드의 '🎬 ㅈㄱ와 파이리 이야기 보기'로 언제든 다시 볼 수 있어요.
-   장면(JGS)마다 길이(d)·자막(cap)·효과음 시각(ev)·그리기(draw)가 있어요. 화면을 누르거나 Enter/Space면 다음 장면,
-   건너뛰기 버튼이나 Esc면 바로 끝나요. 음악은 audio.js의 BGMT.jg (wantBgm이 JG.on일 때 틀어요).
+/* ---------- 곡 인트로 애니메이션 (엔진 + 'ㅈㄱ의 카드 모험' 이야기) ----------
+   소리새 펌프에서 인트로가 있는 곡(PGSONGS의 intro)을 이 기기에서 처음 시작할 때 노래 전에 보여줘요(pumpStart).
+   곡을 고르면 나오는 '🎬 … 이야기 보기' 버튼으로 언제든 다시 볼 수 있어요.
+   인트로는 INTROS[키] = {scenes, bgm, btn}. 장면마다 길이(d)·자막(cap)·효과음 시각(ev)·그리기(draw)·음악(bgm, 없으면 인트로의 bgm)이 있어요.
+   화면을 누르거나 Enter/Space면 다음 장면, 건너뛰기 버튼이나 Esc면 바로 끝나요. 음악은 wantBgm()이 jgBgm()으로 골라요.
+   다른 곡 인트로: 'ㅈㄱ의 카드 모험'은 이 파일, '등굣길 뜀박질'은 lateintro.js
    파이리·카드·뽑기 기계·친구들 그림은 모두 이 파일에서 도형으로 직접 그려요. */
-const JG={on:false,t:0,i:0,raf:0,last:0,done:null,ctx:$('#jgCv').getContext('2d')};
+const JG={on:false,t:0,i:0,raf:0,last:0,done:null,set:null,ctx:$('#jgCv').getContext('2d')};
 const JG_CH=Object.assign({},CH['ㅈㄱ']);
 const JG_LAB=Object.assign({},JG_CH,{coat:'#f4f6ef',vest:'#3b7de0',glasses:true});   /* 연구복(흰 가운) 입은 박사 ㅈㄱ */
 
@@ -212,27 +213,29 @@ const JGS=[
       TX(c,JG.done?'노래 시작!':'THE END',400,100,16,'#f4f6ef','center');c.restore();}
   }}
 ];
+const INTROS={jg:{scenes:JGS,bgm:'jg',btn:'🎬 ㅈㄱ와 파이리 이야기 보기'}};
+function jgBgm(){const sc=JG.set.scenes[JG.i];return (sc&&sc.bgm)||JG.set.bgm;}
 function jgFrame(now){
   if(!JG.on)return;
   JG.raf=requestAnimationFrame(jgFrame);
   const dt=Math.min(.05,(now-JG.last)/1000),t0=JG.t;JG.last=now;JG.t+=dt;
-  const sc=JGS[JG.i];
-  (sc.ev||[]).forEach(e=>{if(e[0]>=t0&&e[0]<JG.t)sfx(e[1]);});
+  const sc=JG.set.scenes[JG.i];
+  (sc.ev||[]).forEach(e=>{if(e[0]>=t0&&e[0]<JG.t){if(typeof e[1]==='function')e[1]();else sfx(e[1]);}});   /* 효과음 이름 또는 함수(예: 라털의 burp) */
   if(JG.t>=sc.d){jgNext(false);return;}
   const c=JG.ctx;
   try{c.save();sc.draw(c,JG.t,JG.t/sc.d);c.restore();jgCap(c,sc.cap,JG.t);}catch(e){console.error(e);}
 }
 function jgNext(tap){
   if(tap)sfx('tick');
-  JG.i++;JG.t=0;if(JG.i>=JGS.length)jgEnd();
+  JG.i++;JG.t=0;if(JG.i>=JG.set.scenes.length)jgEnd();
 }
-/* done: 인트로가 끝나거나 건너뛰면 부를 함수(노래 시작). 없으면 다시 보기라 닫기만 해요 */
-function jgPlay(done){
-  if(JG.on)return;
-  JG.on=true;JG.i=0;JG.t=0;JG.done=done||null;JG.last=performance.now();
+/* key: INTROS의 키. done: 인트로가 끝나거나 건너뛰면 부를 함수(노래 시작). 없으면 다시 보기라 닫기만 해요 */
+function jgPlay(key,done){
+  if(JG.on||!INTROS[key])return;
+  JG.on=true;JG.set=INTROS[key];JG.i=0;JG.t=0;JG.done=done||null;JG.last=performance.now();
   $('#jgSkip').textContent=done?'건너뛰고 노래 시작 ▶▶':'닫기 ✕';
   $('#jgIntro').hidden=false;
-  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)JG.i=JGS.length-1;}catch(e){}
+  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)JG.i=JG.set.scenes.length-1;}catch(e){}
   JG.raf=requestAnimationFrame(jgFrame);bgmSync();
 }
 function jgEnd(){
@@ -247,4 +250,4 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();jgEnd();}
   else if((e.key==='Enter'||e.key===' ')&&!e.repeat){e.preventDefault();e.stopPropagation();jgNext(true);}
 },true);
-$('#pgIntroBtn').addEventListener('click',()=>jgPlay(null));
+$('#pgIntroBtn').addEventListener('click',()=>{const sg=pgPick(PGO.song,PGO.diff);if(sg.intro)jgPlay(sg.intro);});

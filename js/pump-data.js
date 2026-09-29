@@ -264,7 +264,7 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
 const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
 const PG_BETMAX=[1000,2000,3000,4000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
-  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
   {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
