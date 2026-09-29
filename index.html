@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.8.11">
+<link rel="stylesheet" href="css/style.css?v=1.8.12">
 </head>
 <body>
 <header class="board">
@@ -14,13 +14,12 @@
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hDay"></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
   </div>
 </header>
 
 <div id="hub">
   <section id="main" style="display:grid;gap:14px;align-content:start">
-    <div class="note" id="note"></div>
     <div class="note" id="chat"></div>
     <div class="glist" id="gameList">
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
@@ -155,7 +154,6 @@
         <h2 id="sT"></h2>
         <img id="sImg" alt="">
         <table class="sumtab" id="sTab"></table>
-        <p id="sX"></p>
         <div class="btns"><button class="go" id="sBtn">학교로 돌아가기</button></div>
       </div>
     </div>
@@ -199,7 +197,6 @@
     <p class="pgbadge" id="pgRB"></p>
     <table class="sumtab" id="pgRTab"></table>
     <p id="pgRSay" style="color:var(--ink);font-weight:700"></p>
-    <p id="pgRX"></p>
     <div class="btns"><button class="go" id="pgRBack">학교로 돌아가기</button></div>
   </div>
 </div>
@@ -358,23 +355,23 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.8.11"></script>
-<script src="js/save.js?v=1.8.11"></script>
-<script src="js/cloud.js?v=1.8.11"></script>
-<script src="js/login.js?v=1.8.11"></script>
-<script src="js/rank.js?v=1.8.11"></script>
-<script src="js/audio.js?v=1.8.11"></script>
-<script src="js/input.js?v=1.8.11"></script>
-<script src="js/render.js?v=1.8.11"></script>
-<script src="js/kick-data.js?v=1.8.11"></script>
-<script src="js/kick.js?v=1.8.11"></script>
-<script src="js/hub.js?v=1.8.11"></script>
-<script src="js/splash.js?v=1.8.11"></script>
-<script src="js/duel.js?v=1.8.11"></script>
-<script src="js/pump-data.js?v=1.8.11"></script>
-<script src="js/pump.js?v=1.8.11"></script>
-<script src="js/jgintro.js?v=1.8.11"></script>
-<script src="js/main.js?v=1.8.11"></script>
+<script src="js/util.js?v=1.8.12"></script>
+<script src="js/save.js?v=1.8.12"></script>
+<script src="js/cloud.js?v=1.8.12"></script>
+<script src="js/login.js?v=1.8.12"></script>
+<script src="js/rank.js?v=1.8.12"></script>
+<script src="js/audio.js?v=1.8.12"></script>
+<script src="js/input.js?v=1.8.12"></script>
+<script src="js/render.js?v=1.8.12"></script>
+<script src="js/kick-data.js?v=1.8.12"></script>
+<script src="js/kick.js?v=1.8.12"></script>
+<script src="js/hub.js?v=1.8.12"></script>
+<script src="js/splash.js?v=1.8.12"></script>
+<script src="js/duel.js?v=1.8.12"></script>
+<script src="js/pump-data.js?v=1.8.12"></script>
+<script src="js/pump.js?v=1.8.12"></script>
+<script src="js/jgintro.js?v=1.8.12"></script>
+<script src="js/main.js?v=1.8.12"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

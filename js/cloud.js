@@ -26,10 +26,12 @@ async function api(action,params){   /* backend/schema.sql 의 rk_<action> 함�
 }
 let pushT=null,pushBusy=false,dirty=false;
 function cloudSoon(){if(!cloudUrl()||!USER)return;dirty=true;clearTimeout(pushT);pushT=setTimeout(cloudPush,900);}
-function adoptCloud(r){
+/* 서버 기록으로 바꿔 끼우고, 왜 기록이 바뀌었는지(새 시즌 초기화 / 다른 기기 기록) 알림으로 알려 줘요 */
+function adoptCloud(r,msg){
   if(mode!=='hub'){pendingCloud=r;return;}
   const d=mergeData(r.data),newSeason=!!(r.season&&r.season!==USER.season);
-  d.news=newSeason?'새 시즌이 시작되어 모든 기록이 초기화되었다. 다시 1주차부터!':'다른 기기에서 저장한 최신 기록을 불러왔다.';d.updatedAt=r.updatedAt;
+  d.updatedAt=r.updatedAt;
+  toast(newSeason?'새 시즌이 시작되어 모든 기록이 초기화됐어요. 처음부터 다시!':msg||'다른 기기의 더 최신 기록을 불러왔어요.',5000);
   if(r.season)USER.season=r.season;
   S=d;putLocal();renderHub();maybeLoan();
 }
@@ -40,11 +42,10 @@ async function cloudPush(){
     if(OFFLINE_BASE!==null){
       const r0=await api('load',{id:USER.id,pin:USER.pin});
       const base=OFFLINE_BASE;OFFLINE_BASE=null;
-      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0);toast('오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
+      if(r0.exists&&((r0.updatedAt||0)>base||(r0.season&&r0.season!==USER.season))&&r0.data){adoptCloud(r0,'오프라인 동안 서버에 더 새로운 기록이 생겨서 그 기록을 불러왔어요.');setSync('ok');pushBusy=false;return;}
     }
-    const was=USER.season;
     const r=await api('save',{id:USER.id,pin:USER.pin,season:USER.season||LEGACY_SEASON,updatedAt:S.updatedAt,data:cloudData()});
-    if(r.conflict&&r.data){adoptCloud(r);toast(r.season&&r.season!==was?'새 시즌이 시작되어 기록이 초기화됐어요.':'다른 기기의 더 최신 기록을 불러왔어요.');}
+    if(r.conflict&&r.data)adoptCloud(r);
     setSync('ok');
   }catch(e){
     if(e.message==='bad_pin'||e.message==='locked'){setSync('err');toast('클라우드에 등록된 비밀번호와 달라서 저장하지 못했어요. 로그아웃 후 다시 로그인해 주세요.');}

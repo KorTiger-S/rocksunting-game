@@ -4,7 +4,7 @@ let rankMetric='money';
 const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
 function localTop(metric){
   const out=[];
-  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,week:d.week||1,v:d[metric]||0});}catch(e){}});
+  lsKeys().filter(k=>k&&k.startsWith('rk:u:')).forEach(k=>{try{const r=JSON.parse(lsGet(k)),d=r.data||{};out.push({id:r.name,money:d.money||0,wins:d.wins||0,losses:d.losses||0,bestPts:d.bestPts||0,pumpBest:d.pumpBest||0,v:d[metric]||0});}catch(e){}});
   out.sort((a,b)=>b.v-a.v);return out.slice(0,10);
 }
 async function renderRank(){
@@ -22,5 +22,5 @@ $('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
-function toast(m){const t=$('#toast');t.innerHTML='';const d=document.createElement('div');d.textContent=m;t.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove();},2600);}
+function toast(m,ms=2600){const t=$('#toast');t.innerHTML='';const d=document.createElement('div');d.textContent=m;t.appendChild(d);setTimeout(()=>{if(d.parentNode)d.remove();},ms);}
 

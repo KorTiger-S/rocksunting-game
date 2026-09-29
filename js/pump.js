@@ -368,11 +368,11 @@ function pgFinish(failed,quit){
   if(win)S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);else S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);
   if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
   S.plays=(S.plays||0)+1;
-  const weekend=advanceDay();
-  if(S.money>=1000000&&!S.cleared){S.cleared=true;S.news='🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)';setTimeout(()=>sfx('bigwin'),1800);}
+  dayStats();
+  if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money,week:S.week});
-  sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');if(weekend)setTimeout(()=>sfx('bell'),1400);
+  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
+  sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
   const title=quit?'포기…':failed?'STAGE BREAK…':win&&grade==='S'?'완승! S 랭크':win?'내기 승리!':'호우에게 졌다…';
   const say=(quit||failed)?HOU_FAIL:win?(grade==='S'?HOU_BIG:HOU_WIN):HOU_LOSE;
@@ -390,7 +390,6 @@ function pgFinish(failed,quit){
        `<tr><td>소지금</td><td>${fmt(g.before)} → ${fmt(S.money)}원</td></tr>`;
     $('#pgRTab').innerHTML=h;
     $('#pgRSay').textContent='호우: '+pick(say);
-    $('#pgRX').textContent=weekend?`주말이 지나 새 주가 시작됐다. (${S.week}주차 월요일)`:`내일은 ${DAYS[S.day]}요일.`;
     $('#pgResult').hidden=false;
   },failed?500:1500);
 }

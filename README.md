@@ -59,7 +59,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` (`js/hub.js`) |
 | 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (`js/audio.js`), 버튼별 소리는 `BTN_SFX` (`js/hub.js`) |
 | 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js`. 일렉기타(파트 종류 `gtr`, 파워코드 `pc:true`)는 `bgtr()` |
-| 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/소리새가서 노래부르기/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 매일 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
+| 근력·체력·컨디션·기분, 쇠질하기/난지바베큐/소리새가서 노래부르기/디델리 가격 | `GYM_COST`/`BBQ_COST`/`DRINK_COST`/`TTEOK_COST`, `gymAction`/`bbqAction`/`buyDrink`/`buyTteok` (`js/hub.js`), 판마다 감소·컨디션 굴리기는 `dayStats()`/`rollCondition()`, 컨디션→난이도는 `applyCondition()`, 판돈→골키퍼 민첩성은 `applyBet()`, 근력→슛 파워·체력→킥 제한시간은 `applyStats()` (`js/kick.js`) |
 | 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
 | 1:1 대결 판정(오차·골키퍼 반경)·시간 제한 | `rk_duel_shot`, `rk_duel_settle` (backend/schema.sql) |
@@ -118,7 +118,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
   - 소리 파일 없이 Web Audio로 합성해요(배경음악과 같은 악보 형식). 채보는 악보에서 자동 생성돼요(쉬움=4분음표 자리만, 보통=멜로디 음마다, 어려움=멜로디+베이스 박마다 + 점프).
 - **판정**: PERFECT ±60ms · GREAT ±100ms · GOOD ±140ms · BAD ±180ms (컨디션에 따라 ±10% 안팎으로 넉넉/빡빡). 롱노트는 끝까지 눌러야 성공. 점수는 만점 1,000,000점(정확도 90% + 최대 콤보 10%). 랭크는 S 95만 · A 85만 · B 70만 · C 55만 이상.
 - **내기**: 판돈 상한은 난이도별로 쉬움 1,000원 · 보통 2,000원 · 어려움 3,000원 · 매우 어려움 4,000원(`PG_BETMAX`, `js/pump-data.js`)이고, 시작할 때 미리 빠지고 저장돼요. 호우의 목표 점수 이상이면 **판돈 2배**, **S 랭크**면 판돈의 절반을 더 받아요. 게이지가 0이 되면(STAGE BREAK) 판돈을 잃어요.
-- **도전 횟수**: 마이크 🎤 5개, 시작할 때마다 1개씩 쓰고 30분마다 1개 충전(프리킥의 축구공과 같은 방식). 하루(게임 속 하루)도 1번 지나가요.
+- **도전 횟수**: 마이크 🎤 5개, 시작할 때마다 1개씩 쓰고 30분마다 1개 충전(프리킥의 축구공과 같은 방식).
 - **몸 관리 연동**: 체력이 높을수록 시작 게이지가 커요(48%~70%). 컨디션이 좋을수록 판정이 넉넉해요.
 - **옵션**: 속도(×1~×3), 싱크(±200ms)는 이 기기에 기억돼요. 곡이 흐르는 AudioContext 시계를 기준으로 판정해서, 화면·소리가 어긋나면 싱크를 조절하면 돼요.
 - **랭킹**: 🏆 랭킹에 "펌프 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
