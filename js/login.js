@@ -83,7 +83,7 @@ function updateUserChip(){
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
-  USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;updateUserChip();showLogin();
+  USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;hubCard=null;updateUserChip();showLogin();
 }
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */

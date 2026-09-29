@@ -2,6 +2,23 @@
 /* ---------- 허브 ---------- */
 let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
+let hubCard=null;   /* 허브에서 열어 둔 게임 상세 카드 id (null: 게임 목록). 게임이 끝나고 돌아오면 그 카드가 그대로 열려 있어요 */
+function renderGameList(){
+  $('#gameList').hidden=!!hubCard;$('#soonList').hidden=!!hubCard;
+  document.querySelectorAll('.gdet').forEach(c=>c.hidden=c.id!==hubCard);
+  const b=S.balls==null?BALL_MAX:S.balls,open=pgUnlocked();
+  $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 5킥 넣으면 판돈 2배`;
+  $('#glPumpT').textContent=open?'호우와 소리새 펌프':'???';
+  $('#glPump').textContent=open?`🎤 남은 마이크 ${S.mics==null?5:S.mics}/5 · 발판 리듬 게임`:'준비 중 · 관리자 번호로 입장';
+  $('#glDuel').textContent=duOk()?'방 코드로 친구와 실시간 승부':'로그인하면 친구와 대결할 수 있어요';
+  $('#glCare').textContent=`근력 ${Math.round(clamp(S.str==null?25:S.str,0,100))}% · 체력 ${Math.round(clamp(S.stam==null?25:S.stam,0,100))}% · 컨디션 ${CONDS[clamp(S.cond==null?2:S.cond,0,4)]}`;
+}
+function openHubCard(id){
+  hubCard=id;renderGameList();
+  const c=id?$('#'+id):$('#gameList');if(c.getBoundingClientRect().top<0)c.scrollIntoView({block:'start'});
+}
+document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>openHubCard(b.dataset.card)));
+document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
   renderDuelCard();renderPumpCard();
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';$('#hDay').textContent=`${S.week}주차 ${DAYS[S.day]}요일`;
@@ -14,6 +31,7 @@ function renderHub(){
   $('#betV').textContent=fmt(betV)+'원';
   ballTick();renderBalls();
   const can=S.money>=1000&&S.balls>0;
+  renderGameList();
   $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
 }
 /* ---------- 프리킥 도전 횟수: 축구공 5개, 도전할 때마다 1개 사라지고 30분마다 1개씩 다시 채워져요 ----------
@@ -189,7 +207,7 @@ const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'
   gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
-  const n=BTN_SFX[b.id]||'click';if(n!=='none')sfx(n);
+  const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/스탯/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
