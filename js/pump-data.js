@@ -242,7 +242,7 @@ pgBuild({id:'pg11',bpm:176,leadGtr:true,leadVol:.034,leadD:2,bassVol:.08,padVol:
   end:'E5 . . . . . . .',endChord:'Em',endBass:'E2',endRiff:'E2'});
 
 /* 12) ㅈㄱ의 카드 모험 — 이 게임용으로 새로 지은 밝은 모험 테마(게임보이 느낌 칩튠). 쉬운 편 곡이에요.
-   처음 시작할 때 ㅈㄱ와 파이리 이야기 인트로(js/jgintro.js)가 먼저 나와요(PGSONGS의 intro). */
+   시작할 때마다 ㅈㄱ와 파이리 이야기 인트로(js/jgintro.js)가 먼저 나와요(PGSONGS의 intro). */
 const PG12_RF={D:['D3','A2'],G:['G2','D3'],A:['A2','E3'],Bm:['B2','F#3'],Em:['E2','B2']};   /* 코드 → 베이스 근음·5도 */
 const PG12_PROGS=[['D','G','A','D'],['Bm','G','D','A'],['G','A','D','Bm'],['Em','A','D','D']];
 pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,

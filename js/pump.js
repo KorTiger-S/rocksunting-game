@@ -153,12 +153,12 @@ function pgNewGame(sg,bet,before){
     state:'count',paused:false,frozen:0,pauseAt:0,resumeAt:0,grace:0,pop:null,fx:[],missAt:0,comboAt:0,cd:99,go:false,err:0,settled:false,
     t0:0,off:0,step:0,nextT:0,timer:0,tg:null,ptrs:{}};
 }
-function pumpStart(){
+function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는 건너뛰고) 들어온 경우. 버튼 클릭 땐 이벤트 객체가 와요 */
   if(!pgUnlocked()||!USER||mode!=='hub'||JG.on)return;
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
   if(S.money<1000||bet<1000){sfx('deny');return;}
-  if(sg.intro&&S.mics>0&&lsGet('rk:intro:'+sg.id)!=='1'){lsSet('rk:intro:'+sg.id,'1');jgPlay(sg.intro,pumpStart);return;}   /* 인트로가 있는 곡은 이 기기에서 처음 한 번 인트로부터 */
+  if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
