@@ -4,8 +4,8 @@
    채보(노트 배치)도 손으로 찍지 않고 악보에서 자동으로 만들어요. 곡마다 쉬움·보통·어려움·매우 어려움 네 채보가 있고, 곡 id + 난이도(level)로 항상 같은 채보가 나와요.
      level 1 : 멜로디 중 4분음표 자리(짝수 칸)만 노트  → 쉬움
      level 2 : 멜로디 음마다 노트                         → 보통
-     level 3 : 멜로디 + 베이스 음(한 박 단위)까지 노트, 점프(동시 두 발판)가 자주 나와요 → 어려움
-     level 4 : 멜로디 + 베이스 음 전부, 반 마디마다 점프, 롱노트는 줄이고 발판을 크게 건너뛰는 흐름까지 → 매우 어려움
+     level 3 : 멜로디 + 베이스 음 전부 + 틈을 채운 노트(마디 뒤 절반은 0.4초, 앞 절반은 0.55초까지), 점프(동시 두 발판)가 자주 나와요 → 어려움
+     level 4 : 틈을 0.3초까지 촘촘히 채우고, 반 마디마다 점프, 롱노트는 줄이고 발판을 크게 건너뛰는 흐름까지 → 매우 어려움
    새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 4개 포함) 추가하면 돼요. */
 /* ---------- 시즌2 잠금 ----------
    허브에는 제목이 "???"로 가려진 카드만 보이고, 관리자 번호(숫자 4자리)를 입력해야 플레이할 수 있어요.
@@ -215,20 +215,21 @@ pgBuild({id:'pg10',bpm:184,leadGtr:true,leadVol:.034,leadD:2,bassVol:.08,padVol:
   end:'G5 . . . . . . .',endChord:'G',endBass:'G2',endRiff:'G2'});
 
 /* 곡 목록. 곡마다 난이도 4개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움 · [3]=매우 어려움)가 있어요.
-   stars = 별 개수(1~12), target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
+   stars = 별 개수. 채보의 초당 노트 수·4초 최대 밀도·점프 비율·노트 속도로 난이도를 재서, 교가 쉬움 = ★1 · 교가 롹 버전 매우 어려움(v1.8.9 채보) = ★11을
+   기준으로 맞춘 값이에요(v1.8.10에서 어려움부터 채보가 촘촘해져서 그보다 어려운 채보는 11을 넘어요). 채보를 바꾸면 별도 다시 매겨 주세요, target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
 const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
 const PG_BETMAX=[1000,2000,3000,4000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
-  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
-  {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
-  {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:8,target:780000,approach:1.45},{stars:11,target:820000,approach:1.3}]},
-  {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:4,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
-  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:720000,approach:1.7},{stars:7,target:750000,approach:1.5},{stars:9,target:790000,approach:1.35}]},
-  {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5},{stars:10,target:800000,approach:1.35}]},
-  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',seed:202,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:750000,approach:1.7},{stars:7,target:780000,approach:1.5},{stars:9,target:800000,approach:1.35}]},
-  {id:'pg6',name:'터키 행진곡',sub:'모차르트 · 피아노 소나타 11번',seed:606,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5},{stars:10,target:800000,approach:1.35}]},
-  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:4,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:800000,approach:1.5},{stars:10,target:820000,approach:1.3}]},
-  {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:8,target:760000,approach:1.6},{stars:10,target:800000,approach:1.4},{stars:12,target:830000,approach:1.25}]}
+  {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
+  {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
+  {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
+  {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
+  {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:4,target:720000,approach:1.7},{stars:8,target:750000,approach:1.5},{stars:10,target:790000,approach:1.35}]},
+  {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:7,target:740000,approach:1.7},{stars:9,target:780000,approach:1.5},{stars:12,target:800000,approach:1.35}]},
+  {id:'pg2',name:'매점 러시',sub:'종 치면 뛰어!',seed:202,diffs:[{stars:2,target:700000,approach:1.9},{stars:4,target:750000,approach:1.7},{stars:8,target:780000,approach:1.5},{stars:10,target:800000,approach:1.35}]},
+  {id:'pg6',name:'터키 행진곡',sub:'모차르트 · 피아노 소나타 11번',seed:606,diffs:[{stars:4,target:680000,approach:1.9},{stars:7,target:740000,approach:1.7},{stars:9,target:780000,approach:1.5},{stars:13,target:800000,approach:1.35}]},
+  {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:9,target:800000,approach:1.5},{stars:12,target:820000,approach:1.3}]},
+  {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:11,target:760000,approach:1.6},{stars:14,target:800000,approach:1.4},{stars:15,target:830000,approach:1.25}]}
 ];
 PGSONGS.forEach(s=>{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;s.secs=Math.round(s.len*s.spb);});
 /* 곡 + 난이도 → 한 판에 쓰는 설정(level 1~4, 별·목표·속도). 채보는 곡 id + 난이도(key)마다 따로 만들어요. */
@@ -245,9 +246,11 @@ const PGPAT2=PGPAT1.concat([[1,3,1,3],[2,0,2,4],[3,2,1,0,1],[1,0,1,2,3]]);
 const PGPAT3=PGPAT2.concat([[0,3,0,3],[1,4,1,4],[0,1,4,3],[4,3,0,1]]);
 const PGPAT4=PGPAT3.concat([[0,4,0,4],[1,3,0,4],[4,0,3,1],[0,2,4,2,0],[3,1,4,0]]);   /* 매우 어려움: 양 끝을 크게 건너뛰어요 */
 const PGJUMPS=[[0,4],[1,3],[0,3],[1,4]];
-const PGJUMP_P=[0,.12,.4,.6];   /* level별 마디 첫 박에서 점프가 나올 확률 (level 4는 반 마디 자리에서도 PGJUMP_HALF 확률로) */
-const PGJUMP_HALF=.25;
-const PGHOLD_P=[0,.7,.6,.5,.3];    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
+const PGJUMP_P=[0,.12,.7,.9];   /* level별 마디 첫 박에서 점프가 나올 확률 (어려움부터는 반 마디 자리에서도 PGJUMP_HALF 확률로) */
+const PGJUMP_HALF=[0,0,0,.35,.6];   /* level별 반 마디 자리 점프 확률 */
+const PGHOLD_P=[0,.7,.6,.5,.3];
+const PGGAP=[0,0,0,.4,.3];     /* level별 노트 사이 최대 간격(초). 어려움·매우 어려움은 이보다 벌어진 틈을 노트로 채워요 */
+const PGGAP_HEAD=.55;           /* 어려움은 마디 앞 절반만 조금 느슨하게 → 쿵 쿵 따다다다 흐름 */    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
 const PGCHARTS={};
 function pgChart(sg){
   if(PGCHARTS[sg.key])return PGCHARTS[sg.key];
@@ -255,8 +258,17 @@ function pgChart(sg){
   const lib=lv===1?PGPAT1:lv===2?PGPAT2:lv===3?PGPAT3:PGPAT4,steps=[];
   for(let s=0;s<T.len;s++){
     const hasL=lead[s]!=='.',hasB=bass[s]!=='.';
-    const on=lv===1?(hasL&&s%2===0):lv===2?hasL:lv===3?(hasL||(hasB&&s%4===0)):(hasL||hasB);
+    const on=lv===1?(hasL&&s%2===0):lv===2?hasL:(hasL||hasB);
     if(on)steps.push(s);
+  }
+  if(PGGAP[lv]){   /* 어려움부터: 노트 사이가 PGGAP초보다 벌어지면 그 사이 칸을 고르게 채워요(멜로디가 쉬는 곳에서도 계속 밟게) */
+    const add=[];
+    for(let i=0;i+1<steps.length;i++){
+      const a=steps[i],b=steps[i+1],G=lv===3&&a%8<4?PGGAP_HEAD:PGGAP[lv],n=Math.ceil((b-a)*spb/G-1e-9);
+      for(let k=1;k<n;k++)add.push(a+Math.round(k*(b-a)/n));
+    }
+    steps.push(...add);steps.sort((x,y)=>x-y);
+    for(let i=steps.length-1;i>0;i--)if(steps[i]===steps[i-1])steps.splice(i,1);
   }
   const notes=[];let pat=null,pi=0,last=2,curS=0;
   const nextLane=()=>{
@@ -271,7 +283,7 @@ function pgChart(sg){
     curS=s;
     const nx=i+1<steps.length?steps[i+1]:T.len,gap=nx-s,fin=i===steps.length-1;
     const t=s*spb;
-    if(!fin&&((s%8===0&&R()<PGJUMP_P[lv-1])||(lv>=4&&s%8===4&&R()<PGJUMP_HALF))){   /* 점프: 두 발판을 동시에 */
+    if(!fin&&((s%8===0&&R()<PGJUMP_P[lv-1])||(lv>=3&&s%8===4&&R()<PGJUMP_HALF[lv]))){   /* 점프: 두 발판을 동시에 */
       const j=PGJUMPS[Math.floor(R()*PGJUMPS.length)];
       j.forEach(l=>notes.push({t,lane:l,hold:0,s}));
       last=j[Math.floor(R()*2)];pat=null;return;

@@ -66,7 +66,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 프리킥 도전 횟수(축구공 5개·30분마다 1개 충전) | `BALL_MAX`, `BALL_MIN`, `ballTick()`, `ballUse()`, `renderBalls()` (`js/hub.js`), 저장은 `S.balls`/`S.ballAt`(epoch 분), 서버 보정은 `rk_clean` (backend/schema.sql) |
 | 판돈 한도(3,000원) | `betMax()` (`js/hub.js`) |
 | 소리새 펌프 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
-| 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
+| 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
 | 소리새 펌프 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |
 | 소리새 펌프 판돈 정산·S 랭크 보너스·몸 관리 연동 | `pgFinish()`, `pgLife0()`(체력→시작 게이지), `pgWinScale()`(컨디션→판정 폭) (`js/pump.js`) |
 | 소리새 펌프 도전 횟수(마이크 5개·30분마다 1개 충전) | `MIC_MAX`, `MIC_MIN`, `micTick()`, `micUse()` (`js/pump.js`), 저장은 `S.mics`/`S.micAt`, 서버 보정은 `rk_clean` (backend/schema.sql) |
