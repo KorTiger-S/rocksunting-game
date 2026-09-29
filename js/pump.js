@@ -85,7 +85,7 @@ function renderPumpCard(){
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
   const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
-  [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} · ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
+  [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
   $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
