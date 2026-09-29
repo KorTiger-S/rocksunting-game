@@ -39,10 +39,11 @@ setInterval(()=>{
 
 /* ---------- 옵션 (이 기기에 기억) ---------- */
 const PG_SPEEDS=[1,1.5,2,2.5,3];   /* 노트가 올라오는 속도 배율 */
-let PGO={song:0,spd:1,off:0};       /* off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
+let PGO={song:0,diff:0,spd:1,off:0};   /* diff: 0 쉬움 · 1 보통 · 2 어려움 · off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
 try{const o=JSON.parse(lsGet('rk:pump')||'null');if(o&&typeof o==='object')PGO=Object.assign(PGO,o);}catch(e){}
 function pgOptFix(){
   PGO.song=clamp(Math.floor(+PGO.song)||0,0,PGSONGS.length-1);
+  PGO.diff=clamp(Math.floor(+PGO.diff)||0,0,PG_DIFFS.length-1);
   PGO.spd=clamp(Math.floor(+PGO.spd)||0,0,PG_SPEEDS.length-1);
   PGO.off=clamp(Math.round((+PGO.off||0)/10)*10,-200,200);
 }
@@ -53,28 +54,39 @@ const pgWinScale=()=>[.9,.95,1,1.05,1.1][clamp(S.cond==null?2:S.cond,0,4)];   /*
 
 /* ---------- 허브 카드 ---------- */
 let pgBetV=1000;
-const pgBetMax=()=>Math.min(3000,S.money);
+const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도별 상한(pump-data.js의 PG_BETMAX) */
 (function buildSongList(){
   const box=$('#pgSongs');
   PGSONGS.forEach((s,i)=>{
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
-    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★'.repeat(Math.ceil(s.stars/2))+' '+s.stars;
+    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
     b.addEventListener('click',()=>{PGO.song=i;pgOptSave();renderPumpCard();});
     box.appendChild(b);
   });
+  /* 곡을 고른 다음 난이도를 골라요 */
+  const dbox=$('#pgDiffs');
+  PG_DIFFS.forEach((n,i)=>{
+    const b=document.createElement('button');b.type='button';b.className='song';
+    const t=document.createElement('b'),st=document.createElement('span');t.textContent=n;st.className='stars';
+    b.appendChild(t);b.appendChild(st);
+    b.addEventListener('click',()=>{PGO.diff=i;pgOptSave();renderPumpCard();});
+    dbox.appendChild(b);
+  });
 })();
 function renderPumpCard(){
   const open=pgUnlocked();
-  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!open;
+  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 펌프 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
   $('#pgH2').firstChild.textContent=open?'호우와 소리새 펌프 ':'??? ';
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
   micTick();renderMics();pgOptFix();
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
-  const sg=PGSONGS[PGO.song],ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
-  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
+  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
+  $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
+  [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} · ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
+  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
   $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
@@ -112,11 +124,23 @@ const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ 
 const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
 const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
 const PGKEYS={KeyZ:0,KeyQ:1,KeyS:2,KeyE:3,KeyC:4,Numpad1:0,Numpad7:1,Numpad5:2,Numpad9:3,Numpad3:4};
-const pgClock=()=>AC?AC.currentTime:performance.now()/1000;
-const pgNow=()=>PG.paused?PG.frozen:pgClock()-PG.t0-PG.off;
+const pgClock=()=>AC?AC.currentTime:performance.now()/1000;   /* 소리를 예약하는 시계(스피커에서 실제로 들리는 것보다 앞서 있어요) */
+/* 지금 스피커에서 실제로 들리는 곡의 위치(컨텍스트 시간).
+   브라우저가 outputLatency를 0으로 잘못 알려 주는 경우가 많아서, 추측하지 않고 getOutputTimestamp()가 알려 주는
+   "지금 나오고 있는 샘플"을 기준으로 삼아요. 이 시계로 노트 위치·판정을 계산하니 소리와 노트가 맞아요.
+   값이 이상하거나 지원 안 하는 브라우저는 currentTime에서 알려진 지연만큼 뺀 값을 써요. */
+function pgHeard(){
+  if(!AC)return performance.now()/1000;
+  try{
+    const ts=AC.getOutputTimestamp(),lag=AC.currentTime-ts.contextTime;
+    if(ts.contextTime>0&&ts.performanceTime>0&&lag>=0&&lag<.6)return ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+  }catch(e){}
+  return AC.currentTime-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
+}
+const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
-function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
+function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
 function pgNewGame(sg,bet,before){
   const ch=pgChart(sg),lanes=[[],[],[],[],[]],sc=pgWinScale();
   const notes=ch.notes.map(n=>({t:n.t,lane:n.lane,hold:n.hold,res:-1,hs:0}));   /* hs: 0 대기 · 1 누르는 중 · 2 성공 · 3 실패 */
@@ -131,13 +155,13 @@ function pgNewGame(sg,bet,before){
 function pumpStart(){
   if(!pgUnlocked()||!USER||mode!=='hub')return;
   micTick();pgOptFix();
-  const sg=PGSONGS[PGO.song],bet=Math.min(pgBetV,pgBetMax());
+  const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
   if(S.money<1000||bet<1000){sfx('deny');return;}
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
   mode='pump';showPump(true);pgResize();
-  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name}`;
+  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
   $('#pgResult').hidden=true;$('#pgPause').hidden=true;
   pgBegin();
   const g=PG;
@@ -149,8 +173,7 @@ function pumpStart(){
 }
 function pgBegin(){
   const g=PG,a=actx(),lead=Math.max(3.2,g.approach+1.2);
-  const lat=a?clamp((a.baseLatency||0)+(a.outputLatency||0),0,.3):0;   /* 소리가 스피커까지 가는 시간만큼 판정 시계를 늦춰요 */
-  g.off=lat+PGO.off/1000;
+  g.off=PGO.off/1000;   /* 기기 지연은 pgHeard()가 알아서 반영해요. 여기는 사용자가 옵션에서 맞춘 싱크만 */
   g.t0=pgClock()+lead;g.nextT=g.t0;
   if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
 }
@@ -226,6 +249,8 @@ $('#pgCv').addEventListener('pointerdown',e=>{
   if(!PG)return;const l=PG.ptrs[e.pointerId];if(l===undefined)return;delete PG.ptrs[e.pointerId];pgRelease(l);
 }));
 $('#pgCv').addEventListener('contextmenu',e=>e.preventDefault());
+/* touch-action을 제대로 안 지키는 브라우저(구형 iOS 사파리 등)를 위해 플레이 화면에서의 터치 스크롤·확대를 한 번 더 막아요 */
+$('#pumpWrap').addEventListener('touchmove',e=>{if(PG&&e.cancelable)e.preventDefault();},{passive:false});
 window.addEventListener('resize',()=>{if(PG)pgResize();});
 function pgResize(){
   const cv=$('#pgCv');if($('#pumpWrap').hidden)return;
@@ -234,7 +259,7 @@ function pgResize(){
   pad.hidden=lay==='none';row.classList.toggle('side',lay==='side');
   const top=$('#pumpWrap .gtop').offsetHeight+14,padH=lay==='below'?pad.offsetHeight+14:0;
   const w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520),availH=window.innerHeight-top-padH-40;
-  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),560,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 */
+  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),480,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 (작은 폰에서도 발판까지 한 화면에 들어오게 최소 480) */
   const sc=Math.min(2,window.devicePixelRatio||1);
   $('#pgStage').style.width=w+'px';
   cv.width=Math.round(PGW*sc);cv.height=Math.round(PGH*sc);
@@ -249,7 +274,7 @@ function pgTogglePause(){
 }
 function pgPause(){
   const g=PG;if(!g||g.paused||g.state==='end')return;
-  g.frozen=pgNow();g.pauseAt=pgClock();g.paused=true;g.resumeAt=0;
+  g.frozen=pgNow();g.pauseAt=pgClock();g.pauseAudio=g.pauseAt-g.t0;g.paused=true;g.resumeAt=0;
   g.held=[false,false,false,false,false];
   /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
      이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
@@ -287,7 +312,7 @@ function pgUpdate(){
         g.t0+=pgClock()-g.pauseAt;g.resumeAt=0;g.paused=false;
         if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 */
           g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
-          g.step=Math.max(0,Math.ceil((g.frozen+g.off)/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
+          g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
         }
         g.grace=g.frozen+1;   /* 롱노트를 누르던 중이었다면 다시 누를 시간을 줘요 */
       }
@@ -461,7 +486,7 @@ function pgDraw(){
   c.save();c.beginPath();c.arc(38,42,27,0,6.2832);c.clip();
   if(im&&im.complete&&im.naturalWidth){const sz=54,sw=im.naturalWidth,sh=im.naturalHeight,s=Math.min(sw,sh);c.drawImage(im,(sw-s)/2,sh*.02,s,s,11,15,sz,sz);}else{c.fillStyle='#f4f1ee';c.fillRect(11,15,54,54);}
   c.restore();c.beginPath();c.arc(38,42,27,0,6.2832);c.lineWidth=3;c.strokeStyle='#e2334d';c.stroke();
-  pgText(c,g.sg.name,76,22,15,'#dfe6ff','left',"'Noto Sans KR',sans-serif");
+  pgText(c,`${g.sg.name} · ${PG_DIFFS[g.sg.diff]}`,76,22,15,'#dfe6ff','left',"'Noto Sans KR',sans-serif");
   pgText(c,String(pgScore(g)).padStart(7,'0'),PGW-14,38,32,'#fff','right');
   pgText(c,'호우 목표 '+fmt(g.sg.target),PGW-14,64,12,pgScore(g)>=g.sg.target?'#7bed9f':'#9aa3c2','right',"'Noto Sans KR',sans-serif");
   const lx=76,lw=PGW-lx-150;
@@ -473,7 +498,7 @@ function pgDraw(){
   if(now<0&&!g.paused){
     const n=Math.ceil(-now);
     pgText(c,g.sg.name,PGW/2,H*.42-70,28,'#fff');
-    pgText(c,`BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
+    pgText(c,`${PG_DIFFS[g.sg.diff]} ★${g.sg.stars} · BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
     pgText(c,'Z  Q  S  E  C  (숫자패드 1 7 5 9 3) · Esc 일시정지',PGW/2,H*.5+110,13,'#9aa3c2',null,"'Noto Sans KR',sans-serif");
     if(n<=3){const fr=n+now,sc=1+.5*fr;c.save();c.globalAlpha=.4+.6*(1-fr);c.translate(PGW/2,H*.5);c.scale(sc,sc);pgText(c,String(n),0,0,96,'#ffd23f');c.restore();}
   }else if(now<.7&&!g.paused){c.save();c.globalAlpha=1-now/.7;pgText(c,'GO!',PGW/2,H*.5,80,'#7bed9f');c.restore();}
@@ -482,3 +507,43 @@ function pgDraw(){
     if(g.resumeAt){const n=Math.max(1,Math.ceil((g.resumeAt-perf)/1000));pgText(c,String(n),PGW/2,H*.5,110,'#ffd23f');}
   }
 }
+
+/* ---------- 싱크 자동 측정 ----------
+   일정한 간격(0.6초)의 딸깍 소리를 10번 들려주고, 사용자가 아무 발판 키/화면을 눌러서 박자를 맞추면
+   "눌린 시각 - 딸깍이 들린 시각"의 중앙값을 싱크 옵션에 넣어요. (양수 = 평소 늦게 누르는 편 → 노트를 늦게 내려 줘요) */
+let PGCAL=null;
+const PGCAL_N=10,PGCAL_GAP=.6;
+function pgCalStart(){
+  const a=actx();if(!a||PGCAL||mode!=='hub'){if(!a)toast('이 브라우저는 소리를 지원하지 않아요.');return;}
+  const c0=a.currentTime+1.2;
+  PGCAL={c0,taps:[],done:false};
+  for(let i=0;i<PGCAL_N;i++)tone(1400,.06,'square',.09,c0-a.currentTime+i*PGCAL_GAP);
+  $('#pgCalMsg').textContent='딸깍 소리에 맞춰 Z Q S E C 아무 키(또는 화면)를 눌러 주세요.';$('#pgCalCnt').textContent='0 / '+PGCAL_N;
+  $('#pgCalClose').textContent='취소';$('#pgCal').hidden=false;
+  PGCAL.timer=setTimeout(pgCalEnd,(1.2+PGCAL_N*PGCAL_GAP+.6)*1000);
+}
+function pgCalTap(){
+  const c=PGCAL;if(!c||c.done)return;
+  const h=pgHeard()-c.c0,i=Math.round(h/PGCAL_GAP);
+  if(i<0||i>=PGCAL_N||Math.abs(h-i*PGCAL_GAP)>.3)return;   /* 딸깍과 상관없는 눌림은 무시 */
+  if(!c.taps.some(t=>t.i===i))c.taps.push({i,e:h-i*PGCAL_GAP});
+  $('#pgCalCnt').textContent=c.taps.length+' / '+PGCAL_N;
+}
+function pgCalEnd(){
+  const c=PGCAL;if(!c||c.done)return;c.done=true;clearTimeout(c.timer);
+  const t=c.taps.filter(x=>x.i>=2).map(x=>x.e).sort((x,y)=>x-y);   /* 처음 두 번은 적응 시간이라 빼요 */
+  if(t.length<5){$('#pgCalMsg').textContent='박자를 충분히 못 잡았어요. 딸깍 소리에 맞춰 다시 해 볼까요?';$('#pgCalClose').textContent='닫기';sfx('error');return;}
+  const med=t.length%2?t[(t.length-1)/2]:(t[t.length/2-1]+t[t.length/2])/2;
+  PGO.off=clamp(Math.round(med*1000/10)*10,-200,200);pgOptSave();renderPumpCard();
+  $('#pgCalMsg').textContent=`측정 완료! 싱크를 ${PGO.off>0?'+':''}${PGO.off}ms로 맞췄어요. (${t.length}번 측정)`;$('#pgCalClose').textContent='확인';sfx('welcome');
+}
+function pgCalClose(){if(PGCAL){clearTimeout(PGCAL.timer);PGCAL=null;}$('#pgCal').hidden=true;}
+$('#pgCalBtn').addEventListener('click',pgCalStart);
+$('#pgCalClose').addEventListener('click',pgCalClose);
+window.addEventListener('keydown',e=>{
+  if(!PGCAL||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();pgCalClose();return;}
+  if(PGKEYS[e.code]===undefined)return;
+  e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)pgCalTap();
+},true);
+$('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
