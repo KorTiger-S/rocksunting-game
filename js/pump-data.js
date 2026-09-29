@@ -170,12 +170,34 @@ pgBuild({id:'pg8',bpm:120,wave:'square',leadVol:.038,bassVol:.09,kickVol:.17,
   form:['A:main:0','B:main:1','C:soft:2','D:main:3','A:main:0','B:main:1','C:main:2','D:main:3'],
   end:'F5 . . . . . . .',endChord:'F',endBass:'F2'});
 
+/* 9) 머대부고 교가 — 실제 학교 교가(김순세 작곡)의 멜로디를 악보 그대로 옮겼어요(가사는 쓰지 않아요).
+   사장조 4/4, 24마디를 4마디씩 6구간(S1~S6)으로 나눴어요. 16분음표·셋잇단음표는 8분음표 칸에 맞춰 조금 다듬었어요.
+   1절을 한 번 부르고, 후렴(S5~S6)을 드럼을 세게 해서 한 번 더 불러요.
+   ※ 작곡가 저작권이 남아 있을 수 있는 곡이에요. 친구들끼리 하는 게임이라 넣었고, 학교·유족이 원하지 않으면 빼야 해요. */
+const PGKB={G:'G2 . D3 . G2 . D3 .',C:'C3 . G2 . C3 . G2 .',D:'D3 . A2 . D3 . A2 .',Am:'A2 . E3 . A2 . E3 .'};
+const PG9_PROGS=[['G','G','C','D'],['G','Am','D','G'],['D','G','Am','D'],['G','C','D','G'],['C','G','G','D'],['G','C','D','G']];
+pgBuild({id:'pg9',bpm:112,wave:'square',leadVol:.04,bassVol:.09,kickVol:.17,
+  prog:PG9_PROGS[0],progs:PG9_PROGS,basses:PG9_PROGS.map(p=>p.map(c=>PGKB[c])),bass:PG9_PROGS[0].map(c=>PGKB[c]),
+  lead:{
+    S1:['D4 . . . G4 . E4 .','D4 . B3 C4 D4 . D4 .','E4 . . F#4 G4 . E4 .','A4 . . . . . D4 .'],
+    S2:['B4 . . C5 D5 . G4 .','A4 . . B4 C5 . E4 .','D4 . . E4 D4 . A4 .','G4 . . . . . . .'],
+    S3:['A4 . . G4 F#4 D4 E4 F#4','G4 . A4 . B4 . B4 .','C5 . . B4 A4 . B4 C#5','D5 . . . . . D5 .'],
+    S4:['D5 . . C5 B4 . B4 .','C5 . . C5 E4 . E4 .','F#4 . . G4 A4 . B4 .','G4 . . . . . G4 .'],
+    S5:['C5 . . . C5 C5 C5 D5','E5 . D5 C5 B4 . B4 .','B4 . . C5 D5 D5 C5 B4','A4 . . . . . D5 D5'],
+    S6:['D5 . . . B4 B4 A4 G4','E5 . . . . . D4 C5','B4 . . . . . A4 .','G4 . . . . . . .']},
+  drums:{soft:{kick:'x . . . x . . .',snare:'. . . . . . . .',hat:'. . x . . . x .'},
+         beat:{kick:'x . . . x . . .',snare:'. . x . . . x .',hat:'. x . x . x . x'},
+         rock:{kick:'x . . x x . . .',snare:'. . x . . . x .',hat:'x x x x x x x x'}},
+  form:['S1:soft:0','S2:soft:1','S3:beat:2','S4:beat:3','S5:beat:4','S6:beat:5','S5:rock:4','S6:rock:5'],
+  end:'G4 . . . . . . .',endChord:'G',endBass:'G2'});
+
 /* 곡 목록. 곡마다 난이도 3개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움)가 있어요.
    stars = 별 개수(1~10), target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
 const PG_DIFFS=['쉬움','보통','어려움'];
 const PG_BETMAX=[1000,2000,3000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6}]},
+  {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6}]},
   {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:4,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6}]},
   {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:5,target:720000,approach:1.7},{stars:7,target:750000,approach:1.5}]},
   {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:6,target:740000,approach:1.7},{stars:8,target:780000,approach:1.5}]},
