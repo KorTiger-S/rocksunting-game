@@ -214,6 +214,50 @@ pgBuild({id:'pg10',bpm:184,leadGtr:true,leadVol:.034,leadD:2,bassVol:.08,padVol:
   form:['R:rock:0','S1:drive:0','S2:drive:1','S3:drive:2','S4:drive:3','S5:rock:4','S6:rock:5','X:rock:6','Y:rock:6','S5:rock:4','S6:rock:5'],
   end:'G5 . . . . . . .',endChord:'G',endBass:'G2',endRiff:'G2'});
 
+/* 11) 난지 캠프파이어 인더 홀 — 이 게임용으로 새로 지은 롹 곡이에요(멜로디·리프·코드 진행 모두 창작).
+   캠프파이어 앞에서 발 구르며 시작해서 후렴에 다 같이 떼창하는 분위기예요. 템포는 한 곡 안에서 바꿀 수 없어서,
+   앞부분은 드럼·기타·노트를 성기게 두고 후렴에서 촘촘하게 몰아쳐 '빨라지는' 느낌을 내요.
+   progs: [0] 도입 [1] 벌스 [2] 프리코러스 [3] 후렴·기타 훅 [4] 브레이크다운 — 구간마다 베이스·리프 밀도가 달라요. */
+const PG11_ROOT={Em:'E2',C:'C3',G:'G2',D:'D3',Am:'A2'};
+const PG11_PROGS=[['Em','Em','C','D'],['Em','Em','C','D'],['Am','C','Em','D'],['Em','C','G','D'],['C','D','Em','Em']];
+const PG11_BASS=['X . . . . . . .','X . . . X . . .','X . X . X . X .','X . X X . X X .','X . . . . . . .'];
+const PG11_RIFF=['. . . . . . . .','X . . . X . . .','X . X X . X X .','X X X X X X X X','. . . . . . . .'];
+const pg11Bars=pats=>PG11_PROGS.map((p,i)=>p.map(c=>pats[i].replace(/X/g,PG11_ROOT[c])));
+pgBuild({id:'pg11',bpm:176,leadGtr:true,leadVol:.034,leadD:2,bassVol:.08,padVol:.012,kickVol:.22,snareVol:.08,hatVol:.03,riffVol:.04,riffD:.7,
+  prog:PG11_PROGS[0],progs:PG11_PROGS,bass:pg11Bars(PG11_BASS)[0],basses:pg11Bars(PG11_BASS),riffs:pg11Bars(PG11_RIFF),
+  lead:{
+    I:['E4 . . . . . . .','. . . . G4 . . .','E4 . . . . . . .','. . . . B4 . A4 .'],
+    V:['E4 . . . G4 . E4 .','B4 . . A4 G4 . E4 .','E4 . . . G4 . A4 .','F#4 . . . D4 . . .'],
+    W:['E4 . . . G4 . B4 .','A4 . G4 . E4 . . .','G4 . . . E4 . C5 .','B4 . A4 . F#4 . . .'],
+    P:['A4 . C5 . A4 . C5 .','G4 . C5 . E5 . C5 .','B4 . E5 . G5 . E5 .','A4 . D5 . F#5 . A5 .'],
+    K:['B5 . B5 . B5 A5 G5 .','E5 . . . G5 . . .','D5 . D5 . D5 E5 G5 .','F#5 . . . . . . .'],
+    L:['B5 . B5 . B5 A5 G5 .','E5 . G5 . E5 . C5 .','D5 . G5 . B5 . A5 G5','F#5 . A5 . D5 . . .'],
+    Z:['C5 . . . . . . .','D5 . . . . . . .','E5 . . . . . . .','B4 . B4 . B4 B4 B4 B4'],
+    H:['E5 E5 G5 E5 B5 . A5 G5','E5 E5 G5 E5 C6 . B5 G5','D5 D5 G5 D5 B5 . A5 G5','F#5 F#5 A5 F#5 D6 . A5 F#5']},
+  drums:{stomp:{kick:'x . x . x . x .',snare:'. . x . . . x .',hat:'. x . x . x . x'},   /* 발 구르기 + 박수 + 탬버린 */
+         build:{kick:'x . x . x . x .',snare:'. . x . . . x .',hat:'x x x x x x x x'},
+         fire:{kick:'x . x x x . x x',snare:'. . x . . . x .',hat:'x x x x x x x x'},
+         quiet:{kick:'x . . . x . . .',snare:'. . . . . . . .',hat:'. . . . . . . .'}},
+  form:['I:stomp:0','V:stomp:1','W:stomp:1','P:build:2','K:fire:3','L:fire:3','Z:quiet:4','H:fire:3','P:build:2','K:fire:3','L:fire:3'],
+  end:'E5 . . . . . . .',endChord:'Em',endBass:'E2',endRiff:'E2'});
+
+/* 12) ㅈㄱ의 카드 모험 — 이 게임용으로 새로 지은 밝은 모험 테마(게임보이 느낌 칩튠). 쉬운 편 곡이에요.
+   처음 시작할 때 ㅈㄱ와 파이리 이야기 인트로(js/jgintro.js)가 먼저 나와요(PGSONGS의 intro). */
+const PG12_RF={D:['D3','A2'],G:['G2','D3'],A:['A2','E3'],Bm:['B2','F#3'],Em:['E2','B2']};   /* 코드 → 베이스 근음·5도 */
+const PG12_PROGS=[['D','G','A','D'],['Bm','G','D','A'],['G','A','D','Bm'],['Em','A','D','D']];
+pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
+  prog:PG12_PROGS[0],progs:PG12_PROGS,
+  basses:PG12_PROGS.map(p=>p.map(c=>`${PG12_RF[c][0]} . ${PG12_RF[c][1]} . ${PG12_RF[c][0]} . ${PG12_RF[c][1]} .`)),
+  bass:PG12_PROGS[0].map(c=>`${PG12_RF[c][0]} . ${PG12_RF[c][1]} . ${PG12_RF[c][0]} . ${PG12_RF[c][1]} .`),
+  lead:{
+    A:['D5 . F#5 . A5 . F#5 A5','B5 . A5 . G5 . B5 .','A5 . E5 . C#6 . A5 .','D6 . . . A5 . F#5 .'],
+    B:['F#5 . D5 . B4 . D5 F#5','G5 . . . D5 . B4 .','A5 . F#5 . D5 . F#5 .','E5 . C#5 . A4 . . .'],
+    C:['B5 . . A5 G5 . B5 .','C#6 . . B5 A5 . E5 .','F#5 . A5 . D6 . A5 .','B5 . A5 . F#5 . D5 .'],
+    D:['G5 . E5 . B4 . E5 .','A5 . E5 . C#5 . E5 .','F#5 E5 D5 . A4 . D5 .','F#5 . . . . . . .']},
+  drums:{main:{kick:'x . . . x . . .',snare:'. . x . . . x .',hat:'. x . x . x . x'},soft:PGDR_SOFT},
+  form:['A:main:0','B:main:1','C:main:2','D:soft:3','A:main:0','B:main:1','C:main:2','C:main:2'],
+  end:'D6 . . . . . . .',endChord:'D',endBass:'D3'});
+
 /* 곡 목록. 곡마다 난이도 4개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움 · [3]=매우 어려움)가 있어요.
    stars = 별 개수. 채보의 초당 노트 수·4초 최대 밀도·점프 비율·노트 속도로 난이도를 재서, 교가 쉬움 = ★1 · 교가 롹 버전 매우 어려움(v1.8.9 채보) = ★11을
    기준으로 맞춘 값이에요(v1.8.10에서 어려움부터 채보가 촘촘해져서 그보다 어려운 채보는 11을 넘어요). 채보를 바꾸면 별도 다시 매겨 주세요, target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
@@ -223,6 +267,8 @@ const PGSONGS=[
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
+  {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
+  {id:'pg12',name:'ㅈㄱ의 카드 모험',sub:'파이리와 함께하는 모험 테마',seed:1212,intro:'jg',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:6,target:750000,approach:1.6},{stars:9,target:780000,approach:1.4}]},
   {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
   {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:4,target:720000,approach:1.7},{stars:8,target:750000,approach:1.5},{stars:10,target:790000,approach:1.35}]},
   {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:7,target:740000,approach:1.7},{stars:9,target:780000,approach:1.5},{stars:12,target:800000,approach:1.35}]},

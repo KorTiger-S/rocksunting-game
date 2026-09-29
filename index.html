@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.8.10">
+<link rel="stylesheet" href="css/style.css?v=1.8.11">
 </head>
 <body>
 <header class="board">
@@ -62,6 +62,7 @@
         <p id="pgDiffT" style="margin:0;font-weight:700"></p>
         <div class="songs pgdiffs" id="pgDiffs"></div>
         <p id="pgInfo"></p>
+        <button class="linkbtn" id="pgIntroBtn" hidden style="justify-self:start">🎬 ㅈㄱ와 파이리 이야기 보기</button>
         <p id="pgBody"></p>
         <ul class="rules">
           <li>노트가 위쪽 발판에 닿는 순간 맞춰 밟아요. 키보드는 <b>Z Q S E C</b>(숫자패드 <b>1 7 5 9 3</b>), 모바일은 화면 아래 발판을 터치! (<b>Esc</b>: 일시정지)</li>
@@ -201,6 +202,10 @@
     <p id="pgRX"></p>
     <div class="btns"><button class="go" id="pgRBack">학교로 돌아가기</button></div>
   </div>
+</div>
+<div class="ov ovfix" id="jgIntro" hidden aria-label="ㅈㄱ의 카드 모험 인트로 애니메이션. 화면을 누르면 다음 장면으로 넘어가요.">
+  <canvas id="jgCv" width="800" height="480"></canvas>
+  <button class="go ghost" id="jgSkip" type="button">건너뛰기 ▶▶</button>
 </div>
 <div class="ov ovfix" id="splash" aria-label="시작 화면: 롹순팅이 학교에 등교한다. Enter를 누르면 계속돼요.">
   <canvas id="spCv" width="800" height="480"></canvas>
@@ -353,22 +358,23 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.8.10"></script>
-<script src="js/save.js?v=1.8.10"></script>
-<script src="js/cloud.js?v=1.8.10"></script>
-<script src="js/login.js?v=1.8.10"></script>
-<script src="js/rank.js?v=1.8.10"></script>
-<script src="js/audio.js?v=1.8.10"></script>
-<script src="js/input.js?v=1.8.10"></script>
-<script src="js/render.js?v=1.8.10"></script>
-<script src="js/kick-data.js?v=1.8.10"></script>
-<script src="js/kick.js?v=1.8.10"></script>
-<script src="js/hub.js?v=1.8.10"></script>
-<script src="js/splash.js?v=1.8.10"></script>
-<script src="js/duel.js?v=1.8.10"></script>
-<script src="js/pump-data.js?v=1.8.10"></script>
-<script src="js/pump.js?v=1.8.10"></script>
-<script src="js/main.js?v=1.8.10"></script>
+<script src="js/util.js?v=1.8.11"></script>
+<script src="js/save.js?v=1.8.11"></script>
+<script src="js/cloud.js?v=1.8.11"></script>
+<script src="js/login.js?v=1.8.11"></script>
+<script src="js/rank.js?v=1.8.11"></script>
+<script src="js/audio.js?v=1.8.11"></script>
+<script src="js/input.js?v=1.8.11"></script>
+<script src="js/render.js?v=1.8.11"></script>
+<script src="js/kick-data.js?v=1.8.11"></script>
+<script src="js/kick.js?v=1.8.11"></script>
+<script src="js/hub.js?v=1.8.11"></script>
+<script src="js/splash.js?v=1.8.11"></script>
+<script src="js/duel.js?v=1.8.11"></script>
+<script src="js/pump-data.js?v=1.8.11"></script>
+<script src="js/pump.js?v=1.8.11"></script>
+<script src="js/jgintro.js?v=1.8.11"></script>
+<script src="js/main.js?v=1.8.11"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

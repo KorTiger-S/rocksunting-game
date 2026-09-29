@@ -81,7 +81,10 @@ const SFX={
   pgmiss(){tone(140,.1,'sawtooth',.03,0,85);},                                                                   /* 노트를 놓쳤을 때 */
   pgok(){tone(NT.G5,.06,'triangle',.04);tone(NT.C6,.14,'triangle',.04,.05);},                                    /* 롱노트를 끝까지 눌렀을 때 */
   pgcount(f){tone(f||660,.1,'square',.045);},                                                                    /* 3-2-1 카운트다운 */
-  pggo(){tone(NT.C6,.08,'square',.05);tone(NT.G6,.22,'square',.05,.07);}
+  pggo(){tone(NT.C6,.08,'square',.05);tone(NT.G6,.22,'square',.05,.07);},
+  /* ㅈㄱ의 카드 모험 인트로 */
+  sparkle(){[1568,1976,2349,2637,3136].forEach((f,i)=>tone(f,.2,'triangle',.03,i*.06));},                        /* 카드가 반짝일 때 */
+  chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);}                                /* 파이리 울음소리 "파이~!" */
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
@@ -95,7 +98,7 @@ function cheer(){sfx('crowd');}
      gtr   : 일렉기타(찌그러뜨린 톱니파). pc:true면 적힌 음을 근음으로 5도·옥타브를 얹은 파워코드
    새 곡은 BGMT에 추가하고, 어떤 장면에서 틀지는 wantBgm()에서 정해요. */
 const BGM={on:lsGet('rk:bgm')!=='0',name:null,tg:null,step:0,next:0,timer:0,unlocked:false};
-const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3'],Dm:['D3','F3','A3'],A:['A3','C#4','E4'],Bb:['Bb3','D4','F4']};
+const CHORDS={Cm:['C4','Eb4','G4'],Fm:['F3','Ab3','C4'],Ab:['Ab3','C4','Eb4'],C:['C4','E4','G4'],G:['G3','B3','D4'],Am:['A3','C4','E4'],F:['F3','A3','C4'],Em:['E3','G3','B3'],D:['D3','F#3','A3'],E:['E3','G#3','B3'],Dm:['D3','F3','A3'],A:['A3','C#4','E4'],Bb:['Bb3','D4','F4'],Bm:['B3','D4','F#4']};
 const NOTE_SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11},NF={};
 function nf(n){
   if(NF[n])return NF[n];
@@ -147,6 +150,13 @@ const BGMT={
     {t:'note',wave:'sine',vol:.07,d:6,seq:bars('A2 . . . . . . .','A2 . . . . . . .','F2 . . . . . . .','F2 . . . . . . .','C3 . . . . . . .','C3 . . . . . . .','E2 . . . . . . .','E2 . . . . . . .')}
   ]}),
   /* 라털 선생님: 우스꽝스러운 뿌뿌 행진곡 (C-G-C-G-F-C-G-C) */
+  /* ㅈㄱ의 카드 모험 인트로: 오르골 같은 다정한 곡 (C-F-C-G-Am-F-G-C) */
+  jg:trk({bpm:96,len:64,L:[
+    {t:'note',wave:'triangle',vol:.05,d:2.2,seq:bars('E5 . G5 . C6 . G5 .','F5 . A5 . C6 . A5 .','E5 . G5 . C6 . E6 .','D6 . . . B5 . G5 .','C6 . B5 . A5 . E5 .','F5 . E5 . D5 . F5 .','E5 . G5 . D6 . B5 .','C6 . . . . . . .')},
+    {t:'note',wave:'sine',vol:.035,d:1.6,seq:bars('C5 . . . G4 . . .','A4 . . . F4 . . .','G4 . . . E4 . . .','G4 . . . D4 . . .','A4 . . . E4 . . .','A4 . . . F4 . . .','G4 . . . B4 . . .','C5 . G4 . E4 . C4 .')},
+    {t:'note',wave:'sine',vol:.08,d:3,seq:bars('C3 . . . G2 . . .','F2 . . . C3 . . .','C3 . . . G2 . . .','G2 . . . D3 . . .','A2 . . . E3 . . .','F2 . . . C3 . . .','G2 . . . D3 . . .','C3 . . . . . . .')},
+    {t:'hat',vol:.012,seq:bars(...Array(8).fill('. . x . . . x .'))}
+  ]}),
   ratal:trk({bpm:112,len:64,L:[
     {t:'note',wave:'sawtooth',vol:.03,d:1.3,seq:bars('E5 . E5 . G5 . E5 .','D5 . D5 . B4 . D5 .','E5 . G5 . C6 . G5 .','F5 . D5 . G5 . . .','A5 . A5 . F5 . A5 .','G5 . E5 . C5 . E5 .','D5 . F5 . G5 . B5 .','C6 . G5 . E5 . C5 .')},
     {t:'note',wave:'square',vol:.07,d:1.4,seq:bars('C3 . . . G2 . . .','G2 . . . D3 . . .','C3 . . . G2 . . .','G2 . . . D3 . . .','F2 . . . C3 . . .','C3 . . . G2 . . .','G2 . . . D3 . . .','C3 . . . G2 . . .')},
@@ -217,6 +227,7 @@ function bgmPlay(name){
 /* 지금 장면에 맞는 곡 (null이면 조용히) */
 function wantBgm(){
   if(!$('#splash').hidden||!$('#login').hidden)return 'title';
+  if(typeof JG!=='undefined'&&JG.on)return 'jg';   /* ㅈㄱ의 카드 모험 인트로 (js/jgintro.js) */
   if(STORY){const p=STORY.pages[STORY.i];return (p&&p.bgm)||STORY.bgm||'hub';}
   if(!$('#duel').hidden){
     const st=DU.st;if(!st||st.status==='waiting')return 'hub';
