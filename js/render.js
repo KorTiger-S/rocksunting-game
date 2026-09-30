@@ -14,7 +14,7 @@ function faceImg(c,name,cx,cy,r){
   const im=IM[name];if(!im||!im.complete||!im.naturalWidth)return;
   c.save();c.beginPath();c.arc(cx,cy,r,0,7);c.clip();
   const w=r*2.5,h=w*im.naturalHeight/im.naturalWidth;
-  c.drawImage(im,cx-w/2,cy-h*.42,w,h);c.restore();
+  c.drawImage(im,cx-w/2,cy-h*.42,w,h);drawDress(c,myEq(),cx-w/2,cy-h*.42,w,w*190/150);c.restore();   /* 상점에서 산 모자·안경 등 (shop.js) */
   c.lineWidth=Math.max(2,r*.07);c.strokeStyle='#232a45';c.beginPath();c.arc(cx,cy,r,0,7);c.stroke();
 }
 function wrapText(c,txt,maxW){

@@ -223,3 +223,28 @@ html.pgplay #pumpWrap{touch-action:none}
 #pumpWrap .gtop h2{font-size:18px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pumpWrap .gtop .go{flex:none}
 .pgdev{padding:6px 10px;border-radius:8px;background:#fff4c9;color:#3a2c00!important;font-weight:700}
+/* ---------- 상점 · 롹순팅 꾸미기 (js/shop.js) ---------- */
+.shoptop{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.shopprev{display:grid;justify-items:center;gap:4px;flex:none}
+.shopava{width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:4px solid var(--line);background:#f4f1ee}
+.shopname{font-family:var(--display);font-weight:400;font-size:18px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shopinfo{flex:1;min-width:180px;display:grid;gap:6px}
+.shopinfo b{font-size:16px}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.shopit{display:grid;justify-items:center;gap:3px;padding:8px 6px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-shadow:2px 2px 0 var(--line);min-width:0}
+.shopit.sel{background:var(--bar);border-color:var(--ring)}
+.shopit b{font-size:13px;line-height:1.25;text-align:center}
+.shopit small{font-size:12px;font-weight:700;color:var(--gold)}
+.shopit small.own{color:var(--ok)}
+.shopth{width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--line);background:#f4f1ee}
+.shopnm{display:grid;place-items:center;height:60px;font-family:var(--display);font-size:20px}
+/* 작은 얼굴(랭킹 · 1:1 대결) */
+.rava,.dialog img.rava{display:inline-block;width:26px;height:26px;margin:0;border-radius:50%;object-fit:cover;object-position:50% 22%;border:2px solid var(--line);background:#f4f1ee;vertical-align:middle}   /* .dialog img(큰 얼굴)보다 우선 */
+.dside .rava,.dialog .dside img.rava{width:34px;height:34px;display:block;margin:0 auto 2px}
+/* 테두리 아이템 (헤더 얼굴 · 미리보기 · 랭킹) */
+.fr-gold{border-color:#e8a91c!important;box-shadow:0 0 0 2px #ffe38a,0 0 10px rgba(232,169,28,.7)}
+.fr-rainbow{border-color:transparent!important;background:linear-gradient(#f4f1ee,#f4f1ee) padding-box,conic-gradient(#ff4d6d,#ffd23f,#7bed9f,#3aa0ff,#c9a0ff,#ff4d6d) border-box!important}
+/* 이름 색 아이템 (랭킹 · 1:1 대결 · 상점 미리보기) — 밝고 어두운 테마 모두에서 읽히는 색 */
+.nm-red{color:#e2334d!important;font-weight:700}
+.nm-gold{color:#c98a00!important;font-weight:700;text-shadow:0 0 6px rgba(255,210,63,.45)}
+.nm-rainbow{background:linear-gradient(90deg,#ff4d6d,#e8a91c,#2f8f5b,#3aa0ff,#9b6bff);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:700}

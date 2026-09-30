@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.0.0">
+<link rel="stylesheet" href="css/style.css?v=2.1.0">
 </head>
 <body>
 <header class="board">
@@ -25,6 +25,7 @@
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
+      <div class="card grow"><span class="gi" aria-hidden="true">🛍</span><div><h2>상점 · 롹순팅 꾸미기</h2><p id="glShop"></p></div><button class="go alt gopen" data-card="shopCard">구경하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
@@ -114,6 +115,21 @@
         <button class="go alt" id="duJoin">참가하기</button>
       </div>
       <p id="duNote"></p>
+    </div>
+    <div class="card chall gdet" id="shopCard" hidden>
+      <button class="linkbtn gback">← 게임 목록</button>
+      <h2>상점 · 롹순팅 꾸미기</h2>
+      <div class="shoptop">
+        <div class="shopprev"><img class="shopava" id="shopAva" alt="입혀 본 모습"><b class="shopname" id="shopName"></b></div>
+        <div class="shopinfo">
+          <b id="shopSelN"></b>
+          <p id="shopSelD"></p>
+          <div class="acts" style="justify-content:flex-start"><button class="go" id="shopAct" hidden></button><button class="go ghost" id="shopOff" hidden>벗기</button></div>
+          <p class="tip" id="shopMoney" style="text-align:left"></p>
+        </div>
+      </div>
+      <div class="rtabs" id="shopTabs"></div>
+      <div class="shopgrid" id="shopGrid"></div>
     </div>
     <div id="soonList">
       <div class="sec" style="margin-top:0">다른 내기 (준비 중)</div>
@@ -336,24 +352,25 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.0.0"></script>
-<script src="js/save.js?v=2.0.0"></script>
-<script src="js/cloud.js?v=2.0.0"></script>
-<script src="js/login.js?v=2.0.0"></script>
-<script src="js/rank.js?v=2.0.0"></script>
-<script src="js/audio.js?v=2.0.0"></script>
-<script src="js/input.js?v=2.0.0"></script>
-<script src="js/render.js?v=2.0.0"></script>
-<script src="js/kick-data.js?v=2.0.0"></script>
-<script src="js/kick.js?v=2.0.0"></script>
-<script src="js/hub.js?v=2.0.0"></script>
-<script src="js/splash.js?v=2.0.0"></script>
-<script src="js/duel.js?v=2.0.0"></script>
-<script src="js/pump-data.js?v=2.0.0"></script>
-<script src="js/pump.js?v=2.0.0"></script>
-<script src="js/jgintro.js?v=2.0.0"></script>
-<script src="js/lateintro.js?v=2.0.0"></script>
-<script src="js/main.js?v=2.0.0"></script>
+<script src="js/util.js?v=2.1.0"></script>
+<script src="js/save.js?v=2.1.0"></script>
+<script src="js/cloud.js?v=2.1.0"></script>
+<script src="js/login.js?v=2.1.0"></script>
+<script src="js/rank.js?v=2.1.0"></script>
+<script src="js/audio.js?v=2.1.0"></script>
+<script src="js/input.js?v=2.1.0"></script>
+<script src="js/render.js?v=2.1.0"></script>
+<script src="js/kick-data.js?v=2.1.0"></script>
+<script src="js/kick.js?v=2.1.0"></script>
+<script src="js/hub.js?v=2.1.0"></script>
+<script src="js/shop.js?v=2.1.0"></script>
+<script src="js/splash.js?v=2.1.0"></script>
+<script src="js/duel.js?v=2.1.0"></script>
+<script src="js/pump-data.js?v=2.1.0"></script>
+<script src="js/pump.js?v=2.1.0"></script>
+<script src="js/jgintro.js?v=2.1.0"></script>
+<script src="js/lateintro.js?v=2.1.0"></script>
+<script src="js/main.js?v=2.1.0"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

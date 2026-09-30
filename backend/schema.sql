@@ -118,6 +118,20 @@ begin
   return greatest(lo, least(hi, floor(n)))::int;
 end $$;
 
+-- 상점 아이템 보정: {own: [아이템 id…], eq: {슬롯: 아이템 id}}. id는 영문 소문자·숫자·_ (최대 24자), 최대 100개.
+-- 장착(eq)은 가진 아이템(own)만, 슬롯은 hat/glass/acc/frame/name만 남긴다. 아이템 목록·가격은 js/shop.js의 SHOP_ITEMS.
+create or replace function public.rk_clean_items(v jsonb) returns jsonb
+language sql immutable as $$
+  with own as (
+    select coalesce(jsonb_agg(distinct x), '[]'::jsonb) as a from (
+      select j #>> '{}' as x from jsonb_array_elements(case when jsonb_typeof(v->'own') = 'array' then v->'own' else '[]'::jsonb end) as t(j)
+      where jsonb_typeof(j) = 'string' and j #>> '{}' ~ '^[a-z0-9_]{1,24}$' limit 100) s)
+  select jsonb_build_object('own', own.a, 'eq', coalesce((
+    select jsonb_object_agg(k, e) from jsonb_each_text(case when jsonb_typeof(v->'eq') = 'object' then v->'eq' else '{}'::jsonb end) as q(k, e)
+    where k in ('hat', 'glass', 'acc', 'frame', 'name') and own.a ? e), '{}'::jsonb))
+  from own
+$$;
+
 -- 저장 데이터에서 허용된 항목만 남기고 값 범위를 보정한다.
 create or replace function public.rk_clean(d jsonb) returns jsonb
 language sql immutable as $$
@@ -137,6 +151,7 @@ language sql immutable as $$
     'mics',    public.rk_int(d->'mics',    0, 5, 5),               -- 소리새 펌프 도전 횟수(마이크)
     'micAt',   public.rk_int(d->'micAt',   0, 2147483647, 0),
     'pumpBest', public.rk_int(d->'pumpBest', 0, 1000000, 0),       -- 소리새 펌프 클리어 최고 점수
+    'items', public.rk_clean_items(d->'items'),                      -- 상점 아이템(시즌이 끝나도 남음)
     'up', jsonb_build_object(
       'shoes', public.rk_int(d#>'{up,shoes}', 0, 3, 0),
       'snack', public.rk_int(d#>'{up,snack}', 0, 3, 0),
@@ -279,7 +294,8 @@ begin
            case m when 'wins' then wins when 'bestPts' then best_pts
                   when 'pumpBest' then coalesce((data->>'pumpBest')::int, 0) else money end as v,
            coalesce((data->>'pumpBest')::int, 0) as "pumpBest",     -- v가 9번째 열이어야 아래 order by 9가 맞아요
-           id as k
+           id as k,
+           coalesce(data#>'{items,eq}', '{}'::jsonb) as eq          -- 장착한 상점 아이템 (이름 색·얼굴에 씀)
     from public.rk_users
     order by 9 desc, updated_at_ms asc
     limit n) t;
@@ -308,11 +324,14 @@ begin
   return public.rk_season_json();
 end $$;
 
--- 내부 도우미: 모든 플레이어 기록을 초기화하고 시즌 키를 바꾼다(계정·비밀번호는 그대로).
+-- 내부 도우미: 모든 플레이어 기록을 초기화하고 시즌 키를 바꾼다(계정·비밀번호·상점 아이템은 그대로).
+-- Supabase는 WHERE 없는 UPDATE를 막으므로(pg_safeupdate) 모든 행에 맞는 조건을 붙인다.
 create or replace function public.rk_reset_players(k text) returns void
 language sql security definer set search_path = public as $$
   update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
-    data = public.rk_default_data(), season_key = k, updated_at_ms = (extract(epoch from now()) * 1000)::bigint, updated_at = now()
+    data = public.rk_default_data() || jsonb_build_object('items', public.rk_clean_items(data->'items')),
+    season_key = k, updated_at_ms = (extract(epoch from now()) * 1000)::bigint, updated_at = now()
+  where id is not null
 $$;
 
 -- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
@@ -539,6 +558,8 @@ begin
     'theirs', case when kicker = me then d.g_pick is not null else d.k_ax is not null end,
     'hist', d.hist, 'winner', d.winner, 'reason', d.reason,
     'bet', d.bet, 'money', (select money from public.rk_users where id = k),
+    'hostEq', (select coalesce(data#>'{items,eq}', '{}'::jsonb) from public.rk_users where id = d.host),      -- 장착한 상점 아이템
+    'guestEq', (select coalesce(data#>'{items,eq}', '{}'::jsonb) from public.rk_users where id = d.guest),
     'left', greatest(0, ceil(extract(epoch from (d.round_at + interval '25 seconds' - now()))))::int);
 end $$;
 

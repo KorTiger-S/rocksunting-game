@@ -19,7 +19,7 @@ function openHubCard(id){
 document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>openHubCard(b.dataset.card)));
 document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
-  renderDuelCard();renderPumpCard();
+  renderDuelCard();renderPumpCard();renderShop();renderMyFace();
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
@@ -64,7 +64,7 @@ setInterval(()=>{
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
 let STORY=null;
 function showStory(pages,done,bgm){STORY={pages,i:0,done,bgm};renderStory();$('#story').hidden=false;}
-function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;$('#stImg').src=p.src||IMGDATA[p.img||'base'];
+function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;if(p.src){$('#stImg').removeAttribute('data-face');$('#stImg').src=p.src;}else setFace($('#stImg'),p.img||'base');
   const sb=$('#stB');sb.hidden=!p.burp;sb.textContent=p.burp?pick(BURPS):'';if(p.burp)burp();else sfx(p.sfx||'page');
  $('#stN').textContent=p.who?`${p.who}:`:'';$('#stX').textContent=p.text;$('#stBtn').textContent=STORY.i>=STORY.pages.length-1?'확인':'다음';
  $('#story').classList.toggle('danger',!!p.danger);$('#stImg').classList.toggle('angry',!!p.danger);}
@@ -145,7 +145,7 @@ function renderBadges(){
     .catch(()=>{if(!BADGES||BADGES.id!==id)$('#pfBadgeSec').hidden=true;});   /* 서버에 rk_badges가 없거나 오프라인이면 조용히 숨겨요 */
 }
 function closeProfile(){$('#profile').hidden=true;}
-$('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
+$('#bigface').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)]);$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});
 

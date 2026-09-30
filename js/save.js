@@ -4,7 +4,8 @@ const LEGACY_KEY='rocksunting-freekick-v1';
 const DEF=()=>({bestPts:0,plays:0,money:10000,wins:0,losses:0,cleared:false,
   balls:5,ballAt:0,   /* 프리킥 도전 횟수(축구공 5개): 남은 개수 + 다음 공이 충전되기 시작한 시각(epoch 분). 30분마다 1개 충전 */
   mics:5,micAt:0,pumpBest:0,   /* 소리새 펌프(시즌2): 마이크 5개(도전 횟수, 30분마다 1개 충전) + 다음 마이크 충전 시작 시각(epoch 분) + 클리어한 최고 점수 */
-  houDate:-1,houLeft:3});   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
+  houDate:-1,houLeft:3,
+  items:{own:[],eq:{}}});   /* 상점 아이템(shop.js): 산 것 + 슬롯별 장착. 시즌이 끝나도 남아요 */   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
 const MEM={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return MEM[k]===undefined?null:MEM[k];}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
@@ -37,7 +38,7 @@ function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}
 function cloudData(){return{money:S.money,wins:S.wins,losses:S.losses,bestPts:S.bestPts||0,plays:S.plays||0,cleared:!!S.cleared,
   houDate:S.houDate==null?-1:S.houDate,houLeft:S.houLeft==null?3:S.houLeft,
   balls:S.balls==null?5:S.balls,ballAt:S.ballAt||0,
-  mics:S.mics==null?5:S.mics,micAt:S.micAt||0,pumpBest:S.pumpBest||0};}
+  mics:S.mics==null?5:S.mics,micAt:S.micAt||0,pumpBest:S.pumpBest||0,items:itemsOf(S)};}
 const PIN_RE=/^\d{4}$/;
 function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서버에는 PIN 자체를 보내고 서버가 따로 해시해요) */
   const s=id.toLowerCase()+':'+pin;let h1=0xdeadbeef,h2=0x41c6ce57;

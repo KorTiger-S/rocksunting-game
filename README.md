@@ -73,6 +73,9 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 소리새 펌프 도전 횟수(마이크 5개·30분마다 1개 충전) | `MIC_MAX`, `MIC_MIN`, `micTick()`, `micUse()` (`js/pump.js`), 저장은 `S.mics`/`S.micAt`, 서버 보정은 `rk_clean` (backend/schema.sql) |
 | 소리새 펌프 키 배치 | `PGKEYS` (`js/pump.js`), 모바일 발판은 `#pgPad` (index.html) |
 | 시즌 뱃지(시즌 소지금 1등 우승 · 2등 준우승, 프로필과 랭킹 이름 옆에 표시) | `rk_badge_list`/`rk_badges`, `rk_top`의 `badges` (backend/schema.sql, 마감된 시즌 스냅샷 `rk_seasons`에서 계산), 프로필은 `renderBadges()`/`drawBadges()` (`js/hub.js`) · `#pfBadges` (index.html), 랭킹은 `rankBadges()` (`js/rank.js`, 🏆1 = 시즌1 우승 · 누르면 설명) |
+| 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
+| 상점 아이템 저장·보정(시즌이 끝나도 남음) | `S.items` = `{own, eq}` (`js/save.js`), 서버 `rk_clean_items`, `rk_reset_players`(초기화 때 items만 남김), 랭킹 `rk_top`의 `eq`, 대결 `rk_duel_json`의 `hostEq`/`guestEq` (backend/schema.sql) |
+| 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
 | 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` (`js/cloud.js`) |
 | 캐릭터 이미지 추가 | `IMGDATA`(`js/util.js`)에 경로 등록 후 `assets/faces/`에 파일 추가 |
 
