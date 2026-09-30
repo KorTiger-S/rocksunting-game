@@ -227,6 +227,25 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   r = await save('철수', Date.now() + 20000, { money: 99999 }, P, '2099-02-practice');
   ok(r.conflict && r.data.money === 10000 && r.season === '2099-02', '연습 기간 화면이 저장하면 거부되고 초기화된 기록을 돌려줌');
   ok((await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r.closed === false, '초기화 뒤 바로 다시 마감되지 않음');
+  // 우승 기준(metric): 펌프 최고점 시즌은 스냅샷·뱃지가 펌프 최고점 순. 점수 0인 사람은 뱃지 없음
+  ok((await rpc('season_get')).season.metric === 'money', '우승 기준 기본값은 소지금');
+  await db.exec(`update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season'`);
+  ok((await rpc('season_get')).season.metric === 'pumpBest', '우승 기준을 펌프 최고점으로 바꿀 수 있음');
+  await save('짱구', Date.now() + 30000, { money: 10000, pumpBest: 950000 }, P, '2099-02');
+  await save('철수', Date.now() + 30000, { money: 90000, pumpBest: 700000 }, P, '2099-02');
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  const cm = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  ok(cm.closed && cm.players[0].id === '짱구' && cm.players[1].id === '철수', '펌프 최고점 시즌은 소지금이 적어도 펌프 최고점 순으로 1·2등');
+  ok(cm.next.metric === 'pumpBest', '다음 시즌도 우승 기준을 이어 감');
+  const bz = (await rpc('badges', { id: '짱구' })).list.find(b => b.number === cm.season.number), bc = (await rpc('badges', { id: '철수' })).list.find(b => b.number === cm.season.number);
+  ok(bz && bz.rank === 1 && bc && bc.rank === 2, '펌프 최고점 1·2등이 우승·준우승 뱃지');
+  const third = cm.players[2].id;
+  ok(!(await rpc('badges', { id: third })).list.some(b => b.number === cm.season.number), '3등은 뱃지 없음');
+  // 모두 0점이면 아무도 뱃지를 받지 않음
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  const cz = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  ok(cz.closed && !(await rpc('badges', { id: cz.players[0].id })).list.some(b => b.number === cz.season.number), '펌프 최고점이 0점이면 1등이어도 뱃지 없음');
+  await db.exec(`update public.rk_config set value = value || '{"metric":"money"}' where key = 'season'`);
   let denied4 = false; await db.exec('set role anon'); try { await db.query(`select public.rk_reset_players('x')`); } catch (e) { denied4 = true; } await db.exec('reset role');
   ok(denied4, 'anon은 기록 초기화 도우미를 부를 수 없음');
   bd = await rpc('badges', { id: cl2.players[0].id });
@@ -261,7 +280,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     const files = fs.readdirSync(outDir);
     ok(!x.err && files.some(f => f.endsWith('.md')) && files.some(f => f.endsWith('.csv')) && files.includes('issue.md'), '마감일이 지나면 스크립트가 보고서 파일을 만듦');
     const md = fs.readFileSync(path.join(outDir, files.find(f => f.endsWith('.md') && f !== 'issue.md')), 'utf8');
-    ok(md.includes('시즌5'), '스크립트가 만든 보고서가 5번째 시즌 마감 결과 (앞에서 4번 마감함)');
+    ok(md.includes('시즌7'), '스크립트가 만든 보고서가 7번째 시즌 마감 결과 (앞에서 6번 마감함)');
     x = await run({ REPORT_KEY: SEASON });
     ok(!x.err && x.so.includes(`${SEASON}_season1_football`), '이미 마감된 시즌의 보고서를 다시 만들 수 있음');
     x = await run({ SUPABASE_SERVICE_KEY: '' });

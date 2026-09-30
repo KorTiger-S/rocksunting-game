@@ -14,8 +14,9 @@ function faceImg(c,name,cx,cy,r){
   const im=IM[name];if(!im||!im.complete||!im.naturalWidth)return;
   c.save();c.beginPath();c.arc(cx,cy,r,0,7);c.clip();
   const w=r*2.5,h=w*im.naturalHeight/im.naturalWidth;
-  c.drawImage(im,cx-w/2,cy-h*.42,w,h);drawDress(c,myEq(),cx-w/2,cy-h*.42,w,w*190/150);c.restore();   /* 상점에서 산 모자·안경 등 (shop.js) */
+  c.drawImage(im,cx-w/2,cy-h*.42,w,h);c.restore();
   c.lineWidth=Math.max(2,r*.07);c.strokeStyle='#232a45';c.beginPath();c.arc(cx,cy,r,0,7);c.stroke();
+  drawDress(c,myEq(),cx-w/2,cy-h*.42,w,w*190/150);   /* 상점에서 산 모자·안경 등(shop.js): 동그란 얼굴 틀 밖으로 모자가 살짝 나오게 틀 위에 그려요 */
 }
 function wrapText(c,txt,maxW){
   const lines=[];let cur='';

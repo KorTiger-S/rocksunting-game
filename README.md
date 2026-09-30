@@ -76,6 +76,8 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
 | 상점 아이템 저장·보정(시즌이 끝나도 남음) | `S.items` = `{own, eq}` (`js/save.js`), 서버 `rk_clean_items`, `rk_reset_players`(초기화 때 items만 남김), 랭킹 `rk_top`의 `eq`, 대결 `rk_duel_json`의 `hostEq`/`guestEq` (backend/schema.sql) |
 | 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
+| 시즌 우승 기준(소지금/펌프 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
+| 시작 화면(가을 테마·시즌 표시·낙엽) | `spAutumnSky()`, `SP_LEAVES`, `spLeaf()`, `spDraw()` (`js/splash.js`) |
 | 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` (`js/cloud.js`) |
 | 캐릭터 이미지 추가 | `IMGDATA`(`js/util.js`)에 경로 등록 후 `assets/faces/`에 파일 추가 |
 

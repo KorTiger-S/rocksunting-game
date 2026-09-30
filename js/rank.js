@@ -1,6 +1,8 @@
 'use strict';
 /* ---------- 랭킹 ---------- */
 let rankMetric='money';
+/* 이번 시즌의 우승 기준(서버 rk_config season.metric). 랭킹을 열 때마다 이 탭부터 보여줘요 */
+const seasonMetric=()=>SEASON&&SEASON.metric==='pumpBest'&&PUMP_PUBLIC?'pumpBest':'money';
 const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
 function localTop(metric){
   const out=[];
@@ -25,7 +27,7 @@ function rankBadges(list){
 }
 $('#rkTab').addEventListener('click',e=>{const b=e.target.closest('.rbadge');if(b)toast(b.dataset.t);});
 $('#rkTab').addEventListener('keydown',e=>{const b=e.target.closest('.rbadge');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toast(b.dataset.t);}});
-$('#rankBtn').addEventListener('click',()=>{$('#rank').hidden=false;renderSeason();renderRank();});
+$('#rankBtn').addEventListener('click',()=>{rankMetric=seasonMetric();$('#rank').hidden=false;renderSeason();renderRank();});
 
 $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));

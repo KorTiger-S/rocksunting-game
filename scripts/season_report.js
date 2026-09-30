@@ -22,6 +22,9 @@ function renderReport(r) {
   const s = r.season, players = r.players || [];
   const active = players.filter(p => p.plays > 0 || p.wins > 0 || p.losses > 0);
   const cleared = players.filter(p => p.cleared);
+  const metric = COLS[s.metric] ? s.metric : 'money';   // 이 시즌의 우승 기준 (money | pumpBest)
+  const SECT = { money: '## 🏆 소지금 TOP 10', wins: '## ⚽ 승리 TOP 10', bestPts: '## 🎯 최고점 TOP 10', pumpBest: '## 🎤 소리새 펌프 최고점 TOP 10' };
+  const order = [metric].concat(['money', 'wins', 'bestPts', 'pumpBest'].filter(k => k !== metric));
   const name = `${s.key}_season${s.number}_${s.game}`;
   const title = `시즌${s.number} 랭킹 보고서 — ${s.gameName} (${s.key})`;
   const md = [
@@ -30,12 +33,10 @@ function renderReport(r) {
     `- 기간: ${s.startedAt ? kstText(s.startedAt) : '?'} ~ ${kstText(s.endedAt)} (한국 시간)`,
     `- 가입 플레이어: ${players.length}명 · 실제로 플레이한 사람: ${active.length}명`,
     `- 경기 기록: ${r.matchCount}건`,
+    `- 우승 기준: ${COLS[metric].label} (1등 우승 · 2등 준우승 뱃지)`,
     `- 100만 원 달성(완주): ${cleared.length}명${cleared.length ? ' — ' + cleared.map(p => esc(p.id)).join(', ') : ''}`,
     '',
-    '## 🏆 소지금 TOP 10', '', table(players, 'money'),
-    '## ⚽ 승리 TOP 10', '', table(players, 'wins'),
-    '## 🎯 최고점 TOP 10', '', table(players, 'bestPts'),
-    '## 🎤 소리새 펌프 최고점 TOP 10', '', table(players, 'pumpBest'),
+    ...[].concat(...order.map(k => [SECT[k] + (k === metric ? ' (우승 기준)' : ''), '', table(players, k)])),
     `전체 명단은 같은 이름의 \`${name}.csv\` 파일에 있어요.`,
     '',
     '> 이 보고서는 시즌 마감 때 자동으로 만들어졌고, 마감 직후 모든 플레이어의 기록이 초기화되었어요.',

@@ -1,7 +1,7 @@
 'use strict';
 /* ---------- 상점 · 롹순팅 꾸미기 (v2.1.0~) ----------
    아이템은 모두 소지금으로 사요. 산 아이템(S.items.own)과 장착한 아이템(S.items.eq)은 시즌이 끝나도 남아요
-   (서버 rk_reset_players가 items만 남기고 초기화해요). 소지금이 줄면 그만큼 시즌 순위도 내려가요.
+   (서버 rk_reset_players가 items만 남기고 초기화해요). 우승 기준이 소지금인 시즌이면 사는 만큼 순위도 내려가요.
    얼굴 그림(assets/faces/*.jpg, 150×190)은 표정 12장 모두 얼굴 위치가 같아서, 같은 150×190 좌표로 그린 아이템을 위에 겹쳐요.
      머리 윗부분 y≈12 · 이마 y≈55 · 눈 (45,90)·(102,90) · 입 (75,125) · 귀 x≈15·135
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
@@ -142,7 +142,7 @@ function renderShop(){
   const nm=$('#shopName');nm.className='shopname '+nameCls(tryEq);nm.textContent=USER?USER.id:'롹순팅';
   const it=SHOP_BY[shopSel],act=$('#shopAct'),off=$('#shopOff');
   $('#shopMoney').textContent=`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
-  if(!it){$('#shopSelN').textContent='아이템을 골라 입혀 보세요';$('#shopSelD').textContent='사면 소지금이 줄어서 시즌 순위도 내려가요. 꾸밀래, 우승할래?';act.hidden=true;off.hidden=true;return;}
+  if(!it){$('#shopSelN').textContent='아이템을 골라 입혀 보세요';$('#shopSelD').textContent=SEASON&&SEASON.metric==='pumpBest'?'이번 시즌 우승은 헛다리짚기 훈련 최고점으로 겨뤄요. 마음껏 꾸며 보세요!':'사면 소지금이 줄어서 시즌 순위도 내려가요. 꾸밀래, 우승할래?';act.hidden=true;off.hidden=true;return;}
   $('#shopSelN').textContent=`${it.name} · ${fmt(it.price)}원`;$('#shopSelD').textContent=it.desc;
   const own=shopHas(it.id),on=eq[it.slot]===it.id;
   act.hidden=false;off.hidden=!on;
