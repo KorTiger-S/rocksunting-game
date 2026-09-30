@@ -8,7 +8,7 @@ HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우�
 - **로컬 서버로 열기** (Node.js가 있다면): 이 폴더에서 `npm run serve` → 표시되는 주소로 접속
 - **파이썬이 있다면**: `python3 -m http.server 8000` → http://localhost:8000
 
-> 처음 열면 ID 입력 화면이 나와요. 로그인 정보는 브라우저(localStorage)에 저장돼요.
+> 처음 열면 로그인 / 회원가입 / Guest 선택 화면이 나와요. 로그인 정보는 브라우저(localStorage)에 저장돼요.
 
 ## 폴더 구조
 ```
@@ -31,7 +31,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `util.js` | 화면 크기 상수, `APP_VERSION`, 캐릭터 표정 이미지(`IMGDATA`), `$`/`clamp`/`rand`/`fmt` 같은 공용 헬퍼 |
 | `save.js` | localStorage 저장/불러오기, 시즌 정보 |
 | `cloud.js` | Supabase 클라우드 동기화 (`api()`, `cloudPush` 등) |
-| `login.js` | 로그인/게스트/로그아웃, 업데이트 내역(`RELEASE_NOTES`) 팝업 |
+| `login.js` | 로그인/회원가입/게스트/로그아웃, 업데이트 내역(`RELEASE_NOTES`) 팝업 |
 | `rank.js` | 랭킹 화면, `toast()` |
 | `audio.js` | 효과음(`SFX`)·배경음악(`BGMT`) — Web Audio로 그때그때 합성 |
 | `input.js` | 키보드/마우스/터치패드 입력, `mode`(현재 화면 상태) |
@@ -156,7 +156,7 @@ node dev/build.js "https://프로젝트ID.supabase.co" "anon-public-key"
 1. https://supabase.com 에서 새 프로젝트 만들기
 2. SQL Editor에 `backend/schema.sql` 전체를 붙여넣고 Run (여러 번 실행해도 안전해요)
 3. Project Settings → API 에서 **Project URL**과 **anon(public) key** 복사
-4. 게임 로그인 화면의 ⚙ 클라우드 연결 설정에 두 값을 넣고 "저장 + 연결 테스트". 모든 플레이어가 자동으로 연결되게 하려면 위처럼 `build.js`에 두 값을 넘겨서 빌드하거나 `js/cloud.js`의 `CLOUD_DEFAULT`에 넣기
+4. `js/cloud.js`의 `CLOUD_DEFAULT`에 두 값을 넣거나, 위처럼 `build.js`에 두 값을 넘겨서 빌드하기 (모든 플레이어가 자동으로 연결돼요)
    - 임시 테스트: `index.html?api=프로젝트URL&key=anon키`
 
 `service_role`(비밀) 키는 절대 넣지 마세요. 브라우저에는 anon 키만 공개돼요.
