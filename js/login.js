@@ -176,20 +176,6 @@ $('#lgBack1').addEventListener('click',()=>lgStep('main'));
 $('#lgBack2').addEventListener('click',()=>lgStep('main'));
 $('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin));
 $('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.local)finishLogin(null);else showNew(LG.id);});
-$('#lgSetBtn').addEventListener('click',()=>{
-  const s=$('#lgSet');s.hidden=!s.hidden;
-  let c={};try{c=JSON.parse(lsGet('rk:cloud')||'{}')||{};}catch(e){}
-  $('#lgUrl').value=c.url||'';$('#lgKey').value=c.key||'';
-});
-$('#lgUrlSave').addEventListener('click',async()=>{
-  const u=$('#lgUrl').value.trim().replace(/\/+$/,''),k=$('#lgKey').value.trim(),m=$('#lgUrlMsg');
-  if(!/^https:\/\/[A-Za-z0-9-]+\.supabase\.co$/.test(u)){m.textContent='https://프로젝트ID.supabase.co 형태의 주소를 넣어 주세요.';return;}
-  if(k.length<20){m.textContent='anon(public) key를 넣어 주세요.';return;}
-  lsSet('rk:cloud',JSON.stringify({url:u,key:k}));lgModeText();m.textContent='연결 테스트 중…';
-  try{const r=await api('ping',{});m.textContent=`연결 성공! (백엔드 v${r.version})`;}
-  catch(e){m.textContent='연결에 실패했어요. URL과 key를 확인하고, backend/schema.sql을 실행했는지 확인해 주세요.';}
-});
-$('#lgUrlClear').addEventListener('click',()=>{lsDel('rk:cloud');lgModeText();$('#lgUrl').value='';$('#lgKey').value='';$('#lgUrlMsg').textContent='연결을 해제했어요. 이 기기에만 저장돼요.';});
 $('#outBtn').addEventListener('click',logout);
 /* ---------- 비밀번호 변경 ---------- */
 function openPinChange(){

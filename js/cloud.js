@@ -3,9 +3,9 @@
 const CLOUD_DEFAULT={url:'https://arvoervppgbcihzguncs.supabase.co',key:'sb_publishable_v-7w6idb5W_3Yn2DBt3Q7A_p4dYAFv7'};   /* Supabase Project URL과 공개용(publishable/anon) key. 이 값이 있으면 모든 플레이어가 자동으로 연결돼요 */
 function cloudCfg(){
   try{const q=new URLSearchParams(location.search),u=q.get('api'),k=q.get('key');if(u&&k)return{url:u.trim(),key:k.trim()};}catch(e){}
-  try{const s=JSON.parse(lsGet('rk:cloud')||'null');if(s&&s.url&&s.key)return{url:String(s.url).trim(),key:String(s.key).trim()};}catch(e){}
   return{url:String(CLOUD_DEFAULT.url||'').trim(),key:String(CLOUD_DEFAULT.key||'').trim()};
 }
+lsDel('rk:cloud');   /* 예전 로그인 화면 연결 설정에서 저장한 값 정리 (이제 CLOUD_DEFAULT만 써요) */
 function cloudUrl(){const c=cloudCfg();return c.url&&c.key?c.url:'';}
 const SYNC={state:'idle'};
 function syncText(){
