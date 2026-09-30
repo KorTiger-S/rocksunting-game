@@ -1,6 +1,6 @@
-# 롹순팅 키우기 (프리킥 내기 · 소리새 펌프)
+# 롹순팅 키우기 (소리새 펌프 · 프리킥 승부)
 
-머대부속 고등학교에서 친구들과 벌이는 내기 게임이에요. 프리킥 5킥 내기와, 시즌2(2026년 10월)부터 열린 5패널 리듬게임 **소리새 펌프**(홈 화면 이름 "호우와 소리새 헛다리짚기 훈련")가 있어요.
+머대부속 고등학교에서 친구들과 벌이는 내기 게임이에요. 판돈 없는 프리킥 5킥 승부(v2.2.1~)와, 시즌2(2026년 10월)부터 열린 5패널 리듬게임 **소리새 펌프**(홈 화면 이름 "호우와 소리새 헛다리짚기 훈련")가 있어요.
 HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우저로 열면 돌아가요.
 
 ## 바로 실행하기
@@ -59,13 +59,13 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 라털 선생님 대출액(1만 원)·대사·트림 | `LOAN`, `RATAL_LINES`, `BURPS`, `maybeLoan()` (`js/hub.js`) |
 | 효과음(종류·크기·새 소리 추가) | `SFX`, `tone()`, `noise()` (`js/audio.js`), 버튼별 소리는 `BTN_SFX` (`js/hub.js`) |
 | 배경음악(곡 악보·장면별 곡·볼륨) | `BGMT`(악보), `wantBgm()`(장면→곡), `MUSIC.gain`(음악 볼륨) — 모두 `js/audio.js`. 일렉기타(파트 종류 `gtr`, 파워코드 `pc:true`)는 `bgtr()` |
-| 판돈→골키퍼 민첩성 | `applyBet()` (`js/kick.js`) |
 | 강화 항목/가격 | `UPS`, `UPMAX` (`js/kick-data.js`) |
 | 1:1 대결 화면/애니메이션 | `DU`, `duRender()`, `duDraw()` (`js/duel.js`) |
 | 1:1 대결 판정(오차·골키퍼 반경)·시간 제한 | `rk_duel_shot`, `rk_duel_settle` (backend/schema.sql) |
 | 1:1 대결 판돈 상한(5,000원)·정산 | `DU_BETMAX` (`js/duel.js`), `rk_duel_create`, `rk_duel_pay`, `rk_duel_settle` (backend/schema.sql) |
 | 프리킥 도전 횟수(축구공 5개·30분마다 1개 충전) | `BALL_MAX`, `BALL_MIN`, `ballTick()`, `ballUse()`, `renderBalls()` (`js/hub.js`), 저장은 `S.balls`/`S.ballAt`(epoch 분), 서버 보정은 `rk_clean` (backend/schema.sql) |
-| 판돈 한도(3,000원) | `betMax()` (`js/hub.js`) |
+| 프리킥 골키퍼 민첩성(판돈 없이 고정) | `FREE_LEVEL`, `applyBet()` (`js/kick.js`) |
+| 업데이트 내역(v2.0.0부터 안 읽은 것을 차례대로) | `RELEASE_NOTES`, `NOTES_FROM`, `maybeShowNotes()`/`showNextNote()`/`closeNotes()` (`js/login.js`), 읽은 버전은 `rk:seen:ID` |
 | 소리새 펌프 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
 | 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
 | 소리새 펌프 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |

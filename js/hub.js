@@ -1,13 +1,11 @@
 'use strict';
 /* ---------- 허브 ---------- */
-let betV=1000;
-const betMax=()=>Math.min(3000,S.money);
 let hubCard=null;   /* 허브에서 열어 둔 게임 상세 카드 id (null: 게임 목록). 게임이 끝나고 돌아오면 그 카드가 그대로 열려 있어요 */
 function renderGameList(){
   $('#gameList').hidden=!!hubCard;
   document.querySelectorAll('.gdet').forEach(c=>c.hidden=c.id!==hubCard);
   const b=S.balls==null?BALL_MAX:S.balls,open=pgUnlocked();
-  $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 5킥 넣으면 판돈 2배`;
+  $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 판돈 없이 5킥 승부`;
   $('#glPumpT').textContent=open?'호우와 소리새 헛다리짚기 훈련':'???';
   $('#glPump').textContent=open?`🎤 남은 마이크 ${S.mics==null?5:S.mics}/5 · 발판 리듬 게임`:'준비 중 · 관리자 번호로 입장';
   $('#glDuel').textContent=duOk()?'방 코드로 친구와 실시간 승부':'로그인하면 친구와 대결할 수 있어요';
@@ -23,12 +21,10 @@ function renderHub(){
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
-  betV=clamp(betV,1000,Math.max(1000,betMax()));
-  $('#betV').textContent=fmt(betV)+'원';
   ballTick();renderBalls();
-  const can=S.money>=1000&&S.balls>0;
+  const can=S.balls>0;
   renderGameList();
-  $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
+  $('#acceptBtn').disabled=!can;
 }
 /* ---------- 프리킥 도전 횟수: 축구공 5개, 도전할 때마다 1개 사라지고 30분마다 1개씩 다시 채워져요 ----------
    실제 시각(Date.now) 기준이라 앱을 꺼 둬도 시간은 흘러요. S.ballAt은 "다음 공이 채워지기 시작한 시각"(epoch 분)이고, 공이 가득 차 있을 땐 쓰지 않아요. */
@@ -91,18 +87,14 @@ function maybeLoan(){
     {img:'happy',sfx:'coin',bgm:'ratal',title:'1만 원을 빌렸다',text:`소지금 ${fmt(before)}원 → ${fmt(LOAN)}원. 다음엔 아껴 쓰자!`}
   ],()=>{chatCur=randChat();renderHub();});
 }
-$('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHub();});
-$('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
-$('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
-function openChallengeInfo(){$('#chBetInfo').textContent=`이번 판돈: ${fmt(betV)}원 · 축구공 1개를 써요 (남은 공 ${S.balls}개)`;$('#challengeInfo').hidden=false;}
+function openChallengeInfo(){$('#chBetInfo').textContent=`축구공 1개를 써요 (남은 공 ${S.balls}개)`;$('#challengeInfo').hidden=false;}
 function closeChallengeInfo(){$('#challengeInfo').hidden=true;}
-$('#acceptBtn').addEventListener('click',()=>{ballTick();if(S.money>=1000&&S.balls>0)openChallengeInfo();});
+$('#acceptBtn').addEventListener('click',()=>{ballTick();if(S.balls>0)openChallengeInfo();});
 $('#chClose').addEventListener('click',closeChallengeInfo);
 $('#chStart').addEventListener('click',()=>{
   closeChallengeInfo();
-  if(S.money<1000)return;
   if(!ballUse()){sfx('deny');toast('축구공이 없어요. 공이 채워질 때까지 기다려 주세요.');renderHub();return;}
-  startMatch(betV);   /* startMatch가 저장해요 */
+  startMatch();   /* startMatch가 저장해요 */
 });
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
@@ -118,7 +110,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
