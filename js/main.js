@@ -19,7 +19,7 @@ function frame(now){
   }catch(e){console.error(e);if(++errN>=5){errN=0;recover();}}
   pressed={};mouse.click=false;mouse.mv=false;
 }
-$('#bigface').src=IMGDATA.base;
+setFace($('#bigface'),'base');
 $('#verTip').textContent='(v'+APP_VERSION+')';
 renderHub();setSync('idle');renderSeason();
 if(cloudUrl())api('season_get').then(r=>setSeason(r.season)).catch(()=>{});

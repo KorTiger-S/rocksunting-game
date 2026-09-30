@@ -361,7 +361,7 @@ function settle(){
   save();
   cloudScore({bet:M.bet,goals:M.goals,pts:M.pts,result:M.forfeit?'포기':big?'완승':win?'승리':'패배',money:S.money});
   $('#sT').textContent=M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
-  $('#sImg').src=IMGDATA[big?'excited':win?'happy':'frustrated'];
+  setFace($('#sImg'),big?'excited':win?'happy':'frustrated');
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
     `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
     `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;

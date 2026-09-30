@@ -139,11 +139,13 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.key==='Enter'){if(duCanShoot()){e.preventDefault();if(!e.repeat)duAct();}}
   else if(e.code.startsWith('Arrow')&&duCanShoot())e.preventDefault();
 });
-function duSide(el,name,me,hist,side,goals){
+function duSide(el,name,me,hist,side,goals,eq){
   const ks=hist.filter(h=>h.k===side).map(h=>h.r==='goal'?'●':'✕');
   while(ks.length<5)ks.push('○');
   el.className='dside'+(me?' me':'');
-  el.innerHTML=`<b>${duEsc(name)}${me?' (나)':''}</b><span class="n">${goals}</span><div class="dots" aria-label="${ks.join(' ')}">${ks.join(' ')}</div>`;
+  eq=eq||{};
+  el.innerHTML=`<img class="rava ${frameCls(eq)}" alt=""><b class="${nameCls(eq)}">${duEsc(name)}${me?' (나)':''}</b><span class="n">${goals}</span><div class="dots" aria-label="${ks.join(' ')}">${ks.join(' ')}</div>`;
+  setFace(el.querySelector('img.rava'),'base',eq);   /* 상점에서 산 아이템을 입힌 얼굴 (shop.js) */
 }
 function duRender(){
   const st=DU.st;if(!st||!DU.open)return;
@@ -157,8 +159,8 @@ function duRender(){
   if(!DU.anim&&DU.shown<st.hist.length){DU.anim={h:st.hist[DU.shown],t:0};DU.shown++;}
   const hs=st.hist.slice(0,DU.shown);
   let hg=0,gg=0;hs.forEach(h=>{if(h.r==='goal'){if(h.k==='host')hg++;else gg++;}});
-  duSide($('#duS0'),st.host,st.me==='host',hs,'host',hg);
-  duSide($('#duS1'),st.guest,st.me==='guest',hs,'guest',gg);
+  duSide($('#duS0'),st.host,st.me==='host',hs,'host',hg,st.hostEq);
+  duSide($('#duS1'),st.guest,st.me==='guest',hs,'guest',gg,st.guestEq);
   const live=!DU.anim&&DU.shown===st.hist.length;
   const done=live&&st.status==='done';
   $('#duLeave').textContent=done?'닫기':'포기하고 나가기';

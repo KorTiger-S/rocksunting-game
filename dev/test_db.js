@@ -177,6 +177,15 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   ok(denied3, 'anon은 내부 도우미 rk_badge_list를 직접 부를 수 없음');
   ok((await rpc('score', { id: '철수', pin: P, bet: 1, goals: 1, pts: 1, result: '승' })).ok, '새 시즌에도 점수 기록 가능');
   ok((await db.query(`select season_key from public.rk_matches order by id desc limit 1`)).rows[0].season_key === cl.next.key, '경기 기록에 시즌 키가 붙음');
+  // 상점 아이템: 저장할 때 보정 + 시즌이 끝나도 남음
+  r = await save('철수', Date.now() + 3000, { money: 9000, items: { own: ['cap', 'shades', 'cap', 'BAD!', 'x'.repeat(30), 7], eq: { hat: 'cap', glass: 'crown', acc: 'shades', evil: 'cap' } } }, P, cl.next.key);
+  let it = (await load('철수')).data.items;
+  ok(r.ok && it.own.length === 2 && it.own.includes('cap') && it.own.includes('shades'), '상점 아이템: 잘못된 id·중복은 버리고 저장');
+  ok(it.eq.hat === 'cap' && !('glass' in it.eq) && !('evil' in it.eq) && it.eq.acc === 'shades', '상점 아이템: 가진 아이템만, 정해진 슬롯에만 장착');
+  ok(JSON.stringify((await rpc('top', { metric: 'money' })).list.find(x => x.id === '철수').eq) === JSON.stringify(it.eq), '랭킹에 장착 아이템(eq)이 같이 나옴');
+  r = await save('짱구', Date.now() + 3000, { money: 10000, items: 'nope' }, P, cl.next.key);
+  it = (await load('짱구')).data.items;
+  ok(r.ok && Array.isArray(it.own) && it.own.length === 0 && JSON.stringify(it.eq) === '{}', '상점 아이템이 이상한 값이면 빈 목록');
   // 한 번 더 마감해도 시즌 이름이 겹치지 않음
   await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
   await db.exec('set role service_role');
@@ -184,6 +193,8 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await db.exec('reset role');
   const keys = (await db.query('select season_key from public.rk_seasons')).rows.map(x => x.season_key);
   ok(cl2.closed && cl2.next.number === 3 && new Set(keys).size === 2 && ![...keys].includes(cl2.next.key), '연속 마감해도 시즌 이름이 겹치지 않음');
+  r = await load('철수');
+  ok(r.data.money === 10000 && r.data.items.own.length === 2 && r.data.items.eq.hat === 'cap', '시즌이 끝나 기록이 초기화돼도 상점 아이템은 남음');
   // 다음 시즌 설정(next_season): 이름·게임·마감일을 미리 정해 두면 마감 때 그대로 쓰고 지운다
   const farEnd = new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 19) + 'Z';
   await db.query(`insert into public.rk_config (key, value) values ('next_season', $1::jsonb) on conflict (key) do update set value = excluded.value`,
@@ -284,6 +295,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     ok((await st(Cc, code)).error === 'not_member', '대결: 참가자가 아니면 상태를 볼 수 없음');
     r = await rpc('duel_join', { ...B, code: code.toLowerCase() });
     ok(r.ok && r.status === 'playing' && r.me === 'guest' && r.host === '방장' && r.guest === '손님', '대결: 코드로 참가(소문자도 허용) → 시작');
+    ok(r.hostEq && typeof r.hostEq === 'object' && r.guestEq && typeof r.guestEq === 'object', '대결: 두 사람의 장착 아이템(hostEq·guestEq)이 같이 옴');
     ok((await rpc('duel_join', { ...Cc, code })).error === 'full', '대결: 이미 시작한 방은 제3자가 못 들어감');
     ok((await rpc('duel_create', Cc)).ok && (await rpc('duel_join', { ...Cc, code })).error === 'busy', '대결: 다른 방에 참여 중이면 참가 불가(busy)');
     await rpc('duel_leave', { ...Cc, code: (await rpc('duel_create', Cc)).code });
