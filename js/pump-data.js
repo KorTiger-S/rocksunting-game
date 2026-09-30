@@ -12,7 +12,7 @@
    번호는 소스에 남기지 않고 확인값(PUMP_KEY)만 남겨요. 바꾸려면: node dev/pump_key.js 새번호
    ※ 브라우저에서 도는 코드라 '가벼운 잠금'이에요. 소스를 뜯어보는 사람까지 막지는 못해요.
    모두에게 열 때: PUMP_PUBLIC=true (잠금 없이 바로 보임) + 버전을 2.0.0으로 올려요(README '시즌2 오픈 절차') */
-const PUMP_PUBLIC=false;
+const PUMP_PUBLIC=true;   /* 시즌2(v2.0.0, 2026-10-01)부터 모두에게 공개 */
 const PUMP_KEY='2e0rybdu1xw';
 const pgUnlocked=()=>PUMP_PUBLIC||lsGet('rk:pumpkey')===PUMP_KEY;
 const PG_LANES=5;   /* 0=↙ 1=↖ 2=● 3=↗ 4=↘  (화면 왼쪽→오른쪽 순서, 펌프 발판과 같아요) */

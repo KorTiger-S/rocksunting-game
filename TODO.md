@@ -17,13 +17,14 @@
 ## 🟡 시즌2 오픈 PR 준비 (10/1 낮 12시 merge)
 - [x] 홈 화면 게임 이름 "호우와 소리새 헛다리짚기 훈련" (게임 화면·공유·랭킹 등 나머지 "펌프"는 그대로) — v1.8.22
 - [x] 시즌2 카드를 3단계로: 곡 선택 → 난이도 선택(판돈 고정 `PG_BET`, 소지금 부족하면 못 고름) → 게임 설명 + 노래 시작 — v1.8.22
-- [ ] `PUMP_PUBLIC=true` (js/pump-data.js)
-- [ ] 버전 2.0.0: `APP_VERSION`(js/util.js), package.json / package-lock.json, index.html의 `?v=`
+- [x] `PUMP_PUBLIC=true` (js/pump-data.js) — 오픈 커밋(로컬)
+- [x] 버전 2.0.0: `APP_VERSION`(js/util.js), package.json / package-lock.json, index.html의 `?v=`
   - `RELEASE_NOTES['2.0.0']`(js/login.js): 능력치 제거·시즌 뱃지·곡 12개·난이도 4개·고정 판돈까지 반영해 뒀어요
-- [ ] `<title>`("프리킥 내기")와 로그인 문구("시즌1 프리킥") 시즌2에 맞게 수정 (index.html)
+- [x] `<title>` → "롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기", 로그인 문구 → "머대부속 고등학교 · 시즌2 헛다리짚기 훈련"
 - [x] `window.__dbg`(js/main.js) 제거 — 능력치 제거와 같이 함 (develop 로컬 커밋, 아직 push 안 함)
-- [ ] `node dev/build.js`로 dist 다시 만들기
-- [ ] README의 "아직 잠금 상태" 안내를 "시즌2 진행 중"으로 수정
+- [x] `node dev/build.js`로 dist 다시 만들기
+- [x] README의 "아직 잠금 상태" 안내를 "시즌2 진행 중"으로 수정
+- [ ] **12시에 push + PR**: develop 로컬 커밋 2개(능력치 제거, 시즌2 오픈)를 `git push origin develop` → develop→main PR → merge
 
 ## 🟡 능력치 제거 (근력 · 체력 · 피로도 · 컨디션 · 기분) — 시즌2 오픈 PR(2.0.0)에 같이
 - [x] 근력(`str`), 체력(`stam`), 피로도(`fatigue`), 컨디션(`cond`), 기분(`mood`) 기능 제거 — develop 로컬 커밋, 아직 push 안 함
