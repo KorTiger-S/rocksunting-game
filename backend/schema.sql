@@ -182,7 +182,8 @@ end $$;
 create or replace function public.rk_season_json() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object('key', value->>'key', 'number', (value->>'number')::int, 'game', value->>'game',
-                            'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at', 'practiceUntil', value->>'practice_until')
+                            'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at', 'practiceUntil', value->>'practice_until',
+                            'metric', coalesce(value->>'metric', 'money'))   -- 우승 기준: money(소지금) | pumpBest(펌프 최고점)
   from public.rk_config where key = 'season'
 $$;
 
@@ -338,8 +339,10 @@ $$;
 -- 마감 시: 랭킹 스냅샷을 rk_seasons에 저장 → 모든 플레이어 기록 초기화 → 다음 시즌 시작.
 -- 다음 시즌 설정(선택): rk_config 'next_season'에 넣어 두면 마감 때 그 값으로 시작하고 지운다. 없는 항목은 이번 시즌 값/자동 계산.
 --   insert into public.rk_config (key, value) values ('next_season',
---     '{"key":"2026-10","game":"pump","game_name":"소리새 펌프","ends_at":"2026-10-31T15:00:00Z"}')
+--     '{"key":"2026-10","game":"pump","game_name":"소리새 펌프","ends_at":"2026-10-31T15:00:00Z","metric":"pumpBest"}')
 --   on conflict (key) do update set value = excluded.value;
+-- 우승 기준(선택): "metric"에 "money"(소지금) 또는 "pumpBest"(펌프 최고점). 없으면 이번 시즌 기준을 이어 가요. 지금 시즌은
+--   update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';
 -- 연습 기간(선택): next_season에 "practice_until"(예: "2026-09-30T15:00:00Z")을 넣으면, 새 시즌은 그때까지 연습 기간이에요.
 --   연습 기간의 기록은 시즌 키 '<key>-practice'로 따로 쌓이고, practice_until이 지난 뒤 첫 호출(매일 00:10 자동화)에서
 --   스냅샷·뱃지 없이 모두 한 번 더 초기화한 뒤 진짜 시즌 키로 시작해요.
@@ -366,14 +369,15 @@ begin
 
   select coalesce(jsonb_agg(jsonb_build_object('id', name, 'money', money, 'wins', wins, 'losses', losses,
            'bestPts', best_pts, 'pumpBest', coalesce((data->>'pumpBest')::int, 0), 'week', week, 'cleared', cleared, 'plays', coalesce((data->>'plays')::int, 0))
-           order by money desc, wins desc, updated_at_ms asc), '[]'::jsonb)
+           order by case when cfg->>'metric' = 'pumpBest' then coalesce((data->>'pumpBest')::int, 0) else money end desc,   -- 우승 기준 순
+                    money desc, wins desc, updated_at_ms asc), '[]'::jsonb)
     into players from public.rk_users where season_key = cfg->>'key';
   select count(*) into mc from public.rk_matches where season_key = cfg->>'key';
 
   insert into public.rk_seasons (season_key, number, game, game_name, started_at, ended_at, player_count, match_count, snapshot)
   values (cfg->>'key', (cfg->>'number')::int, cfg->>'game', cfg->>'game_name', (cfg->>'started_at')::timestamptz, ends,
           jsonb_array_length(players), mc,
-          jsonb_build_object('players', players, 'matchCount', mc));
+          jsonb_build_object('players', players, 'matchCount', mc, 'metric', coalesce(cfg->>'metric', 'money')));
 
   -- 다음 시즌 이름: next_season.key(안 쓴 이름일 때) 또는 마감 시각이 속한 달(한국 시간). 이미 쓴 이름이면 -2, -3 … 을 붙인다.
   nxt_key := coalesce(nullif(btrim(nx->>'key'), ''), to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM'));
@@ -394,6 +398,7 @@ begin
   update public.rk_config set value = jsonb_build_object('key', case when pu is null then nxt_key else nxt_key || '-practice' end,
       'number', (cfg->>'number')::int + 1,
       'game', coalesce(nullif(nx->>'game', ''), cfg->>'game'), 'game_name', coalesce(nullif(nx->>'game_name', ''), cfg->>'game_name'),
+      'metric', case when nx->>'metric' in ('money', 'pumpBest') then nx->>'metric' else coalesce(cfg->>'metric', 'money') end,
       'started_at', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
       'ends_at', to_char(nxt_ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
     || case when pu is null then '{}'::jsonb else jsonb_build_object('real_key', nxt_key,
@@ -404,7 +409,7 @@ begin
   perform public.rk_reset_players(public.rk_season_json()->>'key');
 
   return jsonb_build_object('ok', true, 'closed', true,
-    'season', jsonb_build_object('key', cfg->>'key', 'number', (cfg->>'number')::int, 'game', cfg->>'game', 'gameName', cfg->>'game_name',
+    'season', jsonb_build_object('key', cfg->>'key', 'number', (cfg->>'number')::int, 'game', cfg->>'game', 'gameName', cfg->>'game_name', 'metric', coalesce(cfg->>'metric', 'money'),
                                  'startedAt', cfg->>'started_at', 'endedAt', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')),
     'players', players, 'matchCount', mc, 'next', public.rk_season_json());
 end $$;
@@ -417,11 +422,11 @@ begin
   select * into r from public.rk_seasons where season_key = p->>'key';
   if not found then return jsonb_build_object('ok', false, 'error', 'no_season'); end if;
   return jsonb_build_object('ok', true, 'season', jsonb_build_object('key', r.season_key, 'number', r.number, 'game', r.game,
-      'gameName', r.game_name, 'startedAt', r.started_at, 'endedAt', r.ended_at),
+      'gameName', r.game_name, 'startedAt', r.started_at, 'endedAt', r.ended_at, 'metric', coalesce(r.snapshot->>'metric', 'money')),
     'players', r.snapshot->'players', 'matchCount', r.match_count);
 end $$;
 
--- 시즌 뱃지: 마감된 시즌의 스냅샷(소지금 순)에서 1등 = 우승, 2등 = 준우승. 프로필에서 보여 준다.
+-- 시즌 뱃지: 마감된 시즌의 스냅샷(그 시즌의 우승 기준 순)에서 1등 = 우승, 2등 = 준우승. 기준 점수가 0이면 받지 않는다. 프로필·랭킹에서 보여 준다.
 -- 스냅샷에서 바로 계산하므로 시즌 마감 함수는 건드리지 않고, 마감이 끝나면 저절로 생긴다. 랭킹처럼 공개 정보라 비밀번호는 받지 않는다.
 -- 내부 도우미: 한 사람(소문자 ID)의 뱃지 목록. 프로필(rk_badges)과 랭킹(rk_top)이 같이 쓴다.
 create or replace function public.rk_badge_list(k text) returns jsonb
@@ -431,6 +436,7 @@ language sql stable security definer set search_path = public as $$
   from public.rk_seasons s
   cross join lateral jsonb_array_elements(s.snapshot->'players') with ordinality as x(pl, pos)
   where x.pos <= 2 and lower(x.pl->>'id') = k
+    and coalesce((x.pl->>coalesce(s.snapshot->>'metric', 'money'))::numeric, 0) > 0
 $$;
 create or replace function public.rk_badges(p jsonb) returns jsonb
 language sql stable security definer set search_path = public as $$

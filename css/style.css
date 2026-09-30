@@ -60,10 +60,6 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .grow h2{margin:0;font-family:var(--display);font-weight:400;font-size:21px;line-height:1.25;word-break:keep-all}   /* 긴 한글 제목이 낱말 중간에서 줄바꿈되지 않게 */
 .grow p{margin:2px 0 0;color:var(--muted);font-size:13px}
 .grow .go{flex:none}
-#soonList .list{gap:6px}
-.row.locked{padding:6px 12px;border:2px dashed var(--bar);border-radius:10px;color:var(--muted)}
-.row.locked h3{margin:0;font-size:14px;font-weight:700}
-.row.locked p{display:none}
 .gback{justify-self:start;margin:-6px 0 -4px -4px;text-decoration:none;font-weight:700;font-size:14px}
 .rules{margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
 .balls{display:flex;gap:6px;font-size:28px;line-height:1}

@@ -29,9 +29,9 @@ function renderSeason(){
   const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
   const pu=Date.parse(SEASON.practiceUntil||'');   /* 연습 기간: 이때까지의 기록은 시즌에 안 들어가고, 지나면 한 번 초기화돼요 */
   if(pu>Date.now()){const d=new Date(pu+KST_MS);chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} 연습 기간 · ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화`;
-    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.`;return;}
+    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 펌프 최고점':''}`;return;}
   chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
-  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 (마감 시 기록 초기화)`;
+  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} (마감 시 기록 초기화)`;
 }
 function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}

@@ -4,7 +4,7 @@ let betV=1000;
 const betMax=()=>Math.min(3000,S.money);
 let hubCard=null;   /* 허브에서 열어 둔 게임 상세 카드 id (null: 게임 목록). 게임이 끝나고 돌아오면 그 카드가 그대로 열려 있어요 */
 function renderGameList(){
-  $('#gameList').hidden=!!hubCard;$('#soonList').hidden=!!hubCard;
+  $('#gameList').hidden=!!hubCard;
   document.querySelectorAll('.gdet').forEach(c=>c.hidden=c.id!==hubCard);
   const b=S.balls==null?BALL_MAX:S.balls,open=pgUnlocked();
   $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 5킥 넣으면 판돈 2배`;
@@ -131,7 +131,7 @@ let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list){
   const box=$('#pfBadges');box.innerHTML='';
   if(!list){const p=document.createElement('p');p.className='none';p.textContent='불러오는 중…';box.appendChild(p);return;}
-  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent='아직 없어요. 시즌이 끝날 때 소지금 1·2등이 우승·준우승 뱃지를 받아요.';box.appendChild(p);return;}
+  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
   list.forEach(b=>{
     const d=document.createElement('div'),s=document.createElement('small');
     d.className='badge b'+b.rank;d.textContent=`${b.rank===1?'🏆':'🥈'} 시즌${b.number} ${b.rank===1?'우승':'준우승'}`;

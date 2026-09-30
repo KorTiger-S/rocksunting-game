@@ -6,7 +6,7 @@
 <title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.1.0">
+<link rel="stylesheet" href="css/style.css?v=2.2.0">
 </head>
 <body>
 <header class="board">
@@ -22,8 +22,8 @@
   <section id="main" style="display:grid;gap:14px;align-content:start">
     <div class="note" id="chat"></div>
     <div class="glist" id="gameList">
-      <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
+      <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🛍</span><div><h2>상점 · 롹순팅 꾸미기</h2><p id="glShop"></p></div><button class="go alt gopen" data-card="shopCard">구경하기</button></div>
     </div>
@@ -130,16 +130,6 @@
       </div>
       <div class="rtabs" id="shopTabs"></div>
       <div class="shopgrid" id="shopGrid"></div>
-    </div>
-    <div id="soonList">
-      <div class="sec" style="margin-top:0">다른 내기 (준비 중)</div>
-      <div class="list">
-        <div class="row locked"><div><h3>식당 달리기 · 주멘, 씨붕</h3><p>준비 중</p></div></div>
-        <div class="row locked"><div><h3>수업 중 단소 · 현숭</h3><p>준비 중</p></div></div>
-        <div class="row locked"><div><h3>음악실 피아노 · 호우</h3><p>준비 중</p></div></div>
-        <div class="row locked"><div><h3>창문 빵 배달 · 머호</h3><p>준비 중</p></div></div>
-        <div class="row locked"><div><h3>도깨비 줏 퇴치 · 전교생</h3><p>준비 중</p></div></div>
-      </div>
     </div>
   </section>
 </div>
@@ -256,7 +246,7 @@
   <div class="card dialog">
     <h2>🏆 랭킹</h2>
     <p class="tip" id="rkSeason" style="margin-top:0"></p>
-    <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="wins">승리</button><button class="go ghost" data-m="bestPts">최고 점수</button><button class="go ghost" data-m="pumpBest" hidden>펌프 최고점</button></div>
+    <div class="rtabs"><button class="go ghost" data-m="pumpBest" hidden>펌프 최고점</button><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="bestPts">프리킥 최고점</button></div>
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go" id="rkClose">닫기</button></div>
@@ -352,25 +342,25 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.1.0"></script>
-<script src="js/save.js?v=2.1.0"></script>
-<script src="js/cloud.js?v=2.1.0"></script>
-<script src="js/login.js?v=2.1.0"></script>
-<script src="js/rank.js?v=2.1.0"></script>
-<script src="js/audio.js?v=2.1.0"></script>
-<script src="js/input.js?v=2.1.0"></script>
-<script src="js/render.js?v=2.1.0"></script>
-<script src="js/kick-data.js?v=2.1.0"></script>
-<script src="js/kick.js?v=2.1.0"></script>
-<script src="js/hub.js?v=2.1.0"></script>
-<script src="js/shop.js?v=2.1.0"></script>
-<script src="js/splash.js?v=2.1.0"></script>
-<script src="js/duel.js?v=2.1.0"></script>
-<script src="js/pump-data.js?v=2.1.0"></script>
-<script src="js/pump.js?v=2.1.0"></script>
-<script src="js/jgintro.js?v=2.1.0"></script>
-<script src="js/lateintro.js?v=2.1.0"></script>
-<script src="js/main.js?v=2.1.0"></script>
+<script src="js/util.js?v=2.2.0"></script>
+<script src="js/save.js?v=2.2.0"></script>
+<script src="js/cloud.js?v=2.2.0"></script>
+<script src="js/login.js?v=2.2.0"></script>
+<script src="js/rank.js?v=2.2.0"></script>
+<script src="js/audio.js?v=2.2.0"></script>
+<script src="js/input.js?v=2.2.0"></script>
+<script src="js/render.js?v=2.2.0"></script>
+<script src="js/kick-data.js?v=2.2.0"></script>
+<script src="js/kick.js?v=2.2.0"></script>
+<script src="js/hub.js?v=2.2.0"></script>
+<script src="js/shop.js?v=2.2.0"></script>
+<script src="js/splash.js?v=2.2.0"></script>
+<script src="js/duel.js?v=2.2.0"></script>
+<script src="js/pump-data.js?v=2.2.0"></script>
+<script src="js/pump.js?v=2.2.0"></script>
+<script src="js/jgintro.js?v=2.2.0"></script>
+<script src="js/lateintro.js?v=2.2.0"></script>
+<script src="js/main.js?v=2.2.0"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
