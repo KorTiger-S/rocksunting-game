@@ -5,7 +5,7 @@
    골대 좌표: x -1(왼쪽 골포스트)~1(오른쪽), y 0(바닥)~1(크로스바). 밖으로 나가면 빗나가요. */
 const DU={code:null,st:null,shown:0,anim:null,open:false,poll:0,raf:0,last:0,left:0,leftAt:0,pickedRound:-1,pickIdx:-1,fail:0,ctx:null,lastMsg:'',msgBase:'',
   aim:{x:0,y:.55},ph:'aim',gt:0,gv:0,sent:null,round:-1,endPlayed:false,lastSec:-1};
-const duOk=()=>!!(USER&&!USER.guest&&cloudUrl());
+const duOk=()=>!!(USER&&cloudUrl());
 let duBet=0;   /* 새 방을 만들 때 걸 판돈 (0~5,000원) */
 const DU_BETMAX=5000;
 const duBetMax=()=>Math.floor(Math.min(DU_BETMAX,Math.max(0,S.money))/100)*100;
@@ -21,7 +21,7 @@ function renderDuelCard(){
   $('#duBetV').textContent=duBet?`판돈 ${fmt(duBet)}원`:'판돈 없음';
   $('#duBm').disabled=!ok||duBet<=0;$('#duBp').disabled=!ok||duBet+100>mx;$('#duBb').disabled=!ok||duBet+500>mx;
   $('#duMake').disabled=!ok;$('#duJoin').disabled=!ok;$('#duCode').disabled=!ok;
-  $('#duNote').textContent=ok?'':(USER&&USER.guest?'Guest는 대결할 수 없어요. 로그인해 주세요.':'클라우드에 연결되어 있어야 대결할 수 있어요.');
+  $('#duNote').textContent=ok?'':'클라우드에 연결되어 있어야 대결할 수 있어요.';
 }
 const duCall=(a,x)=>api('duel_'+a,Object.assign({id:USER.id,pin:USER.pin,code:DU.code},x));
 async function duEnter(action,code){

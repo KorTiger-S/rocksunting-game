@@ -8,7 +8,7 @@ HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우�
 - **로컬 서버로 열기** (Node.js가 있다면): 이 폴더에서 `npm run serve` → 표시되는 주소로 접속
 - **파이썬이 있다면**: `python3 -m http.server 8000` → http://localhost:8000
 
-> 처음 열면 로그인 / 회원가입 / Guest 선택 화면이 나와요. 로그인 정보는 브라우저(localStorage)에 저장돼요.
+> 처음 열면 로그인 / 회원가입 선택 화면이 나와요. 로그인 정보는 브라우저(localStorage)에 저장돼요.
 
 ## 폴더 구조
 ```
@@ -31,7 +31,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `util.js` | 화면 크기 상수, `APP_VERSION`, 캐릭터 표정 이미지(`IMGDATA`), `$`/`clamp`/`rand`/`fmt` 같은 공용 헬퍼 |
 | `save.js` | localStorage 저장/불러오기, 시즌 정보 |
 | `cloud.js` | Supabase 클라우드 동기화 (`api()`, `cloudPush` 등) |
-| `login.js` | 로그인/회원가입/게스트/로그아웃, 업데이트 내역(`RELEASE_NOTES`) 팝업 |
+| `login.js` | 로그인/회원가입/로그아웃, 업데이트 내역(`RELEASE_NOTES`) 팝업 |
 | `rank.js` | 랭킹 화면, `toast()` |
 | `audio.js` | 효과음(`SFX`)·배경음악(`BGMT`) — Web Audio로 그때그때 합성 |
 | `input.js` | 키보드/마우스/터치패드 입력, `mode`(현재 화면 상태) |
@@ -100,7 +100,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 지금은 허브에 **제목이 "???"로 가려진 카드**만 보이고, **관리자 번호(숫자 4자리)를 입력해야** 플레이할 수 있어요. 한 번 입력하면 그 기기에 기억돼요(카드 아래 "다시 잠그기"로 해제). 랭킹의 "펌프 최고점" 탭은 잠금을 풀어도 숨겨져 있다가 `PUMP_PUBLIC=true`일 때 보여요.
 - 번호는 소스에 남기지 않고 확인값 `PUMP_KEY`(`js/pump-data.js`)만 둬요. 바꾸려면 `node dev/pump_key.js 새번호`가 출력한 값을 `PUMP_KEY`에 붙여넣으세요.
 - ⚠ 브라우저에서 도는 코드라 **가벼운 잠금**이에요. 소스나 저장소(README·커밋)를 보는 사람에게까지 제목·내용을 숨기지는 못해요.
-- 로컬 테스트: 그냥 열어서(`npm run serve`) 번호를 입력하면 돼요. Guest로 하면 기록·랭킹에 남지 않아 안전하고, 로그인해서 하면 진짜 계정의 소지금이 바뀌고 `rk_matches`에 경기가 기록돼요.
+- 로컬 테스트: 그냥 열어서(`npm run serve`) 번호를 입력하면 돼요. 로그인해서 하면 진짜 계정의 소지금이 바뀌고 `rk_matches`에 경기가 기록되니, 테스트용 ID를 따로 만들어 쓰세요.
 - **시즌2를 모두에게 열 때**
   1. `backend/schema.sql`을 Supabase SQL Editor에서 다시 실행 (마이크·펌프 최고점 저장, 랭킹 지표)
   2. `js/pump-data.js`의 `PUMP_PUBLIC=true` (잠금 없이 바로 보임)

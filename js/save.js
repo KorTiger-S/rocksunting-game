@@ -47,7 +47,7 @@ function pinHash(id,pin){  /* 이 기기에 저장해 두는 확인용 값 (서�
 }
 function putLocal(){lsSet(ukey(USER.id),JSON.stringify({name:USER.id,pin:USER.ph,season:USER.season,updatedAt:S.updatedAt,data:S}));}
 function save(){
-  if(!USER||USER.guest)return;   /* Guest는 저장하지 않아요 */
+  if(!USER)return;
   S.updatedAt=Date.now();
   putLocal();
   lsSet('rk:last',USER.id);
