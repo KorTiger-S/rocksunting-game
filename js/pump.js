@@ -273,9 +273,18 @@ function pgResize(){
   const coarse=touchy(),pad=$('#pgPad'),row=$('#pgRow');
   const lay=coarse?'below':window.innerWidth>=860?'side':'none';   /* 발판: 모바일은 화면 아래, PC는 넓으면 옆(키 안내 겸용), 좁으면 숨김 */
   pad.hidden=lay==='none';row.classList.toggle('side',lay==='side');
-  const top=$('#pumpWrap .gtop').offsetHeight+14,padH=lay==='below'?pad.offsetHeight+14:0;
-  const w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520),availH=window.innerHeight-top-padH-40;
-  PGH=clamp(Math.round(PGW*(availH-6)/(w-6)),480,880);   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 (작은 폰에서도 발판까지 한 화면에 들어오게 최소 480) */
+  const vh=window.innerHeight,top=$('#pumpWrap .gtop').offsetHeight+14;
+  let w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520);
+  /* 화면이 낮은 폰(아이폰 SE·13 사파리 등)에서 아래 발판이 화면 밖으로 밀려나 ↙ ↘를 못 누르던 문제:
+     발판 칸 높이를 76px에서 최소 54px까지 줄이고, 그래도 모자라면 플레이 화면 폭을 줄여서 발판까지 한 화면에 다 들어오게 해요 */
+  if(lay==='below'){
+    const minCanvas=Math.min(w,260)*480/PGW;   /* 플레이 화면을 이만큼은 남겨 둬요 */
+    pad.style.setProperty('--pgrow',clamp(Math.floor((vh-top-minCanvas-14-14-40)/3),54,76)+'px');
+  }else pad.style.removeProperty('--pgrow');
+  const padH=lay==='below'?pad.offsetHeight+14:0,availH=vh-top-padH-40;
+  PGH=Math.round(PGW*(availH-6)/(w-6));   /* 화면 높이에 맞춰 논리 세로 길이를 정해요 */
+  if(PGH<480){PGH=480;w=Math.max(200,Math.floor((availH-6)*PGW/480+6));}   /* 최소 480은 지키고, 대신 폭을 줄여서 높이를 맞춰요 */
+  PGH=Math.min(880,PGH);
   const sc=Math.min(2,window.devicePixelRatio||1);
   $('#pgStage').style.width=w+'px';
   cv.width=Math.round(PGW*sc);cv.height=Math.round(PGH*sc);
