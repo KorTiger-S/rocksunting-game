@@ -33,3 +33,9 @@
   ```sql
   update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';
   ```
+
+## 🔧 v2.2.1: 프리킥 판돈 없음 · 꾸미기 버튼 · 업데이트 내역 누적
+- [x] 주스의 프리킥 도전장: 판돈 없이(축구공만 사용), 골키퍼는 예전 판돈 2,000원 수준으로 고정(`FREE_LEVEL`), 대사·결과·HUD·안내에서 판돈 문구 정리
+- [x] 상점: 게임 목록 카드 대신 헤더의 "🛍 꾸미기" 버튼
+- [x] 업데이트 내역: v2.0.0부터 마지막으로 읽은 다음 버전부터 한 장씩 차례대로 (`maybeShowNotes`/`showNextNote`)
+- 서버 변경 없음 → 스키마 재실행 없이 merge만 하면 돼요

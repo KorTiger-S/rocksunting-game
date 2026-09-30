@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기</title>
+<title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 승부</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -261,7 +261,7 @@ html.pgplay #pumpWrap{touch-action:none}
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
   </div>
 </header>
 
@@ -272,21 +272,15 @@ html.pgplay #pumpWrap{touch-action:none}
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
-      <div class="card grow"><span class="gi" aria-hidden="true">🛍</span><div><h2>상점 · 롹순팅 꾸미기</h2><p id="glShop"></p></div><button class="go alt gopen" data-card="shopCard">구경하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
       <h2>주스의 프리킥 도전장</h2>
       <div class="balls" id="balls" role="img"><span>⚽</span><span>⚽</span><span>⚽</span><span>⚽</span><span>⚽</span></div>
       <p id="ballNote"></p>
-      <div class="stepper">
-        <button class="go ghost" id="bMinus">-100</button>
-        <span class="amt" id="betV">1,000원</span>
-        <button class="go ghost" id="bPlus">+100</button>
-        <button class="go ghost" id="bBig">+500</button>
-      </div>
+      <p>판돈 없이 주스와 5킥 승부! 3골이면 승리, 4골이면 완승이에요. 점수는 랭킹의 "프리킥 최고점"에 올라가요.</p>
       <div class="acts">
-        <button class="go" id="acceptBtn">내기 받기</button>
+        <button class="go" id="acceptBtn">도전하기</button>
       </div>
     </div>
     <div class="card chall gdet" id="pumpCard" hidden>
@@ -364,7 +358,7 @@ html.pgplay #pumpWrap{touch-action:none}
       <p id="duNote"></p>
     </div>
     <div class="card chall gdet" id="shopCard" hidden>
-      <button class="linkbtn gback">← 게임 목록</button>
+      <button class="linkbtn gback">← 홈으로</button>
       <h2>상점 · 롹순팅 꾸미기</h2>
       <div class="shoptop">
         <div class="shopprev"><img class="shopava" id="shopAva" alt="입혀 본 모습"><b class="shopname" id="shopName"></b></div>
@@ -383,7 +377,7 @@ html.pgplay #pumpWrap{touch-action:none}
 
 <div id="gameWrap" hidden>
   <div class="gtop">
-    <h2>주스와 프리킥 5킥 내기</h2>
+    <h2>주스와 프리킥 5킥 승부</h2>
     <span class="ctrl" id="gCtrl"></span>
     <button class="go ghost" id="skip" hidden>대화 건너뛰기 (S)</button>
     <button class="go ghost" id="mute">효과음 끄기</button>
@@ -527,17 +521,15 @@ html.pgplay #pumpWrap{touch-action:none}
 <div class="ov ovfix" id="challengeInfo" hidden role="dialog" aria-labelledby="chT">
   <div class="card dialog">
     <h2 id="chT">주스의 프리킥 도전장</h2>
-    <p>축구부 에이스 주스가 골키퍼를 서는 5킥 내기예요.</p>
+    <p>축구부 에이스 주스가 골키퍼를 서는 5킥 승부예요. 판돈은 없어요.</p>
     <ul class="rules" style="text-align:left">
-      <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, 판돈을 그대로 받아요.</li>
-      <li><b>4골 이상</b>이면 완승! 주스가 판돈의 절반을 더 얹어 줘요.</li>
-      <li>지면 판돈은 주스의 크림빵 값이 돼요.</li>
+      <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, <b>4골 이상</b>이면 완승!</li>
+      <li>골과 킥 솜씨로 점수를 얻어요. 가장 높은 점수가 랭킹의 <b>프리킥 최고점</b>이 돼요.</li>
       <li>킥 위치는 매번 달라져요. 처음엔 가깝고 점점 멀어지고, <b>마지막은 운명의 페널티킥</b>이에요!</li>
-      <li>주스는 <b>3,000원</b>까지만 받아 줘요.</li>
       <li>도전할 때마다 <b>⚽ 축구공</b>이 1개씩 사라져요. 최대 5개이고, <b>30분마다 1개</b>씩 다시 채워져요.</li>
     </ul>
     <p class="tip" id="chBetInfo" style="margin-top:0"></p>
-    <div class="btns"><button class="go" id="chStart">내기 시작</button><button class="go ghost" id="chClose">닫기</button></div>
+    <div class="btns"><button class="go" id="chStart">도전 시작</button><button class="go ghost" id="chClose">닫기</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">
@@ -593,7 +585,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='2.2.0';
+const APP_VERSION='2.2.1';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -848,6 +840,11 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '2.2.1':{sub:'프리킥은 판돈 없이, 꾸미기는 더 가까이',items:[
+    '⚽ 주스의 프리킥 도전장은 이제 판돈 없이 해요. 축구공만 있으면 도전! 점수는 랭킹의 "프리킥 최고점"에 올라가요.',
+    '🛍 롹순팅 꾸미기 상점은 화면 위쪽 "🛍 꾸미기" 버튼으로 바로 열어요.',
+    '📜 업데이트 소식을 놓쳤다면, 마지막으로 본 소식 다음 것부터 차례대로 보여 줘요.'
+  ]},
   '2.2.0':{sub:'시즌2 우승은 펌프 최고점으로! 🏆',items:[
     '🏆 시즌2 우승·준우승은 펌프 최고점으로 정해요. 랭킹은 펌프 최고점 탭부터 보이고, 승리 탭은 없어졌어요.',
     '🛍 상점에서 꾸며도 시즌 순위에는 영향이 없어요. 마음껏 꾸며 보세요!',
@@ -925,15 +922,32 @@ const RELEASE_NOTES={
   ]}
 };
 const seenKey=()=>'rk:seen:'+(USER?USER.id.toLowerCase():'');
+/* 업데이트 내역은 v2.0.0부터 누적해서 보여줘요: 마지막으로 읽은 버전(rk:seen:ID) 다음 것부터 지금 버전까지,
+   오래된 버전부터 한 장씩. "확인"을 누르면 그 버전까지 읽은 걸로 기억하고 다음 버전을 띄워요. */
+const NOTES_FROM='2.0.0';
+const verCmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;};
+let NOTE_Q=[],NOTE_CUR=null,NOTE_N=0;
 function maybeShowNotes(isNew){
-  const n=RELEASE_NOTES[APP_VERSION];if(!n||!USER)return;
-  if(lsGet(seenKey())===APP_VERSION)return;
+  if(!USER)return;
   if(isNew){lsSet(seenKey(),APP_VERSION);return;}   /* 처음 가입한 사람에게는 "바뀐 점"이 없어요 */
-  $('#wnT').textContent='🎉 업데이트 v'+APP_VERSION;$('#wnSub').textContent=n.sub||'';
-  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
-  $('#wn').hidden=false;sfx('chime');setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+  const seen=lsGet(seenKey()),from=/^\d+\.\d+\.\d+$/.test(seen||'')&&verCmp(seen,NOTES_FROM)>=0?seen:null;   /* 2.0.0보다 전에 읽었으면 2.0.0부터 */
+  NOTE_Q=Object.keys(RELEASE_NOTES).filter(v=>verCmp(v,NOTES_FROM)>=0&&verCmp(v,APP_VERSION)<=0&&(!from||verCmp(v,from)>0)).sort(verCmp);
+  NOTE_N=NOTE_Q.length;
+  if(NOTE_N)showNextNote();
 }
-function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);maybeLoan();}
+function showNextNote(){
+  NOTE_CUR=NOTE_Q.shift();const n=RELEASE_NOTES[NOTE_CUR];
+  $('#wnT').textContent='🎉 업데이트 v'+NOTE_CUR+(NOTE_N>1?` (${NOTE_N-NOTE_Q.length}/${NOTE_N})`:'');$('#wnSub').textContent=n.sub||'';
+  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+  $('#wnOk').textContent=NOTE_Q.length?'다음 업데이트 보기':'확인';
+  $('#wn').hidden=false;sfx(NOTE_N-NOTE_Q.length>1?'page':'chime');setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+}
+function closeNotes(){
+  if(USER&&NOTE_CUR)lsSet(seenKey(),NOTE_CUR);   /* 여기까지 읽었어요 (중간에 창을 닫아도 다음엔 그다음 버전부터) */
+  if(NOTE_Q.length){showNextNote();return;}
+  if(USER)lsSet(seenKey(),APP_VERSION);
+  NOTE_CUR=null;$('#wn').hidden=true;maybeLoan();
+}
 $('#wnOk').addEventListener('click',closeNotes);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value,$('#lgPin2').value);
@@ -1473,7 +1487,8 @@ function solve(ball,tx,ty,s,ys){
   }
   return v;
 }
-const BET_LO=1000,BET_HI=3000;   /* 이 도전(vs 주스)의 판돈 범위. 최소면 골키퍼가 아예 안 움직이고, 최대면 평소보다 더 날렵해져요 */
+const BET_LO=1000,BET_HI=3000;   /* 예전 판돈 범위(골키퍼 민첩성 계산용). 최소면 골키퍼가 아예 안 움직이고, 최대면 평소보다 더 날렵해져요 */
+const FREE_LEVEL=2000;            /* v2.2.1부터 프리킥은 판돈 없이 해요. 골키퍼는 예전 판돈 2,000원 수준(중간)으로 고정 */
 function applyBet(k,bet){
   const t=clamp(((bet==null?BET_LO:bet)-BET_LO)/(BET_HI-BET_LO),0,1);
   k.vk=(k.vk||4)*t*1.3;
@@ -1481,7 +1496,7 @@ function applyBet(k,bet){
 }
 function setupKick(i,ko){
   const k=ko||M.kicks[i];K=Object.assign({},k,{i});
-  applyBet(K,M&&M.bet);   /* 판돈이 클수록 골키퍼가 날렵해지고, 최소 판돈이면 아예 움직이지 않아요 */
+  applyBet(K,FREE_LEVEL);   /* 골키퍼 민첩성: 판돈 없이 중간 수준으로 고정 */
   K.ball={x:k.bx,y:.11,z:k.bz};
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
@@ -1611,30 +1626,30 @@ function drawCut(c){
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const RK=(text,face)=>({who:'rock',face:face||'angry',text});
 const INTRO_A=[
- bet=>({bg:'hall',chars:[{id:'rock',x:200,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'씨붕',x:700,y:318,s:1.7},{id:'머호',x:80,y:318,s:1.7,flip:true}],lines:[
+ ()=>({bg:'hall',chars:[{id:'rock',x:200,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'씨붕',x:700,y:318,s:1.7},{id:'머호',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'주스',text:'롹순팅. 쉬는 시간에 킥 다섯 번 어때? 프리킥 네 번에 마지막은 페널티킥이다. 세 골 넣으면 네 승! 난 한 손가락만 써도 막아.'},
   {who:'씨붕',text:'야, 쫄았냐? 인마 그럴수록 세게 걸어야지! …아니, 딱히 걱정돼서 하는 말 아니거든.'},
   {who:'머호',text:'세상은 어차피 다 5할이야! 이길 수도 질 수도 있지~'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원이라. 좋아. 지면 깨물어버린다!`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'주멘',x:690,y:318,s:1.7},{id:'히통',x:80,y:318,s:1.7,flip:true}],lines:[
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 지면 깨물어버린다!'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'주멘',x:690,y:318,s:1.7},{id:'히통',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'주스',text:'롹순팅, 오늘 킥 한 판 하자. 한 손가락만 써서 막아 줄게. 깨물어버린다!'},
   {who:'주멘',text:'이 내기, 오늘 일정표에 이미 있었어. 전부 계획대로야.'},
-  {who:'히통',text:'판돈 없으면 빌려줄게. 이자는 10%.'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원 접수. 후회하지 마라.`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'겨맘',x:690,y:318,s:1.7},{id:'ㅈㄱ',x:80,y:318,s:1.7,flip:true}],lines:[
+  {who:'히통',text:'지면 위로 삼아 크림빵 값 빌려줄게. 이자는 10%.'},
+  RK('…롹.'),
+  {who:'주스',text:'도전 접수. 후회하지 마라.'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'겨맘',x:690,y:318,s:1.7},{id:'ㅈㄱ',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'겨맘',text:'자세 봐봐, 내가 어제 알려준 킥 폼 그대로네? 다치지 말고 화이팅!'},
   {who:'주스',text:'축구는 내 자존심이야. 세 골이면 네 승. 한 손가락이면 충분하지만.'},
   {who:'ㅈㄱ',text:'…이건 파이리급 승부야.'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원. 좋아. 깨물어버린다!`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'현숭',x:690,y:318,s:1.7},{id:'호우',x:80,y:318,s:1.7,flip:true}],lines:[
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 깨물어버린다!'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'현숭',x:690,y:318,s:1.7},{id:'호우',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'현숭',text:'진지하게 계산해봤는데, 5킥 중 3골이면 승리, 4골이면 완승이야. 근거는… 딱히 없어.'},
   {who:'호우',text:'킥도 노래처럼 박자가 중요해~ 골대가 골 때리게 만들어 봐, 응?'},
   {who:'주스',text:'설명 끝났으면 시작하자. 난 한 손가락이면 돼. 깨물어버린다!'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원 확인. 골대는 내가 지킨다.`}]})
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 골대는 내가 지킨다.'}]})
 ];
 const INTRO_B=[
  ()=>({bg:'field',chars:[{id:'rock',x:180,y:350,s:2.4,face:'resolve'},{id:'주스',x:660,y:300,s:1.6},{id:'겨맘',x:330,y:312,s:1.6},{id:'히통',x:470,y:318,s:1.6},{id:'주멘',x:560,y:312,s:1.5}],lines:[
@@ -1665,27 +1680,27 @@ const INTRO_B=[
   {who:'주멘',text:'A안, B안, C안 다 준비했어. 전부 계획대로야.'},
   {who:'주스',text:'시작하자! 한 손가락이면 돼.'}]})
 ];
-const payLine=(big,bet,bonus)=>big?`…인정. 한 손가락으론 무리였네. 자존심 값으로 ${fmt(bonus)}원 더 얹어 줄게.`:`…한 손가락만 썼으면 막았는데! ${fmt(bet)}원, 가져가. 깨물어버린다!`;
+const payLine=big=>big?'…인정. 한 손가락으론 무리였네. 완승이다. 다음엔 두 손가락 쓴다!':'…한 손가락만 썼으면 막았는데! 이번 판은 네 승이다. 깨물어버린다!';
 const WIN_CUTS=[
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'주멘',x:210,y:330,s:1.9,arms:'up'},{id:'씨붕',x:300,y:322,s:1.7,arms:'up'},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'주멘',x:210,y:330,s:1.9,arms:'up'},{id:'씨붕',x:300,y:322,s:1.7,arms:'up'},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'주멘',text:'롹순팅이 이기는 것까지 전부 계획대로였어. …아마도.'},
   {who:'겨맘',text:'거봐, 내가 알려준 자세 그대로 넣었잖아! 오늘 저녁은 내가 쏜다!'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'씨붕',x:210,y:330,s:1.9,arms:'up'},{id:'머호',x:300,y:322,s:1.7,arms:'up'},{id:'히통',x:520,y:322,s:1.7}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'씨붕',x:210,y:330,s:1.9,arms:'up'},{id:'머호',x:300,y:322,s:1.7,arms:'up'},{id:'히통',x:520,y:322,s:1.7}],lines:[
   {who:'씨붕',text:'거봐, 내가 될 줄 알았다니까! …아니, 몰랐어. 그냥 잘했다고, 인마.'},
   {who:'머호',text:'세상은 어차피 다 5할인데, 오늘은 롹순팅 쪽이 컸네!'},
   {who:'히통',text:'이자 없이 축하해 줄게. 오늘만이야.'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'ㅈㄱ',x:210,y:330,s:1.9},{id:'현숭',x:300,y:322,s:1.7},{id:'호우',x:520,y:322,s:1.7,arms:'up'}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'ㅈㄱ',x:210,y:330,s:1.9},{id:'현숭',x:300,y:322,s:1.7},{id:'호우',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'ㅈㄱ',text:'…메가진화급이었어.'},
   {who:'현숭',text:'진지하게 계산해봤는데, 이건 다 내 응원 덕분이야. 근거는 없어.'},
   {who:'호우',text:'축하해~ 오늘 골 소리는 완전 솔! 솔직히 대박이야.'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'우룡',x:210,y:330,s:1.9},{id:'룡갈',x:300,y:322,s:1.7},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'우룡',x:210,y:330,s:1.9},{id:'룡갈',x:300,y:322,s:1.7},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'우룡',text:'벽 사업 적자다… 에라 모르겠다, 다음 판에 만회하지!'},
   {who:'룡갈',text:'헐, 뚫렸다! …근데 그 표정 보니까 앙 기모띠, 봐준다.'},
   {who:'겨맘',text:'롹순팅 최고~! 완전 국대급 킥이었어!'},
-  {who:'주스',text:payLine(big,bet,bonus)}]})
+  {who:'주스',text:payLine(big)}]})
 ];
 const LOSE_CUTS=[
  ()=>({bg:'canteen',chars:[{id:'rock',x:250,y:340,s:2.5,face:'frustrated'},{id:'주스',x:570,y:340,s:2.5,item:'bread'},{id:'히통',x:410,y:262,s:1.5},{id:'머호',x:100,y:320,s:1.5}],lines:[
@@ -1710,19 +1725,19 @@ const LOSE_CUTS=[
   {who:'우룡',text:'이 판은 손절이다… 에라 모르겠다, 주스나 스카우트하자.'},
   {who:'주스',text:'이제 키퍼만 해라? 좋지! 앙!'}]})
 ];
-function introA(bet){return pick(INTRO_A)(bet);}
+function introA(){return pick(INTRO_A)();}
 function introB(){return pick(INTRO_B)();}
-function finalCut(win,big,bet,bonus){return win?pick(WIN_CUTS)(big,bet,bonus):pick(LOSE_CUTS)();}
+function finalCut(win,big){return win?pick(WIN_CUTS)(big):pick(LOSE_CUTS)();}
 const SPECT=[{n:'주멘',x:-8.5,z:-2},{n:'머호',x:-7.2,z:-3.5},{n:'히통',x:8.5,z:-2},{n:'겨맘',x:7.2,z:-3.5},{n:'ㅈㄱ',x:11.5,z:-6}];
 const REACT={
  주멘:{goal:['계획대로다!','이 골도 일정표에 있었어.','A안 성공! 전부 계획대로야.'],save:['예상 범위 안이야.','B안으로 전환한다.','…변수 발생. 계획 수정!'],post:['골대 확률 3%였는데?!','오차 5센티야, 아깝다!','계획엔 없던 골대야…'],wall:['벽 튕김 확률까지 계산했어.','예상했던 결과야.','ㅋㅋㅋ 계획대로 벽.'],miss:['오차 범위 초과…','다음 킥 만회 계획을 짜자.','계획 재수립 중…']},
  머호:{goal:['미쳤다! 5할이 뒤집혔네~','세상은 5할이라더니 오늘은 롹순팅 쪽!','오~ 5할 중 좋은 쪽이 나왔다!'],save:['세상은 어차피 다 5할이야!','반반인데 저쪽이 나왔네~','그래도 5할은 5할이지.'],post:['아깝다~ 이것도 5할이야!','골대! 반대쪽 5할이 나왔네!'],wall:['세상은 어차피 다 5할이야!','벽 5할, 골 5할~'],miss:['세상은 5할이야!','다음 킥이 5할 남았잖아~','빗나갈 확률도 5할이었어!']},
- 히통:{goal:['골이면 판돈 회수네. 이자는 10%.','롹순팅 신용등급 상승!','이건 돈 빌려도 되는 골!'],save:['주스 키퍼 재능있네.','지면 빌려줄게. 이자는 10%.','아~ 판돈이 내 창구로 올 텐데.'],post:['이자율 5%만큼 빗나갔네.','한 뼘 차이 아깝다!'],wall:['벽에 맞은 판돈은 이자로 간다.','내 이자 계산이 더 빠르다.'],miss:['이 킥은 대손처리네…','손실 10% 확정.','담보라도 잡고 차자.']},
+ 히통:{goal:['골이면 신용등급 상승이지. 이자는 10%.','롹순팅 신용등급 상승!','이건 돈 빌려도 되는 골!'],save:['주스 키퍼 재능있네.','지면 빌려줄게. 이자는 10%.','아~ 크림빵 값이 내 창구로 올 텐데.'],post:['이자율 5%만큼 빗나갔네.','한 뼘 차이 아깝다!'],wall:['벽에 맞은 공도 이자로 간다.','내 이자 계산이 더 빠르다.'],miss:['이 킥은 대손처리네…','손실 10% 확정.','담보라도 잡고 차자.']},
  겨맘:{goal:['거봐, 그 자세가 정답이라니까!','완벽한 슛! 나도 그렇게 넣어~','국가대표급 킥이야, 진짜!'],save:['괜찮아~ 발끝 각도만 조금 더!','아깝다! 폼은 좋았어~','힘내, 다음 건 내가 봐줄게!'],post:['한 끗 차이! 소금 한 꼬집 부족한 느낌?','앗, 진짜 아까웠어~'],wall:['괜찮아, 저 벽은 나도 못 뚫어!','다치지 않았지? 다시 하자!'],miss:['괜찮아 괜찮아~ 밥부터 든든히 먹자!','자세 교정만 조금 하면 돼!','다음 킥 응원할게~']},
  ㅈㄱ:{goal:['피카피카!','…메가진화급.','…(파이리 카드를 번쩍 든다)'],save:['고라파덕…','…파이리가 불을 뿜었어야 했는데.','…(잠만보처럼 멍하니 본다)'],post:['…이상해씨급으로 아깝다.','…(꼬부기 카드를 만지작)'],wall:['…벽이 강철이야.','…롱스톤 같아.'],miss:['…이건 잠만보야.','…버터플처럼 날아갔네.']},
  우룡:{goal:['헉, 뚫렸다! …에라 모르겠다, 다음 판에 만회하지.','벽 사업 적자다…'],wall:['역시 내 벽 투자는 실패가 없어.','룡갈, 오늘 수익률 좋다!'],save:['주스가 다 했네. 난 숟가락만 얹었다.'],miss:['거봐, 승률 계산 끝났다니까.']},
  룡갈:{goal:['헐, 뚫렸다! 앙 기모띠, 그래도 인정.','콤비의 수치…! 근데 나쁘지 않네.'],wall:['막았다! 앙 기모띠~','거 봐, 내가 막는다고 했지.'],save:['주스가 다 했지, 난 구경만 했다.'],miss:['거 봐, 안 들어간다고 했지. 앙 기모띠!']},
- 씨붕:{goal:['아 진짜 아깝게 놓쳤네! …아니 됐고, 판돈이나 계산하자.','인마 다음엔 더 세게 걸어야지!'],wall:['거봐 내가 뭐랬어. …그래도 잘 찼어, 인마.','내가 막았다! …아니 주스가.'],save:['아이씨, 아깝잖아! …괜찮아, 다음에 넣어.'],miss:['야 인마 정신 안 차려?! …됐고, 다음 거나 잘 차.']},
+ 씨붕:{goal:['아 진짜 아깝게 놓쳤네! …아니 됐고, 크림빵이나 사러 가자.','인마 다음엔 더 세게 걸어야지!'],wall:['거봐 내가 뭐랬어. …그래도 잘 찼어, 인마.','내가 막았다! …아니 주스가.'],save:['아이씨, 아깝잖아! …괜찮아, 다음에 넣어.'],miss:['야 인마 정신 안 차려?! …됐고, 다음 거나 잘 차.']},
  현숭:{goal:['역시… 내 계산대로군. (계산 안 함)','진지하게 말하는데, 저건 우연이 아니야.'],wall:['벽의 밀도를 고려하면 합리적인 결과지.','통계적으로 예정된 결과였어. (안 그랬음)'],save:['음. 확률상 예상된 결과다. (예상 안 함)'],miss:['흠, 지구 자전 때문이야. 아마.']},
  호우:{goal:['골이 야옹~ 아니 골인~!','좋은 리듬이야! (박수)'],wall:['벽이 이겼다… 벽(壁)창호네.'],save:['아깝다! 오늘 주스가 완전 주스타야.'],miss:['빗나갔네. 오늘 리듬감이 좀 음이탈났나 봐.']}
 };
@@ -1746,21 +1761,18 @@ let chatCur=randChat();
 /* ---------- 매치 흐름 ---------- */
 let quitAsk=0;
 function showGame(g){$('#hub').hidden=g;$('#gameWrap').hidden=!g;$('#pad').classList.toggle('on',g);document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
-function startMatch(bet){
+function startMatch(){
   sfx('start');
-  bet=Math.min(bet,S.money);
-  M={bet,goals:0,pts:0,res:[],before:S.money,kicks:buildKicks()};
-  /* 판돈을 걸자마자 소지금에서 빼고 저장해요. 이렇게 안 하면, 지고 있을 때 새로고침해서
-     아직 반영 안 된 판돈을 그대로 되돌리는 부정행위가 가능해져요(정산은 원래 대결이 끝날 때만 했어요). */
-  S.money-=bet;save();
+  M={bet:0,goals:0,pts:0,res:[],before:S.money,kicks:buildKicks()};   /* 판돈 없음(v2.2.1~): 소지금은 그대로예요 */
+  save();   /* 축구공을 쓴 것을 바로 저장해요 */
   showGame(true);$('#ovSet').hidden=true;pressed={};mouse.click=false;
-  playCut(introA(bet),()=>playCut(introB(),()=>startKick(0)));
+  playCut(introA(),()=>playCut(introB(),()=>startKick(0)));
 }
 function startKick(i){sfx('whistle');setupKick(i);M.k=i;mode='kick';pressed={};mouse.click=false;$('#gCtrl').textContent='조준 → 공 맞힐 위치 → 파워';}
 function askQuit(){
   const now=performance.now();
   if(now-quitAsk<3000){forfeit();return;}
-  quitAsk=now;toast('한 번 더 누르면 포기해요. 판돈은 잃어요.');
+  quitAsk=now;toast('한 번 더 누르면 포기해요. 이번 판은 패배로 기록돼요.');
 }
 function forfeit(){
   if(mode==='hub'||mode==='settle')return;
@@ -1768,16 +1780,14 @@ function forfeit(){
 }
 function nextKick(){
   if(K.i>=4){
-    const win=M.goals>=3,big=M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
-    M.win=win;M.big=big;M.bonus=bonus;
-    playCut(finalCut(win,big,M.bet,bonus),settle);
+    const win=M.goals>=3,big=M.goals>=4;
+    M.win=win;M.big=big;
+    playCut(finalCut(win,big),settle);
   }else startKick(K.i+1);
 }
 function settle(){
   mode='settle';
-  const win=M.forfeit?false:M.goals>=3,big=!M.forfeit&&M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
-  const delta=win?2*M.bet+(big?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+완승 보너스)만 더해요 */
-  S.money=Math.max(0,S.money+delta);
+  const win=M.forfeit?false:M.goals>=3,big=!M.forfeit&&M.goals>=4;
   if(win)S.wins++;else S.losses++;
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
   sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');
@@ -1787,8 +1797,7 @@ function settle(){
   $('#sT').textContent=M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
   setFace($('#sImg'),big?'excited':win?'happy':'frustrated');
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
-    `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
-    `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;
+    `<tr><td>프리킥 최고점</td><td>${fmt(S.bestPts||0)}점</td></tr>`;
   $('#ovSet').hidden=false;
 }
 /* ---------- 킥 업데이트 ---------- */
@@ -2135,7 +2144,7 @@ function drawParticles(c){
 function drawKick(c){
   if(padBackBtn)padBackBtn.classList.toggle('show',K.ph==='spin'||K.ph==='power');
   c.save();if(K.shake>0)c.translate(rand(-5,5),rand(-4,4));drawField(c);c.restore();
-  hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`판돈 ${fmt(M.bet)}원`);
+  hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`${M.goals}골 · ${fmt(M.pts)}점`);
   for(let i=0;i<5;i++){const r=M.res[i],x=26+i*30;
     c.fillStyle=r?(r.type==='goal'?'#2f8f5b':r.type==='post'?'#e8a91c':'#e2334d'):'#dfe4ee';c.beginPath();c.arc(x,68,11,0,7);c.fill();
     c.lineWidth=i===K.i?4:2;c.strokeStyle=i===K.i?'#fff':'#232a45';c.stroke();if(r&&r.type==='goal')TX(c,'✓',x,69,14,'#fff','center');}
@@ -2192,14 +2201,12 @@ function drawKick(c){
 
 'use strict';
 /* ---------- 허브 ---------- */
-let betV=1000;
-const betMax=()=>Math.min(3000,S.money);
 let hubCard=null;   /* 허브에서 열어 둔 게임 상세 카드 id (null: 게임 목록). 게임이 끝나고 돌아오면 그 카드가 그대로 열려 있어요 */
 function renderGameList(){
   $('#gameList').hidden=!!hubCard;
   document.querySelectorAll('.gdet').forEach(c=>c.hidden=c.id!==hubCard);
   const b=S.balls==null?BALL_MAX:S.balls,open=pgUnlocked();
-  $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 5킥 넣으면 판돈 2배`;
+  $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 판돈 없이 5킥 승부`;
   $('#glPumpT').textContent=open?'호우와 소리새 헛다리짚기 훈련':'???';
   $('#glPump').textContent=open?`🎤 남은 마이크 ${S.mics==null?5:S.mics}/5 · 발판 리듬 게임`:'준비 중 · 관리자 번호로 입장';
   $('#glDuel').textContent=duOk()?'방 코드로 친구와 실시간 승부':'로그인하면 친구와 대결할 수 있어요';
@@ -2215,12 +2222,10 @@ function renderHub(){
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
-  betV=clamp(betV,1000,Math.max(1000,betMax()));
-  $('#betV').textContent=fmt(betV)+'원';
   ballTick();renderBalls();
-  const can=S.money>=1000&&S.balls>0;
+  const can=S.balls>0;
   renderGameList();
-  $('#acceptBtn').disabled=!can;$('#bMinus').disabled=betV<=1000||!can;$('#bPlus').disabled=betV+100>betMax();$('#bBig').disabled=betV+500>betMax();
+  $('#acceptBtn').disabled=!can;
 }
 /* ---------- 프리킥 도전 횟수: 축구공 5개, 도전할 때마다 1개 사라지고 30분마다 1개씩 다시 채워져요 ----------
    실제 시각(Date.now) 기준이라 앱을 꺼 둬도 시간은 흘러요. S.ballAt은 "다음 공이 채워지기 시작한 시각"(epoch 분)이고, 공이 가득 차 있을 땐 쓰지 않아요. */
@@ -2283,18 +2288,14 @@ function maybeLoan(){
     {img:'happy',sfx:'coin',bgm:'ratal',title:'1만 원을 빌렸다',text:`소지금 ${fmt(before)}원 → ${fmt(LOAN)}원. 다음엔 아껴 쓰자!`}
   ],()=>{chatCur=randChat();renderHub();});
 }
-$('#bMinus').addEventListener('click',()=>{betV=Math.max(1000,betV-100);renderHub();});
-$('#bPlus').addEventListener('click',()=>{betV=Math.min(betMax(),betV+100);renderHub();});
-$('#bBig').addEventListener('click',()=>{betV=Math.min(betMax(),betV+500);renderHub();});
-function openChallengeInfo(){$('#chBetInfo').textContent=`이번 판돈: ${fmt(betV)}원 · 축구공 1개를 써요 (남은 공 ${S.balls}개)`;$('#challengeInfo').hidden=false;}
+function openChallengeInfo(){$('#chBetInfo').textContent=`축구공 1개를 써요 (남은 공 ${S.balls}개)`;$('#challengeInfo').hidden=false;}
 function closeChallengeInfo(){$('#challengeInfo').hidden=true;}
-$('#acceptBtn').addEventListener('click',()=>{ballTick();if(S.money>=1000&&S.balls>0)openChallengeInfo();});
+$('#acceptBtn').addEventListener('click',()=>{ballTick();if(S.balls>0)openChallengeInfo();});
 $('#chClose').addEventListener('click',closeChallengeInfo);
 $('#chStart').addEventListener('click',()=>{
   closeChallengeInfo();
-  if(S.money<1000)return;
   if(!ballUse()){sfx('deny');toast('축구공이 없어요. 공이 채워질 때까지 기다려 주세요.');renderHub();return;}
-  startMatch(betV);   /* startMatch가 저장해요 */
+  startMatch();   /* startMatch가 저장해요 */
 });
 $('#sBtn').addEventListener('click',toHub);
 $('#skip').addEventListener('click',()=>{if(mode==='cut')pressed.SkipCut=true;});
@@ -2310,7 +2311,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
@@ -2448,6 +2449,8 @@ function shopTry(){   /* 지금 장착한 것 + 고른 아이템을 입혀 본 �
   SHOP_SLOTS.forEach(s=>{const b=document.createElement('button');b.type='button';b.className='go ghost';b.dataset.slot=s.id;b.textContent=s.name;
     b.addEventListener('click',()=>{shopSlot=s.id;shopSel=null;renderShop();});tabs.appendChild(b);});
   $('#shopAct').addEventListener('click',shopAction);
+  /* 헤더의 🛍 꾸미기 버튼: 홈 화면에서 상점 카드를 열어요 */
+  $('#shopBtn').addEventListener('click',()=>{if(mode!=='hub'||!USER)return;shopSel=null;openHubCard('shopCard');renderShop();$('#shopCard').scrollIntoView({block:'start'});});
   $('#shopOff').addEventListener('click',()=>{const it=SHOP_BY[shopSel];if(!it)return;const d=itemsOf(S);delete d.eq[it.slot];S.items=d;save();sfx('swish');toast(`${it.name}을(를) 벗었어요.`);renderHub();});
 })();
 function shopAction(){
@@ -2464,7 +2467,6 @@ function shopAction(){
 function renderShop(){
   if(!$('#shopGrid'))return;
   const d=itemsOf(S),eq=d.eq;
-  $('#glShop').textContent=`보유 아이템 ${d.own.length}/${SHOP_ITEMS.length}개 · 모자·안경·테두리·이름 색`;
   document.querySelectorAll('#shopTabs [data-slot]').forEach(b=>b.classList.toggle('on',b.dataset.slot===shopSlot));
   const grid=$('#shopGrid');grid.textContent='';
   SHOP_ITEMS.filter(it=>it.slot===shopSlot).forEach(it=>{

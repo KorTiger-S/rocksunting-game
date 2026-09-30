@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기</title>
+<title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 승부</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.2.0">
+<link rel="stylesheet" href="css/style.css?v=2.2.1">
 </head>
 <body>
 <header class="board">
@@ -14,7 +14,7 @@
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
   </div>
 </header>
 
@@ -25,21 +25,15 @@
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
-      <div class="card grow"><span class="gi" aria-hidden="true">🛍</span><div><h2>상점 · 롹순팅 꾸미기</h2><p id="glShop"></p></div><button class="go alt gopen" data-card="shopCard">구경하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
       <h2>주스의 프리킥 도전장</h2>
       <div class="balls" id="balls" role="img"><span>⚽</span><span>⚽</span><span>⚽</span><span>⚽</span><span>⚽</span></div>
       <p id="ballNote"></p>
-      <div class="stepper">
-        <button class="go ghost" id="bMinus">-100</button>
-        <span class="amt" id="betV">1,000원</span>
-        <button class="go ghost" id="bPlus">+100</button>
-        <button class="go ghost" id="bBig">+500</button>
-      </div>
+      <p>판돈 없이 주스와 5킥 승부! 3골이면 승리, 4골이면 완승이에요. 점수는 랭킹의 "프리킥 최고점"에 올라가요.</p>
       <div class="acts">
-        <button class="go" id="acceptBtn">내기 받기</button>
+        <button class="go" id="acceptBtn">도전하기</button>
       </div>
     </div>
     <div class="card chall gdet" id="pumpCard" hidden>
@@ -117,7 +111,7 @@
       <p id="duNote"></p>
     </div>
     <div class="card chall gdet" id="shopCard" hidden>
-      <button class="linkbtn gback">← 게임 목록</button>
+      <button class="linkbtn gback">← 홈으로</button>
       <h2>상점 · 롹순팅 꾸미기</h2>
       <div class="shoptop">
         <div class="shopprev"><img class="shopava" id="shopAva" alt="입혀 본 모습"><b class="shopname" id="shopName"></b></div>
@@ -136,7 +130,7 @@
 
 <div id="gameWrap" hidden>
   <div class="gtop">
-    <h2>주스와 프리킥 5킥 내기</h2>
+    <h2>주스와 프리킥 5킥 승부</h2>
     <span class="ctrl" id="gCtrl"></span>
     <button class="go ghost" id="skip" hidden>대화 건너뛰기 (S)</button>
     <button class="go ghost" id="mute">효과음 끄기</button>
@@ -280,17 +274,15 @@
 <div class="ov ovfix" id="challengeInfo" hidden role="dialog" aria-labelledby="chT">
   <div class="card dialog">
     <h2 id="chT">주스의 프리킥 도전장</h2>
-    <p>축구부 에이스 주스가 골키퍼를 서는 5킥 내기예요.</p>
+    <p>축구부 에이스 주스가 골키퍼를 서는 5킥 승부예요. 판돈은 없어요.</p>
     <ul class="rules" style="text-align:left">
-      <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, 판돈을 그대로 받아요.</li>
-      <li><b>4골 이상</b>이면 완승! 주스가 판돈의 절반을 더 얹어 줘요.</li>
-      <li>지면 판돈은 주스의 크림빵 값이 돼요.</li>
+      <li>5킥 중 <b>3골</b> 이상이면 롹순팅 승리, <b>4골 이상</b>이면 완승!</li>
+      <li>골과 킥 솜씨로 점수를 얻어요. 가장 높은 점수가 랭킹의 <b>프리킥 최고점</b>이 돼요.</li>
       <li>킥 위치는 매번 달라져요. 처음엔 가깝고 점점 멀어지고, <b>마지막은 운명의 페널티킥</b>이에요!</li>
-      <li>주스는 <b>3,000원</b>까지만 받아 줘요.</li>
       <li>도전할 때마다 <b>⚽ 축구공</b>이 1개씩 사라져요. 최대 5개이고, <b>30분마다 1개</b>씩 다시 채워져요.</li>
     </ul>
     <p class="tip" id="chBetInfo" style="margin-top:0"></p>
-    <div class="btns"><button class="go" id="chStart">내기 시작</button><button class="go ghost" id="chClose">닫기</button></div>
+    <div class="btns"><button class="go" id="chStart">도전 시작</button><button class="go ghost" id="chClose">닫기</button></div>
   </div>
 </div>
 <div class="ov ovfix" id="wn" hidden role="dialog" aria-labelledby="wnT">
@@ -342,25 +334,25 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.2.0"></script>
-<script src="js/save.js?v=2.2.0"></script>
-<script src="js/cloud.js?v=2.2.0"></script>
-<script src="js/login.js?v=2.2.0"></script>
-<script src="js/rank.js?v=2.2.0"></script>
-<script src="js/audio.js?v=2.2.0"></script>
-<script src="js/input.js?v=2.2.0"></script>
-<script src="js/render.js?v=2.2.0"></script>
-<script src="js/kick-data.js?v=2.2.0"></script>
-<script src="js/kick.js?v=2.2.0"></script>
-<script src="js/hub.js?v=2.2.0"></script>
-<script src="js/shop.js?v=2.2.0"></script>
-<script src="js/splash.js?v=2.2.0"></script>
-<script src="js/duel.js?v=2.2.0"></script>
-<script src="js/pump-data.js?v=2.2.0"></script>
-<script src="js/pump.js?v=2.2.0"></script>
-<script src="js/jgintro.js?v=2.2.0"></script>
-<script src="js/lateintro.js?v=2.2.0"></script>
-<script src="js/main.js?v=2.2.0"></script>
+<script src="js/util.js?v=2.2.1"></script>
+<script src="js/save.js?v=2.2.1"></script>
+<script src="js/cloud.js?v=2.2.1"></script>
+<script src="js/login.js?v=2.2.1"></script>
+<script src="js/rank.js?v=2.2.1"></script>
+<script src="js/audio.js?v=2.2.1"></script>
+<script src="js/input.js?v=2.2.1"></script>
+<script src="js/render.js?v=2.2.1"></script>
+<script src="js/kick-data.js?v=2.2.1"></script>
+<script src="js/kick.js?v=2.2.1"></script>
+<script src="js/hub.js?v=2.2.1"></script>
+<script src="js/shop.js?v=2.2.1"></script>
+<script src="js/splash.js?v=2.2.1"></script>
+<script src="js/duel.js?v=2.2.1"></script>
+<script src="js/pump-data.js?v=2.2.1"></script>
+<script src="js/pump.js?v=2.2.1"></script>
+<script src="js/jgintro.js?v=2.2.1"></script>
+<script src="js/lateintro.js?v=2.2.1"></script>
+<script src="js/main.js?v=2.2.1"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

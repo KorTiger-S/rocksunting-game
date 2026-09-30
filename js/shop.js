@@ -104,6 +104,8 @@ function shopTry(){   /* 지금 장착한 것 + 고른 아이템을 입혀 본 �
   SHOP_SLOTS.forEach(s=>{const b=document.createElement('button');b.type='button';b.className='go ghost';b.dataset.slot=s.id;b.textContent=s.name;
     b.addEventListener('click',()=>{shopSlot=s.id;shopSel=null;renderShop();});tabs.appendChild(b);});
   $('#shopAct').addEventListener('click',shopAction);
+  /* 헤더의 🛍 꾸미기 버튼: 홈 화면에서 상점 카드를 열어요 */
+  $('#shopBtn').addEventListener('click',()=>{if(mode!=='hub'||!USER)return;shopSel=null;openHubCard('shopCard');renderShop();$('#shopCard').scrollIntoView({block:'start'});});
   $('#shopOff').addEventListener('click',()=>{const it=SHOP_BY[shopSel];if(!it)return;const d=itemsOf(S);delete d.eq[it.slot];S.items=d;save();sfx('swish');toast(`${it.name}을(를) 벗었어요.`);renderHub();});
 })();
 function shopAction(){
@@ -120,7 +122,6 @@ function shopAction(){
 function renderShop(){
   if(!$('#shopGrid'))return;
   const d=itemsOf(S),eq=d.eq;
-  $('#glShop').textContent=`보유 아이템 ${d.own.length}/${SHOP_ITEMS.length}개 · 모자·안경·테두리·이름 색`;
   document.querySelectorAll('#shopTabs [data-slot]').forEach(b=>b.classList.toggle('on',b.dataset.slot===shopSlot));
   const grid=$('#shopGrid');grid.textContent='';
   SHOP_ITEMS.filter(it=>it.slot===shopSlot).forEach(it=>{

@@ -49,7 +49,8 @@ function solve(ball,tx,ty,s,ys){
   }
   return v;
 }
-const BET_LO=1000,BET_HI=3000;   /* 이 도전(vs 주스)의 판돈 범위. 최소면 골키퍼가 아예 안 움직이고, 최대면 평소보다 더 날렵해져요 */
+const BET_LO=1000,BET_HI=3000;   /* 예전 판돈 범위(골키퍼 민첩성 계산용). 최소면 골키퍼가 아예 안 움직이고, 최대면 평소보다 더 날렵해져요 */
+const FREE_LEVEL=2000;            /* v2.2.1부터 프리킥은 판돈 없이 해요. 골키퍼는 예전 판돈 2,000원 수준(중간)으로 고정 */
 function applyBet(k,bet){
   const t=clamp(((bet==null?BET_LO:bet)-BET_LO)/(BET_HI-BET_LO),0,1);
   k.vk=(k.vk||4)*t*1.3;
@@ -57,7 +58,7 @@ function applyBet(k,bet){
 }
 function setupKick(i,ko){
   const k=ko||M.kicks[i];K=Object.assign({},k,{i});
-  applyBet(K,M&&M.bet);   /* 판돈이 클수록 골키퍼가 날렵해지고, 최소 판돈이면 아예 움직이지 않아요 */
+  applyBet(K,FREE_LEVEL);   /* 골키퍼 민첩성: 판돈 없이 중간 수준으로 고정 */
   K.ball={x:k.bx,y:.11,z:k.bz};
   const L=Math.hypot(k.bx,k.bz);K.L=L;
   K.dir={x:-k.bx/L,z:-k.bz/L};K.right={x:K.dir.z,z:-K.dir.x};
@@ -187,30 +188,30 @@ function drawCut(c){
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const RK=(text,face)=>({who:'rock',face:face||'angry',text});
 const INTRO_A=[
- bet=>({bg:'hall',chars:[{id:'rock',x:200,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'씨붕',x:700,y:318,s:1.7},{id:'머호',x:80,y:318,s:1.7,flip:true}],lines:[
+ ()=>({bg:'hall',chars:[{id:'rock',x:200,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'씨붕',x:700,y:318,s:1.7},{id:'머호',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'주스',text:'롹순팅. 쉬는 시간에 킥 다섯 번 어때? 프리킥 네 번에 마지막은 페널티킥이다. 세 골 넣으면 네 승! 난 한 손가락만 써도 막아.'},
   {who:'씨붕',text:'야, 쫄았냐? 인마 그럴수록 세게 걸어야지! …아니, 딱히 걱정돼서 하는 말 아니거든.'},
   {who:'머호',text:'세상은 어차피 다 5할이야! 이길 수도 질 수도 있지~'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원이라. 좋아. 지면 깨물어버린다!`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'주멘',x:690,y:318,s:1.7},{id:'히통',x:80,y:318,s:1.7,flip:true}],lines:[
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 지면 깨물어버린다!'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'주멘',x:690,y:318,s:1.7},{id:'히통',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'주스',text:'롹순팅, 오늘 킥 한 판 하자. 한 손가락만 써서 막아 줄게. 깨물어버린다!'},
   {who:'주멘',text:'이 내기, 오늘 일정표에 이미 있었어. 전부 계획대로야.'},
-  {who:'히통',text:'판돈 없으면 빌려줄게. 이자는 10%.'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원 접수. 후회하지 마라.`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'겨맘',x:690,y:318,s:1.7},{id:'ㅈㄱ',x:80,y:318,s:1.7,flip:true}],lines:[
+  {who:'히통',text:'지면 위로 삼아 크림빵 값 빌려줄게. 이자는 10%.'},
+  RK('…롹.'),
+  {who:'주스',text:'도전 접수. 후회하지 마라.'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'겨맘',x:690,y:318,s:1.7},{id:'ㅈㄱ',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'겨맘',text:'자세 봐봐, 내가 어제 알려준 킥 폼 그대로네? 다치지 말고 화이팅!'},
   {who:'주스',text:'축구는 내 자존심이야. 세 골이면 네 승. 한 손가락이면 충분하지만.'},
   {who:'ㅈㄱ',text:'…이건 파이리급 승부야.'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원. 좋아. 깨물어버린다!`}]}),
- bet=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'현숭',x:690,y:318,s:1.7},{id:'호우',x:80,y:318,s:1.7,flip:true}],lines:[
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 깨물어버린다!'}]}),
+ ()=>({bg:'hall',chars:[{id:'rock',x:190,y:340,s:2.5},{id:'주스',x:560,y:340,s:2.5,arms:'cross'},{id:'현숭',x:690,y:318,s:1.7},{id:'호우',x:80,y:318,s:1.7,flip:true}],lines:[
   {who:'현숭',text:'진지하게 계산해봤는데, 5킥 중 3골이면 승리, 4골이면 완승이야. 근거는… 딱히 없어.'},
   {who:'호우',text:'킥도 노래처럼 박자가 중요해~ 골대가 골 때리게 만들어 봐, 응?'},
   {who:'주스',text:'설명 끝났으면 시작하자. 난 한 손가락이면 돼. 깨물어버린다!'},
-  RK(`…롹. (판돈 ${fmt(bet)}원)`),
-  {who:'주스',text:`${fmt(bet)}원 확인. 골대는 내가 지킨다.`}]})
+  RK('…롹.'),
+  {who:'주스',text:'좋아. 골대는 내가 지킨다.'}]})
 ];
 const INTRO_B=[
  ()=>({bg:'field',chars:[{id:'rock',x:180,y:350,s:2.4,face:'resolve'},{id:'주스',x:660,y:300,s:1.6},{id:'겨맘',x:330,y:312,s:1.6},{id:'히통',x:470,y:318,s:1.6},{id:'주멘',x:560,y:312,s:1.5}],lines:[
@@ -241,27 +242,27 @@ const INTRO_B=[
   {who:'주멘',text:'A안, B안, C안 다 준비했어. 전부 계획대로야.'},
   {who:'주스',text:'시작하자! 한 손가락이면 돼.'}]})
 ];
-const payLine=(big,bet,bonus)=>big?`…인정. 한 손가락으론 무리였네. 자존심 값으로 ${fmt(bonus)}원 더 얹어 줄게.`:`…한 손가락만 썼으면 막았는데! ${fmt(bet)}원, 가져가. 깨물어버린다!`;
+const payLine=big=>big?'…인정. 한 손가락으론 무리였네. 완승이다. 다음엔 두 손가락 쓴다!':'…한 손가락만 썼으면 막았는데! 이번 판은 네 승이다. 깨물어버린다!';
 const WIN_CUTS=[
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'주멘',x:210,y:330,s:1.9,arms:'up'},{id:'씨붕',x:300,y:322,s:1.7,arms:'up'},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'주멘',x:210,y:330,s:1.9,arms:'up'},{id:'씨붕',x:300,y:322,s:1.7,arms:'up'},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'주멘',text:'롹순팅이 이기는 것까지 전부 계획대로였어. …아마도.'},
   {who:'겨맘',text:'거봐, 내가 알려준 자세 그대로 넣었잖아! 오늘 저녁은 내가 쏜다!'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'씨붕',x:210,y:330,s:1.9,arms:'up'},{id:'머호',x:300,y:322,s:1.7,arms:'up'},{id:'히통',x:520,y:322,s:1.7}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'씨붕',x:210,y:330,s:1.9,arms:'up'},{id:'머호',x:300,y:322,s:1.7,arms:'up'},{id:'히통',x:520,y:322,s:1.7}],lines:[
   {who:'씨붕',text:'거봐, 내가 될 줄 알았다니까! …아니, 몰랐어. 그냥 잘했다고, 인마.'},
   {who:'머호',text:'세상은 어차피 다 5할인데, 오늘은 롹순팅 쪽이 컸네!'},
   {who:'히통',text:'이자 없이 축하해 줄게. 오늘만이야.'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'ㅈㄱ',x:210,y:330,s:1.9},{id:'현숭',x:300,y:322,s:1.7},{id:'호우',x:520,y:322,s:1.7,arms:'up'}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'ㅈㄱ',x:210,y:330,s:1.9},{id:'현숭',x:300,y:322,s:1.7},{id:'호우',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'ㅈㄱ',text:'…메가진화급이었어.'},
   {who:'현숭',text:'진지하게 계산해봤는데, 이건 다 내 응원 덕분이야. 근거는 없어.'},
   {who:'호우',text:'축하해~ 오늘 골 소리는 완전 솔! 솔직히 대박이야.'},
-  {who:'주스',text:payLine(big,bet,bonus)}]}),
- (big,bet,bonus)=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'우룡',x:210,y:330,s:1.9},{id:'룡갈',x:300,y:322,s:1.7},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
+  {who:'주스',text:payLine(big)}]}),
+ big=>({bg:'field',confetti:true,chars:[{id:'rock',x:400,y:345,s:2.6,face:'excited',arms:'up',lift:22},{id:'주스',x:640,y:340,s:2.2,arms:'cross'},{id:'우룡',x:210,y:330,s:1.9},{id:'룡갈',x:300,y:322,s:1.7},{id:'겨맘',x:520,y:322,s:1.7,arms:'up'}],lines:[
   {who:'우룡',text:'벽 사업 적자다… 에라 모르겠다, 다음 판에 만회하지!'},
   {who:'룡갈',text:'헐, 뚫렸다! …근데 그 표정 보니까 앙 기모띠, 봐준다.'},
   {who:'겨맘',text:'롹순팅 최고~! 완전 국대급 킥이었어!'},
-  {who:'주스',text:payLine(big,bet,bonus)}]})
+  {who:'주스',text:payLine(big)}]})
 ];
 const LOSE_CUTS=[
  ()=>({bg:'canteen',chars:[{id:'rock',x:250,y:340,s:2.5,face:'frustrated'},{id:'주스',x:570,y:340,s:2.5,item:'bread'},{id:'히통',x:410,y:262,s:1.5},{id:'머호',x:100,y:320,s:1.5}],lines:[
@@ -286,19 +287,19 @@ const LOSE_CUTS=[
   {who:'우룡',text:'이 판은 손절이다… 에라 모르겠다, 주스나 스카우트하자.'},
   {who:'주스',text:'이제 키퍼만 해라? 좋지! 앙!'}]})
 ];
-function introA(bet){return pick(INTRO_A)(bet);}
+function introA(){return pick(INTRO_A)();}
 function introB(){return pick(INTRO_B)();}
-function finalCut(win,big,bet,bonus){return win?pick(WIN_CUTS)(big,bet,bonus):pick(LOSE_CUTS)();}
+function finalCut(win,big){return win?pick(WIN_CUTS)(big):pick(LOSE_CUTS)();}
 const SPECT=[{n:'주멘',x:-8.5,z:-2},{n:'머호',x:-7.2,z:-3.5},{n:'히통',x:8.5,z:-2},{n:'겨맘',x:7.2,z:-3.5},{n:'ㅈㄱ',x:11.5,z:-6}];
 const REACT={
  주멘:{goal:['계획대로다!','이 골도 일정표에 있었어.','A안 성공! 전부 계획대로야.'],save:['예상 범위 안이야.','B안으로 전환한다.','…변수 발생. 계획 수정!'],post:['골대 확률 3%였는데?!','오차 5센티야, 아깝다!','계획엔 없던 골대야…'],wall:['벽 튕김 확률까지 계산했어.','예상했던 결과야.','ㅋㅋㅋ 계획대로 벽.'],miss:['오차 범위 초과…','다음 킥 만회 계획을 짜자.','계획 재수립 중…']},
  머호:{goal:['미쳤다! 5할이 뒤집혔네~','세상은 5할이라더니 오늘은 롹순팅 쪽!','오~ 5할 중 좋은 쪽이 나왔다!'],save:['세상은 어차피 다 5할이야!','반반인데 저쪽이 나왔네~','그래도 5할은 5할이지.'],post:['아깝다~ 이것도 5할이야!','골대! 반대쪽 5할이 나왔네!'],wall:['세상은 어차피 다 5할이야!','벽 5할, 골 5할~'],miss:['세상은 5할이야!','다음 킥이 5할 남았잖아~','빗나갈 확률도 5할이었어!']},
- 히통:{goal:['골이면 판돈 회수네. 이자는 10%.','롹순팅 신용등급 상승!','이건 돈 빌려도 되는 골!'],save:['주스 키퍼 재능있네.','지면 빌려줄게. 이자는 10%.','아~ 판돈이 내 창구로 올 텐데.'],post:['이자율 5%만큼 빗나갔네.','한 뼘 차이 아깝다!'],wall:['벽에 맞은 판돈은 이자로 간다.','내 이자 계산이 더 빠르다.'],miss:['이 킥은 대손처리네…','손실 10% 확정.','담보라도 잡고 차자.']},
+ 히통:{goal:['골이면 신용등급 상승이지. 이자는 10%.','롹순팅 신용등급 상승!','이건 돈 빌려도 되는 골!'],save:['주스 키퍼 재능있네.','지면 빌려줄게. 이자는 10%.','아~ 크림빵 값이 내 창구로 올 텐데.'],post:['이자율 5%만큼 빗나갔네.','한 뼘 차이 아깝다!'],wall:['벽에 맞은 공도 이자로 간다.','내 이자 계산이 더 빠르다.'],miss:['이 킥은 대손처리네…','손실 10% 확정.','담보라도 잡고 차자.']},
  겨맘:{goal:['거봐, 그 자세가 정답이라니까!','완벽한 슛! 나도 그렇게 넣어~','국가대표급 킥이야, 진짜!'],save:['괜찮아~ 발끝 각도만 조금 더!','아깝다! 폼은 좋았어~','힘내, 다음 건 내가 봐줄게!'],post:['한 끗 차이! 소금 한 꼬집 부족한 느낌?','앗, 진짜 아까웠어~'],wall:['괜찮아, 저 벽은 나도 못 뚫어!','다치지 않았지? 다시 하자!'],miss:['괜찮아 괜찮아~ 밥부터 든든히 먹자!','자세 교정만 조금 하면 돼!','다음 킥 응원할게~']},
  ㅈㄱ:{goal:['피카피카!','…메가진화급.','…(파이리 카드를 번쩍 든다)'],save:['고라파덕…','…파이리가 불을 뿜었어야 했는데.','…(잠만보처럼 멍하니 본다)'],post:['…이상해씨급으로 아깝다.','…(꼬부기 카드를 만지작)'],wall:['…벽이 강철이야.','…롱스톤 같아.'],miss:['…이건 잠만보야.','…버터플처럼 날아갔네.']},
  우룡:{goal:['헉, 뚫렸다! …에라 모르겠다, 다음 판에 만회하지.','벽 사업 적자다…'],wall:['역시 내 벽 투자는 실패가 없어.','룡갈, 오늘 수익률 좋다!'],save:['주스가 다 했네. 난 숟가락만 얹었다.'],miss:['거봐, 승률 계산 끝났다니까.']},
  룡갈:{goal:['헐, 뚫렸다! 앙 기모띠, 그래도 인정.','콤비의 수치…! 근데 나쁘지 않네.'],wall:['막았다! 앙 기모띠~','거 봐, 내가 막는다고 했지.'],save:['주스가 다 했지, 난 구경만 했다.'],miss:['거 봐, 안 들어간다고 했지. 앙 기모띠!']},
- 씨붕:{goal:['아 진짜 아깝게 놓쳤네! …아니 됐고, 판돈이나 계산하자.','인마 다음엔 더 세게 걸어야지!'],wall:['거봐 내가 뭐랬어. …그래도 잘 찼어, 인마.','내가 막았다! …아니 주스가.'],save:['아이씨, 아깝잖아! …괜찮아, 다음에 넣어.'],miss:['야 인마 정신 안 차려?! …됐고, 다음 거나 잘 차.']},
+ 씨붕:{goal:['아 진짜 아깝게 놓쳤네! …아니 됐고, 크림빵이나 사러 가자.','인마 다음엔 더 세게 걸어야지!'],wall:['거봐 내가 뭐랬어. …그래도 잘 찼어, 인마.','내가 막았다! …아니 주스가.'],save:['아이씨, 아깝잖아! …괜찮아, 다음에 넣어.'],miss:['야 인마 정신 안 차려?! …됐고, 다음 거나 잘 차.']},
  현숭:{goal:['역시… 내 계산대로군. (계산 안 함)','진지하게 말하는데, 저건 우연이 아니야.'],wall:['벽의 밀도를 고려하면 합리적인 결과지.','통계적으로 예정된 결과였어. (안 그랬음)'],save:['음. 확률상 예상된 결과다. (예상 안 함)'],miss:['흠, 지구 자전 때문이야. 아마.']},
  호우:{goal:['골이 야옹~ 아니 골인~!','좋은 리듬이야! (박수)'],wall:['벽이 이겼다… 벽(壁)창호네.'],save:['아깝다! 오늘 주스가 완전 주스타야.'],miss:['빗나갔네. 오늘 리듬감이 좀 음이탈났나 봐.']}
 };
@@ -322,21 +323,18 @@ let chatCur=randChat();
 /* ---------- 매치 흐름 ---------- */
 let quitAsk=0;
 function showGame(g){$('#hub').hidden=g;$('#gameWrap').hidden=!g;$('#pad').classList.toggle('on',g);document.body.classList.toggle('playing',g);window.scrollTo(0,0);}
-function startMatch(bet){
+function startMatch(){
   sfx('start');
-  bet=Math.min(bet,S.money);
-  M={bet,goals:0,pts:0,res:[],before:S.money,kicks:buildKicks()};
-  /* 판돈을 걸자마자 소지금에서 빼고 저장해요. 이렇게 안 하면, 지고 있을 때 새로고침해서
-     아직 반영 안 된 판돈을 그대로 되돌리는 부정행위가 가능해져요(정산은 원래 대결이 끝날 때만 했어요). */
-  S.money-=bet;save();
+  M={bet:0,goals:0,pts:0,res:[],before:S.money,kicks:buildKicks()};   /* 판돈 없음(v2.2.1~): 소지금은 그대로예요 */
+  save();   /* 축구공을 쓴 것을 바로 저장해요 */
   showGame(true);$('#ovSet').hidden=true;pressed={};mouse.click=false;
-  playCut(introA(bet),()=>playCut(introB(),()=>startKick(0)));
+  playCut(introA(),()=>playCut(introB(),()=>startKick(0)));
 }
 function startKick(i){sfx('whistle');setupKick(i);M.k=i;mode='kick';pressed={};mouse.click=false;$('#gCtrl').textContent='조준 → 공 맞힐 위치 → 파워';}
 function askQuit(){
   const now=performance.now();
   if(now-quitAsk<3000){forfeit();return;}
-  quitAsk=now;toast('한 번 더 누르면 포기해요. 판돈은 잃어요.');
+  quitAsk=now;toast('한 번 더 누르면 포기해요. 이번 판은 패배로 기록돼요.');
 }
 function forfeit(){
   if(mode==='hub'||mode==='settle')return;
@@ -344,16 +342,14 @@ function forfeit(){
 }
 function nextKick(){
   if(K.i>=4){
-    const win=M.goals>=3,big=M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
-    M.win=win;M.big=big;M.bonus=bonus;
-    playCut(finalCut(win,big,M.bet,bonus),settle);
+    const win=M.goals>=3,big=M.goals>=4;
+    M.win=win;M.big=big;
+    playCut(finalCut(win,big),settle);
   }else startKick(K.i+1);
 }
 function settle(){
   mode='settle';
-  const win=M.forfeit?false:M.goals>=3,big=!M.forfeit&&M.goals>=4,bonus=Math.round(M.bet*.5/100)*100;
-  const delta=win?2*M.bet+(big?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+완승 보너스)만 더해요 */
-  S.money=Math.max(0,S.money+delta);
+  const win=M.forfeit?false:M.goals>=3,big=!M.forfeit&&M.goals>=4;
   if(win)S.wins++;else S.losses++;
   S.bestPts=Math.max(S.bestPts||0,M.pts||0);S.plays=(S.plays||0)+1;
   sfx(M.forfeit?'lose':big?'bigwin':win?'win':'lose');
@@ -363,8 +359,7 @@ function settle(){
   $('#sT').textContent=M.forfeit?'포기…':big?'완승!':win?'승리!':'패배…';
   setFace($('#sImg'),big?'excited':win?'happy':'frustrated');
   $('#sTab').innerHTML=`<tr><td>결과</td><td>${M.goals}골 / 5킥</td></tr><tr><td>점수</td><td>${M.pts}점</td></tr>`+
-    `<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(M.bet)}원</td></tr>`+(big?`<tr><td>완승 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
-    `<tr><td>소지금</td><td>${fmt(M.before)} → ${fmt(S.money)}원</td></tr>`;
+    `<tr><td>프리킥 최고점</td><td>${fmt(S.bestPts||0)}점</td></tr>`;
   $('#ovSet').hidden=false;
 }
 /* ---------- 킥 업데이트 ---------- */
@@ -711,7 +706,7 @@ function drawParticles(c){
 function drawKick(c){
   if(padBackBtn)padBackBtn.classList.toggle('show',K.ph==='spin'||K.ph==='power');
   c.save();if(K.shake>0)c.translate(rand(-5,5),rand(-4,4));drawField(c);c.restore();
-  hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`판돈 ${fmt(M.bet)}원`);
+  hudBar(c,'주스 vs 롹순팅',`${K.i+1}/5킥 · ${K.label}`,`${M.goals}골 · ${fmt(M.pts)}점`);
   for(let i=0;i<5;i++){const r=M.res[i],x=26+i*30;
     c.fillStyle=r?(r.type==='goal'?'#2f8f5b':r.type==='post'?'#e8a91c':'#e2334d'):'#dfe4ee';c.beginPath();c.arc(x,68,11,0,7);c.fill();
     c.lineWidth=i===K.i?4:2;c.strokeStyle=i===K.i?'#fff':'#232a45';c.stroke();if(r&&r.type==='goal')TX(c,'✓',x,69,14,'#fff','center');}

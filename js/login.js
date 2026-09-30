@@ -109,6 +109,11 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '2.2.1':{sub:'프리킥은 판돈 없이, 꾸미기는 더 가까이',items:[
+    '⚽ 주스의 프리킥 도전장은 이제 판돈 없이 해요. 축구공만 있으면 도전! 점수는 랭킹의 "프리킥 최고점"에 올라가요.',
+    '🛍 롹순팅 꾸미기 상점은 화면 위쪽 "🛍 꾸미기" 버튼으로 바로 열어요.',
+    '📜 업데이트 소식을 놓쳤다면, 마지막으로 본 소식 다음 것부터 차례대로 보여 줘요.'
+  ]},
   '2.2.0':{sub:'시즌2 우승은 펌프 최고점으로! 🏆',items:[
     '🏆 시즌2 우승·준우승은 펌프 최고점으로 정해요. 랭킹은 펌프 최고점 탭부터 보이고, 승리 탭은 없어졌어요.',
     '🛍 상점에서 꾸며도 시즌 순위에는 영향이 없어요. 마음껏 꾸며 보세요!',
@@ -186,15 +191,32 @@ const RELEASE_NOTES={
   ]}
 };
 const seenKey=()=>'rk:seen:'+(USER?USER.id.toLowerCase():'');
+/* 업데이트 내역은 v2.0.0부터 누적해서 보여줘요: 마지막으로 읽은 버전(rk:seen:ID) 다음 것부터 지금 버전까지,
+   오래된 버전부터 한 장씩. "확인"을 누르면 그 버전까지 읽은 걸로 기억하고 다음 버전을 띄워요. */
+const NOTES_FROM='2.0.0';
+const verCmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;};
+let NOTE_Q=[],NOTE_CUR=null,NOTE_N=0;
 function maybeShowNotes(isNew){
-  const n=RELEASE_NOTES[APP_VERSION];if(!n||!USER)return;
-  if(lsGet(seenKey())===APP_VERSION)return;
+  if(!USER)return;
   if(isNew){lsSet(seenKey(),APP_VERSION);return;}   /* 처음 가입한 사람에게는 "바뀐 점"이 없어요 */
-  $('#wnT').textContent='🎉 업데이트 v'+APP_VERSION;$('#wnSub').textContent=n.sub||'';
-  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
-  $('#wn').hidden=false;sfx('chime');setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+  const seen=lsGet(seenKey()),from=/^\d+\.\d+\.\d+$/.test(seen||'')&&verCmp(seen,NOTES_FROM)>=0?seen:null;   /* 2.0.0보다 전에 읽었으면 2.0.0부터 */
+  NOTE_Q=Object.keys(RELEASE_NOTES).filter(v=>verCmp(v,NOTES_FROM)>=0&&verCmp(v,APP_VERSION)<=0&&(!from||verCmp(v,from)>0)).sort(verCmp);
+  NOTE_N=NOTE_Q.length;
+  if(NOTE_N)showNextNote();
 }
-function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);maybeLoan();}
+function showNextNote(){
+  NOTE_CUR=NOTE_Q.shift();const n=RELEASE_NOTES[NOTE_CUR];
+  $('#wnT').textContent='🎉 업데이트 v'+NOTE_CUR+(NOTE_N>1?` (${NOTE_N-NOTE_Q.length}/${NOTE_N})`:'');$('#wnSub').textContent=n.sub||'';
+  const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+  $('#wnOk').textContent=NOTE_Q.length?'다음 업데이트 보기':'확인';
+  $('#wn').hidden=false;sfx(NOTE_N-NOTE_Q.length>1?'page':'chime');setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
+}
+function closeNotes(){
+  if(USER&&NOTE_CUR)lsSet(seenKey(),NOTE_CUR);   /* 여기까지 읽었어요 (중간에 창을 닫아도 다음엔 그다음 버전부터) */
+  if(NOTE_Q.length){showNextNote();return;}
+  if(USER)lsSet(seenKey(),APP_VERSION);
+  NOTE_CUR=null;$('#wn').hidden=true;maybeLoan();
+}
 $('#wnOk').addEventListener('click',closeNotes);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value,$('#lgPin2').value);
