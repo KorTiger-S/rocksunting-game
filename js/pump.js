@@ -135,14 +135,21 @@ const pgClock=()=>AC?AC.currentTime:performance.now()/1000;   /* 소리를 예�
 /* 지금 스피커에서 실제로 들리는 곡의 위치(컨텍스트 시간).
    브라우저가 outputLatency를 0으로 잘못 알려 주는 경우가 많아서, 추측하지 않고 getOutputTimestamp()가 알려 주는
    "지금 나오고 있는 샘플"을 기준으로 삼아요. 이 시계로 노트 위치·판정을 계산하니 소리와 노트가 맞아요.
-   값이 이상하거나 지원 안 하는 브라우저는 currentTime에서 알려진 지연만큼 뺀 값을 써요. */
+   값이 이상하거나 지원 안 하는 브라우저는 currentTime에서 알려진 지연만큼 뺀 값을 써요.
+   ⚠ 휴대폰에서 오디오가 잠깐 멈췄다 돌아오면(공유창·앱 전환·오디오 끊김) 타임스탬프가 옛날 값에 멈춰 있는데,
+     "그때부터 흐른 시간"을 더하면 곡 위치가 몇 초 앞으로 튀어요(카운트다운 없이 노트가 쏟아지고 F로 끝나던 버그).
+     그래서 들리는 위치는 currentTime보다 앞설 수 없고 0.6초보다 더 뒤처질 수도 없게 확인해요. */
 function pgHeard(){
   if(!AC)return performance.now()/1000;
+  const cur=AC.currentTime;
   try{
-    const ts=AC.getOutputTimestamp(),lag=AC.currentTime-ts.contextTime;
-    if(ts.contextTime>0&&ts.performanceTime>0&&lag>=0&&lag<.6)return ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+    const ts=AC.getOutputTimestamp(),lag=cur-ts.contextTime;
+    if(AC.state==='running'&&ts.contextTime>0&&ts.performanceTime>0&&lag>=0&&lag<.6){
+      const h=ts.contextTime+(performance.now()-ts.performanceTime)/1000;
+      if(h<=cur+.02&&h>=cur-.6)return h;
+    }
   }catch(e){}
-  return AC.currentTime-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
+  return cur-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
 }
 const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
@@ -328,7 +335,13 @@ function pgUpdate(){
     return;
   }
   if(g.state==='end')return;
-  const now=pgNow();
+  let now=pgNow();
+  /* 안전장치: 곡 시계는 실제 시간보다 빨리 갈 수 없어요. 1초 넘게 앞으로 튀면(오디오 시계 오류) 그만큼 시작 시각과
+     곡 예약 위치를 함께 뒤로 밀어서, 노트가 한꺼번에 지나가 MISS가 쏟아지지 않게 해요. (pgHeard의 보정 폭은 0.6초라 평소엔 안 걸려요)
+     멈춰 있다 풀리는 건(시계가 덜 가는 쪽) 그대로 둬요. */
+  const pn=performance.now();
+  if(g.lastPn){const jump=(now-g.lastNow)-(pn-g.lastPn)/1000;if(jump>1){g.t0+=jump;g.nextT+=jump;now-=jump;}}
+  g.lastNow=now;g.lastPn=pn;
   if(now<0){const n=Math.ceil(-now);if(n<=3&&n!==g.cd){g.cd=n;sfx('pgcount',n===1?880:660);}}
   else if(!g.go){g.go=true;sfx('pggo');}
   if(g.state==='count'&&now>=-g.W.bad)g.state='play';
