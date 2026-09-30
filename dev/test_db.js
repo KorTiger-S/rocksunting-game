@@ -184,6 +184,18 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await db.exec('reset role');
   const keys = (await db.query('select season_key from public.rk_seasons')).rows.map(x => x.season_key);
   ok(cl2.closed && cl2.next.number === 3 && new Set(keys).size === 2 && ![...keys].includes(cl2.next.key), '연속 마감해도 시즌 이름이 겹치지 않음');
+  // 다음 시즌 설정(next_season): 이름·게임·마감일을 미리 정해 두면 마감 때 그대로 쓰고 지운다
+  const farEnd = new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 19) + 'Z';
+  await db.query(`insert into public.rk_config (key, value) values ('next_season', $1::jsonb) on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify({ key: '2099-01', game: 'pump', game_name: '소리새 펌프', ends_at: farEnd })]);
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  await db.exec('set role service_role');
+  const cl3 = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  await db.exec('reset role');
+  ok(cl3.closed && cl3.season.gameName === '프리킥 축구' && cl3.next.key === '2099-01' && cl3.next.game === 'pump' && cl3.next.gameName === '소리새 펌프' && cl3.next.endsAt === farEnd,
+    'next_season으로 다음 시즌 이름·게임·마감일을 정할 수 있고, 마감된 시즌 기록은 원래 이름 그대로');
+  ok((await db.query(`select 1 from public.rk_config where key = 'next_season'`)).rows.length === 0 && (await load('철수')).season === '2099-01', 'next_season은 한 번 쓰면 지워지고 플레이어도 새 시즌 키로 바뀜');
+  ok((await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r.closed === false, '새 시즌은 정한 마감일 전까지 닫히지 않음(바로 다시 마감되지 않음)');
   bd = await rpc('badges', { id: cl2.players[0].id });
   ok(bd.list.some(b => b.number === 2 && b.rank === 1) && bd.list.every((b, i, a) => !i || a[i - 1].number <= b.number), '시즌마다 뱃지가 쌓이고 시즌 순으로 나옴');
 
@@ -216,7 +228,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     const files = fs.readdirSync(outDir);
     ok(!x.err && files.some(f => f.endsWith('.md')) && files.some(f => f.endsWith('.csv')) && files.includes('issue.md'), '마감일이 지나면 스크립트가 보고서 파일을 만듦');
     const md = fs.readFileSync(path.join(outDir, files.find(f => f.endsWith('.md') && f !== 'issue.md')), 'utf8');
-    ok(md.includes('시즌3'), '스크립트가 만든 보고서가 3번째 시즌 마감 결과');
+    ok(md.includes('시즌4'), '스크립트가 만든 보고서가 4번째 시즌 마감 결과 (앞에서 3번 마감함)');
     x = await run({ REPORT_KEY: SEASON });
     ok(!x.err && x.so.includes(`${SEASON}_season1_football`), '이미 마감된 시즌의 보고서를 다시 만들 수 있음');
     x = await run({ SUPABASE_SERVICE_KEY: '' });

@@ -310,12 +310,18 @@ end $$;
 
 -- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
 -- 마감 시: 랭킹 스냅샷을 rk_seasons에 저장 → 모든 플레이어 기록 초기화 → 다음 시즌 시작.
+-- 다음 시즌 설정(선택): rk_config 'next_season'에 넣어 두면 마감 때 그 값으로 시작하고 지운다. 없는 항목은 이번 시즌 값/자동 계산.
+--   insert into public.rk_config (key, value) values ('next_season',
+--     '{"key":"2026-10","game":"pump","game_name":"소리새 펌프","ends_at":"2026-10-31T15:00:00Z"}')
+--   on conflict (key) do update set value = excluded.value;
 create or replace function public.rk_close_season(p jsonb default '{}') returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
 declare
-  cfg jsonb; ends timestamptz; players jsonb; mc int; nxt_key text; nxt_ends timestamptz; i int := 1; nowms bigint;
+  cfg jsonb; nx jsonb; ends timestamptz; players jsonb; mc int; nxt_key text; nxt_ends timestamptz; i int := 1; nowms bigint;
 begin
   select value into cfg from public.rk_config where key = 'season' for update;
+  select value into nx from public.rk_config where key = 'next_season';
+  nx := coalesce(nx, '{}'::jsonb);
   ends := (cfg->>'ends_at')::timestamptz;
   if now() < ends then return jsonb_build_object('ok', true, 'closed', false, 'endsAt', cfg->>'ends_at'); end if;
 
@@ -330,19 +336,24 @@ begin
           jsonb_array_length(players), mc,
           jsonb_build_object('players', players, 'matchCount', mc));
 
-  -- 다음 시즌: 마감 시각이 속한 달(한국 시간)의 이름. 이미 쓴 이름이면 -2, -3 … 을 붙인다.
-  nxt_key := to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM');
+  -- 다음 시즌 이름: next_season.key(안 쓴 이름일 때) 또는 마감 시각이 속한 달(한국 시간). 이미 쓴 이름이면 -2, -3 … 을 붙인다.
+  nxt_key := coalesce(nullif(btrim(nx->>'key'), ''), to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM'));
   while exists (select 1 from public.rk_seasons where season_key = nxt_key) or nxt_key = cfg->>'key' loop
-    i := i + 1; nxt_key := to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM') || '-' || i;
+    i := i + 1; nxt_key := coalesce(nullif(btrim(nx->>'key'), ''), to_char(ends at time zone 'Asia/Seoul', 'YYYY-MM')) || '-' || i;
   end loop;
-  nxt_ends := (date_trunc('month', ends at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul';
-  if nxt_ends <= now() then nxt_ends := (date_trunc('month', now() at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul'; end if;
+  -- 다음 시즌 마감: next_season.ends_at(지금보다 뒤일 때) 또는 마감 시각이 속한 달의 다음 달 1일 0시(한국 시간)
+  begin nxt_ends := (nx->>'ends_at')::timestamptz; exception when others then nxt_ends := null; end;
+  if nxt_ends is null or nxt_ends <= now() then
+    nxt_ends := (date_trunc('month', ends at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul';
+    if nxt_ends <= now() then nxt_ends := (date_trunc('month', now() at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul'; end if;
+  end if;
 
   update public.rk_config set value = jsonb_build_object('key', nxt_key, 'number', (cfg->>'number')::int + 1,
-      'game', cfg->>'game', 'game_name', cfg->>'game_name',
+      'game', coalesce(nullif(nx->>'game', ''), cfg->>'game'), 'game_name', coalesce(nullif(nx->>'game_name', ''), cfg->>'game_name'),
       'started_at', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
       'ends_at', to_char(nxt_ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
   where key = 'season';
+  delete from public.rk_config where key = 'next_season';   -- 한 번 쓰면 지운다
 
   nowms := (extract(epoch from now()) * 1000)::bigint;
   update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
