@@ -24,18 +24,11 @@ function goLoginForm(m){
   setLgMode(m||'login');lgStep('main');
   setTimeout(()=>{try{($('#lgId').value?$('#lgPin'):$('#lgId')).focus();}catch(e){}},30);
 }
-function enterGuest(){
-  USER={id:'Guest',guest:true};S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;
-  $('#login').hidden=true;mode='hub';
-  renderHub();updateUserChip();setSync('idle');
-  sfx('chime');toast('Guest로 시작해요. 기록은 저장되지 않아요.');
-  maybeShowNotes(false);maybeLoan();
-}
 async function startLogin(raw,rawPin,rawPin2){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
   const pin=String(rawPin||'').trim();
   if(!ID_RE.test(id)){$('#lgMsg').textContent='ID는 2~12자, 한글·영문·숫자·_ 만 쓸 수 있어요.';return;}
-  if(/^(guest|게스트)$/i.test(id)){$('#lgMsg').textContent='이 ID는 쓸 수 없어요. (Guest는 따로 시작할 수 있어요)';return;}
+  if(/^(guest|게스트)$/i.test(id)){$('#lgMsg').textContent='이 ID는 쓸 수 없어요.';return;}
   if(!PIN_RE.test(pin)){$('#lgMsg').textContent='비밀번호는 숫자 4자리로 입력해 주세요.';return;}
   if(LGMODE==='signup'&&pin!==String(rawPin2||'').trim()){$('#lgMsg').textContent='비밀번호 확인이 맞지 않아요. 같은 숫자 4자리를 두 번 넣어 주세요.';$('#lgPin2').value='';try{$('#lgPin2').focus();}catch(e){}return;}
   LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false,mode:LGMODE};
@@ -96,8 +89,8 @@ function enter(name,data,at,news,isNew){
   maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){
-  $('#hUser').textContent=USER?(USER.guest?'👤 Guest (저장 안 됨)':`👤 ${USER.id}`):'';
-  const pb=$('#pinBtn');if(pb)pb.disabled=!USER||USER.guest;
+  $('#hUser').textContent=USER?`👤 ${USER.id}`:'';
+  const pb=$('#pinBtn');if(pb)pb.disabled=!USER;
 }
 async function logout(){
   if(mode!=='hub')return;
@@ -169,7 +162,7 @@ const RELEASE_NOTES={
     '🏫 시작 화면에 롹순팅이 등교하는 애니메이션이 생겼어요.'
   ]}
 };
-const seenKey=()=>'rk:seen:'+(USER&&!USER.guest?USER.id.toLowerCase():'guest');
+const seenKey=()=>'rk:seen:'+(USER?USER.id.toLowerCase():'');
 function maybeShowNotes(isNew){
   const n=RELEASE_NOTES[APP_VERSION];if(!n||!USER)return;
   if(lsGet(seenKey())===APP_VERSION)return;
@@ -191,7 +184,6 @@ $('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dat
 $('#lgToLogin').addEventListener('click',()=>goLoginForm('login'));
 $('#lgToSignup').addEventListener('click',()=>goLoginForm('signup'));
 $('#lgSwitch').addEventListener('click',()=>goLoginForm(LGMODE==='signup'?'login':'signup'));
-$('#lgGuest').addEventListener('click',enterGuest);
 $('#lgBackChoice').addEventListener('click',()=>{$('#lgMsg').textContent='';lgStep('choice');setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);});
 $('#lgCreate').addEventListener('click',()=>createUser(false));
 $('#lgImport').addEventListener('click',()=>createUser(true));
@@ -202,7 +194,7 @@ $('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.mode==='sign
 $('#outBtn').addEventListener('click',logout);
 /* ---------- 비밀번호 변경 ---------- */
 function openPinChange(){
-  if(!USER||USER.guest)return;
+  if(!USER)return;
   $('#pcOld').value='';$('#pcNew').value='';$('#pcNew2').value='';$('#pcMsg').textContent='';
   $('#pinChange').hidden=false;setTimeout(()=>{try{$('#pcOld').focus();}catch(e){}},30);
 }

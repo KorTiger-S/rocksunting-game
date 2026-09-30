@@ -9,7 +9,6 @@ lsDel('rk:cloud');   /* 예전 로그인 화면 연결 설정에서 저장한 �
 function cloudUrl(){const c=cloudCfg();return c.url&&c.key?c.url:'';}
 const SYNC={state:'idle'};
 function syncText(){
-  if(USER&&USER.guest)return '👤 Guest — 기록이 저장되지 않아요';
   if(!cloudUrl())return '💾 이 기기(브라우저)에만 저장돼요';
   return {busy:'☁ 저장 중…',ok:'☁ 클라우드에 저장됨',err:'⚠ 오프라인 — 나중에 다시 저장해요',idle:'☁ 클라우드 연결됨'}[SYNC.state]||'☁ 클라우드 연결됨';
 }
@@ -36,7 +35,7 @@ function adoptCloud(r,msg){
   S=d;putLocal();renderHub();maybeLoan();
 }
 async function cloudPush(){
-  if(!USER||USER.guest||!cloudUrl()||pushBusy||!dirty)return;
+  if(!USER||!cloudUrl()||pushBusy||!dirty)return;
   pushBusy=true;dirty=false;setSync('busy');
   try{
     if(OFFLINE_BASE!==null){
@@ -55,5 +54,5 @@ async function cloudPush(){
 }
 setInterval(()=>{if(dirty)cloudPush();},20000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();cloudPush();}});
-function cloudScore(r){if(!cloudUrl()||!USER||USER.guest)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
+function cloudScore(r){if(!cloudUrl()||!USER)return;api('score',Object.assign({id:USER.id,pin:USER.pin},r)).catch(()=>{});}
 
