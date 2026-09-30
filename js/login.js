@@ -20,6 +20,15 @@ function setLgMode(m){   /* 'login' | 'signup' : 같은 입력 칸을 로그인/
   const b=$('#lgResume');b.hidden=su||!b.dataset.id;
   $('#lgMsg').textContent='';
 }
+/* 로그인 유지: 한 번 로그인하면 로그아웃하거나 브라우저의 사이트 데이터(쿠키 등)를 지울 때까지 자동으로 들어와요 */
+const SESSION_KEY='rk:session';
+function keepSession(){if(USER)lsSet(SESSION_KEY,JSON.stringify({id:USER.id,pin:USER.pin}));}
+function dropSession(){lsDel(SESSION_KEY);}
+function autoLogin(){
+  let s=null;try{s=JSON.parse(lsGet(SESSION_KEY)||'null');}catch(e){}
+  if(!s||!ID_RE.test(String(s.id||''))||!PIN_RE.test(String(s.pin||''))){dropSession();return false;}
+  setLgMode('login');$('#lgId').value=s.id;startLogin(s.id,s.pin);return true;
+}
 function goLoginForm(m){
   setLgMode(m||'login');lgStep('main');
   setTimeout(()=>{try{($('#lgId').value?$('#lgPin'):$('#lgId')).focus();}catch(e){}},30);
@@ -48,13 +57,13 @@ async function startLogin(raw,rawPin,rawPin2){
   finishLogin(cloud);
 }
 function idTaken(){sfx('error');lgStep('main');$('#lgMsg').textContent='이미 사용 중인 ID예요. 다른 ID를 골라 주세요. (내 ID라면 로그인으로 들어오세요)';try{$('#lgId').focus();}catch(e){}}
-function idMissing(){sfx('error');lgStep('main');$('#lgMsg').textContent='없는 ID예요. 처음이라면 회원가입을 해 주세요.';try{$('#lgId').focus();}catch(e){}}
+function idMissing(){dropSession();sfx('error');lgStep('main');$('#lgMsg').textContent='없는 ID예요. 처음이라면 회원가입을 해 주세요.';try{$('#lgId').focus();}catch(e){}}
 function signupNew(){
   const raw=lsGet(LEGACY_KEY),done=lsGet('rk:legacyDone');let leg=null;
   try{if(raw&&!done)leg=JSON.parse(raw);}catch(e){}
   if(leg)showNew(LG.id);else createUser(false);   /* 이 기기에 예전 기록이 있을 때만 가져올지 물어봐요 */
 }
-function pinFail(msg){sfx('error');lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
+function pinFail(msg){dropSession();sfx('error');lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
   const id=LG.id,cEx=cloud&&cloud.exists&&cloud.data;
   let local=LG.local,stale=false;
@@ -82,7 +91,7 @@ function createUser(useLegacy){
 }
 function enter(name,data,at,news,isNew){
   USER={id:name,pin:LG.pin,ph:LG.ph,season:LG.season||(SEASON&&SEASON.key)||LEGACY_SEASON};S=data;
-  OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;
+  OFFLINE_BASE=(LG.offline&&cloudUrl())?(at||0):null;keepSession();
   $('#login').hidden=true;mode='hub';
   save();renderHub();updateUserChip();setSync(cloudUrl()?'idle':'idle');
   sfx('welcome');toast(news||(isNew?`${name} 님, 환영해요!`:`${name} 님, 다시 만나서 반가워요!`),news?5000:2600);
@@ -95,7 +104,7 @@ function updateUserChip(){
 async function logout(){
   if(mode!=='hub')return;
   try{if(dirty)await cloudPush();}catch(e){}
-  USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;hubCard=null;updateUserChip();showLogin();
+  dropSession();USER=null;S=DEF();OFFLINE_BASE=null;pendingCloud=null;dirty=false;hubCard=null;updateUserChip();showLogin();
 }
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
@@ -176,9 +185,9 @@ $('#wnOk').addEventListener('click',closeNotes);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value,$('#lgPin2').value);
 $('#lgGo').addEventListener('click',lgSubmit);
-$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#lgPin').focus();}});
-$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(LGMODE==='signup')$('#lgPin2').focus();else lgSubmit();}});
-$('#lgPin2').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
+$('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.defaultPrevented){e.preventDefault();$('#lgPin').focus();}});
+$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.defaultPrevented){e.preventDefault();if(LGMODE==='signup')$('#lgPin2').focus();else lgSubmit();}});
+$('#lgPin2').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.defaultPrevented){e.preventDefault();lgSubmit();}});
 ['#lgPin','#lgPin2'].forEach(q=>$(q).addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);}));
 $('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dataset.id;$('#lgPin').focus();});
 $('#lgToLogin').addEventListener('click',()=>goLoginForm('login'));
@@ -209,7 +218,7 @@ async function submitPinChange(){
   try{
     if(cloudUrl())await api('change_pin',{id:USER.id,pin:oldPin,newPin:n1});
     else if(oldPin!==USER.pin)throw new Error('bad_pin');
-    USER.pin=n1;USER.ph=pinHash(USER.id,n1);save();
+    USER.pin=n1;USER.ph=pinHash(USER.id,n1);save();keepSession();
     sfx('coin');toast('비밀번호를 변경했어요.');closePinChange();
   }catch(e){
     const m=e&&e.message;

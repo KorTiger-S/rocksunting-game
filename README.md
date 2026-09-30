@@ -211,6 +211,7 @@ npm run test:backend     schema.sql 로직 테스트 (PGlite: Node 안에서 도
 브라우저 localStorage
 - `rk:u:<id소문자>` : 해당 ID의 전체 저장 데이터
 - `rk:last` : 마지막으로 로그인한 ID
+- `rk:session` : 로그인 유지용 ID/비밀번호 (로그아웃하면 지워져요)
 
 ## 알려진 한계
 - 비밀번호는 숫자 4자리라 약해요. 5회 실패 잠금이 있지만, 남이 일부러 틀려서 특정 ID를 5분간 잠글 수는 있어요.
