@@ -262,7 +262,7 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
    stars = 별 개수. 채보의 초당 노트 수·4초 최대 밀도·점프 비율·노트 속도로 난이도를 재서, 교가 쉬움 = ★1 · 교가 롹 버전 매우 어려움(v1.8.9 채보) = ★11을
    기준으로 맞춘 값이에요(v1.8.10에서 어려움부터 채보가 촘촘해져서 그보다 어려운 채보는 11을 넘어요). 채보를 바꾸면 별도 다시 매겨 주세요, target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
 const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
-const PG_BETMAX=[1000,2000,3000,4000];   /* 난이도별 판돈 상한(원). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
+const PG_BET=[1000,2000,3000,4000];   /* 난이도별 판돈(원, 고정). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},

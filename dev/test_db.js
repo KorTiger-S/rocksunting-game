@@ -157,6 +157,21 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   const rep = (await db.query(`select public.rk_season_report($1::jsonb) as r`, [JSON.stringify({ key: SEASON })])).rows[0].r;
   await db.exec('reset role');
   ok(rep.ok && rep.season.gameName === '프리킥 축구' && rep.players.length === cl.players.length, '마감된 시즌 보고서를 다시 가져올 수 있음');
+  // 시즌 뱃지: 스냅샷 1등 = 우승, 2등 = 준우승
+  const [p1, p2, p3] = cl.players.map(x => x.id);
+  let bd = await rpc('badges', { id: p1.toUpperCase() });
+  ok(bd.ok && bd.list.length === 1 && bd.list[0].rank === 1 && bd.list[0].number === 1 && bd.list[0].gameName === '프리킥 축구', '시즌1 1등은 우승 뱃지 (ID 대소문자 무시)');
+  bd = await rpc('badges', { id: p2 });
+  ok(bd.list.length === 1 && bd.list[0].rank === 2, '시즌1 2등은 준우승 뱃지');
+  ok((await rpc('badges', { id: p3 })).list.length === 0 && (await rpc('badges', { id: '없는사람' })).list.length === 0 && (await rpc('badges', { id: 'a' })).list.length === 0, '3등·없는 ID·잘못된 ID는 뱃지 없음');
+  await db.exec('set role anon'); bd = await rpc('badges', { id: p1 }); await db.exec('reset role');
+  ok(bd.ok && bd.list.length === 1, 'anon(브라우저)도 뱃지를 조회할 수 있음');
+  await db.exec(`update public.rk_users set money = 20000 where id = lower('${p2}')`);   // 새 시즌 랭킹에 준우승자가 1위로
+  const tp = await rpc('top', { metric: 'money' });
+  ok(tp.list[0].id === p2 && tp.list[0].badges.length === 1 && tp.list[0].badges[0].rank === 2 && tp.list[0].badges[0].number === 1, '랭킹 목록에 이름별 뱃지가 같이 나옴');
+  ok(tp.list.every(x => Array.isArray(x.badges) && !('k' in x)) && tp.list.filter(x => x.badges.length).length === 2, '뱃지 없는 사람은 빈 목록, 내부 열(k)은 안 나감');
+  let denied3 = false; await db.exec('set role anon'); try { await db.query(`select public.rk_badge_list('x')`); } catch (e) { denied3 = true; } await db.exec('reset role');
+  ok(denied3, 'anon은 내부 도우미 rk_badge_list를 직접 부를 수 없음');
   ok((await rpc('score', { id: '철수', pin: P, bet: 1, goals: 1, pts: 1, result: '승' })).ok, '새 시즌에도 점수 기록 가능');
   ok((await db.query(`select season_key from public.rk_matches order by id desc limit 1`)).rows[0].season_key === cl.next.key, '경기 기록에 시즌 키가 붙음');
   // 한 번 더 마감해도 시즌 이름이 겹치지 않음
@@ -166,6 +181,8 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   await db.exec('reset role');
   const keys = (await db.query('select season_key from public.rk_seasons')).rows.map(x => x.season_key);
   ok(cl2.closed && cl2.next.number === 3 && new Set(keys).size === 2 && ![...keys].includes(cl2.next.key), '연속 마감해도 시즌 이름이 겹치지 않음');
+  bd = await rpc('badges', { id: cl2.players[0].id });
+  ok(bd.list.some(b => b.number === 2 && b.rank === 1) && bd.list.every((b, i, a) => !i || a[i - 1].number <= b.number), '시즌마다 뱃지가 쌓이고 시즌 순으로 나옴');
 
   // ----- 보고서 생성 (scripts/) -----
   const { renderReport } = require('../scripts/season_report');

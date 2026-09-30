@@ -8,7 +8,7 @@ function renderGameList(){
   document.querySelectorAll('.gdet').forEach(c=>c.hidden=c.id!==hubCard);
   const b=S.balls==null?BALL_MAX:S.balls,open=pgUnlocked();
   $('#glFree').textContent=`⚽ 남은 공 ${b}/${BALL_MAX} · 5킥 넣으면 판돈 2배`;
-  $('#glPumpT').textContent=open?'호우와 소리새 펌프':'???';
+  $('#glPumpT').textContent=open?'호우와 소리새 헛다리짚기 훈련':'???';
   $('#glPump').textContent=open?`🎤 남은 마이크 ${S.mics==null?5:S.mics}/5 · 발판 리듬 게임`:'준비 중 · 관리자 번호로 입장';
   $('#glDuel').textContent=duOk()?'방 코드로 친구와 실시간 승부':'로그인하면 친구와 대결할 수 있어요';
   $('#glCare').textContent=`근력 ${Math.round(clamp(S.str==null?25:S.str,0,100))}% · 체력 ${Math.round(clamp(S.stam==null?25:S.stam,0,100))}% · 컨디션 ${CONDS[clamp(S.cond==null?2:S.cond,0,4)]}`;
@@ -198,7 +198,7 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgBm:'tick',pgBp:'tick',pgBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
+const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
   gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
@@ -206,7 +206,25 @@ document.addEventListener('click',e=>{
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/스탯/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){renderStats();$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;}
+function openProfile(){renderStats();$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+/* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
+let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
+function drawBadges(list){
+  const box=$('#pfBadges');box.innerHTML='';
+  if(!list){const p=document.createElement('p');p.className='none';p.textContent='불러오는 중…';box.appendChild(p);return;}
+  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent='아직 없어요. 시즌이 끝날 때 소지금 1·2등이 우승·준우승 뱃지를 받아요.';box.appendChild(p);return;}
+  list.forEach(b=>{
+    const d=document.createElement('div'),s=document.createElement('small');
+    d.className='badge b'+b.rank;d.textContent=`${b.rank===1?'🏆':'🥈'} 시즌${b.number} ${b.rank===1?'우승':'준우승'}`;
+    s.textContent=b.gameName||'';d.appendChild(s);box.appendChild(d);
+  });
+}
+function renderBadges(){
+  $('#pfBadgeSec').hidden=!USER||!cloudUrl();if(!USER||!cloudUrl())return;
+  const id=USER.id;drawBadges(BADGES&&BADGES.id===id?BADGES.list:null);
+  api('badges',{id}).then(r=>{BADGES={id,list:r.list||[]};if(USER&&USER.id===id)drawBadges(BADGES.list);})
+    .catch(()=>{if(!BADGES||BADGES.id!==id)$('#pfBadgeSec').hidden=true;});   /* 서버에 rk_badges가 없거나 오프라인이면 조용히 숨겨요 */
+}
 function closeProfile(){$('#profile').hidden=true;}
 $('#bigface').addEventListener('click',function(){this.src=IMGDATA[FACES[Math.floor(Math.random()*FACES.length)]];$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);

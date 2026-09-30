@@ -52,9 +52,15 @@ const pgOptSave=()=>lsSet('rk:pump',JSON.stringify(PGO));
 const pgLife0=()=>Math.round(40+clamp(S.stam==null?25:S.stam,0,100)*.3);      /* 체력 25% → 48, 100% → 70 */
 const pgWinScale=()=>[.9,.95,1,1.05,1.1][clamp(S.cond==null?2:S.cond,0,4)];   /* 컨디션이 좋을수록 판정이 넉넉해요 */
 
-/* ---------- 허브 카드 ---------- */
-let pgBetV=1000;
-const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도별 상한(pump-data.js의 PG_BETMAX) */
+/* ---------- 허브 카드: 곡 선택(0) → 난이도 선택(1, 난이도마다 판돈 고정) → 게임 설명 + 노래 시작(2) ---------- */
+let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
+const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
+function pgGo(step){
+  pgStep=step;renderPumpCard();
+  const c=$('#pumpCard');if(c.getBoundingClientRect().top<0)c.scrollIntoView({block:'start'});   /* 긴 곡 목록 아래에서 눌렀어도 다음 단계의 맨 위부터 보여요 */
+}
+document.querySelectorAll('.gopen[data-card="pumpCard"]').forEach(b=>b.addEventListener('click',()=>{pgStep=0;renderPumpCard();}));
+document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('click',()=>pgGo(+b.dataset.to)));
 (function buildSongList(){
   const box=$('#pgSongs');
   PGSONGS.forEach((s,i)=>{
@@ -62,7 +68,7 @@ const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도�
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
     n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
-    b.addEventListener('click',()=>{PGO.song=i;pgOptSave();renderPumpCard();});
+    b.addEventListener('click',()=>{PGO.song=i;pgOptSave();pgGo(1);});
     box.appendChild(b);
   });
   /* 곡을 고른 다음 난이도를 골라요 */
@@ -71,34 +77,37 @@ const pgBetMax=()=>Math.min(PG_BETMAX[PGO.diff]||1000,S.money);   /* 난이도�
     const b=document.createElement('button');b.type='button';b.className='song';
     const t=document.createElement('b'),st=document.createElement('span');t.textContent=n;st.className='stars';
     b.appendChild(t);b.appendChild(st);
-    b.addEventListener('click',()=>{PGO.diff=i;pgOptSave();renderPumpCard();});
+    b.addEventListener('click',()=>{if(S.money<pgBet(i)){sfx('deny');toast(`판돈 ${fmt(pgBet(i))}원이 필요해요.`);return;}PGO.diff=i;pgOptSave();pgGo(2);});
     dbox.appendChild(b);
   });
 })();
 function renderPumpCard(){
   const open=pgUnlocked();
   document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 펌프 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
-  $('#pgH2').firstChild.textContent=open?'호우와 소리새 펌프 ':'??? ';
+  $('#pgH2').firstChild.textContent=open?'호우와 소리새 헛다리짚기 훈련 ':'??? ';
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
   micTick();renderMics();pgOptFix();
+  if(pgStep===2&&S.money<pgBet(PGO.diff))pgStep=1;   /* 돈이 모자라 이 난이도를 못 하게 되면 난이도 선택으로 돌아가요 */
+  [0,1,2].forEach(i=>{$('#pgStep'+i).hidden=i!==pgStep;});
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
-  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4);
-  $('#pgDiffT').textContent=`「${sg.name}」 난이도 선택`;
-  [...$('#pgDiffs').children].forEach((b,i)=>{const d=sg.diffs[i];b.classList.toggle('sel',i===PGO.diff);b.lastChild.textContent=`★${d.stars} ~${fmt(PG_BETMAX[i])}원`;b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 최대 ${fmt(PG_BETMAX[i])}원`);});
+  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4),bet=pgBet(PGO.diff);
+  $('#pgDiffT').textContent=`「${sg.name}」 난이도를 골라요`;
+  [...$('#pgDiffs').children].forEach((b,i)=>{
+    const d=sg.diffs[i],poor=S.money<pgBet(i);
+    b.classList.toggle('sel',i===PGO.diff);b.classList.toggle('poor',poor);b.setAttribute('aria-disabled',poor);
+    b.lastChild.textContent=`★${d.stars} · 판돈 ${fmt(pgBet(i))}원`;   /* 돈이 모자라면 CSS(.poor)가 "소지금 부족" 줄을 붙여요 */
+    b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 ${fmt(pgBet(i))}원${poor?' · 소지금 부족':''}`);
+  });
+  $('#pgSumT').textContent=`${sg.name} · ${PG_DIFFS[PGO.diff]} ★${sg.stars}`;
+  $('#pgSumB').textContent=`판돈 ${fmt(bet)}원`;
   $('#pgIntroBtn').hidden=!sg.intro;if(sg.intro)$('#pgIntroBtn').textContent=INTROS[sg.intro].btn;
-  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초 · 판돈 최대 ${fmt(PG_BETMAX[PGO.diff])}원`;
+  $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
   $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
   $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
-  pgBetV=clamp(pgBetV,1000,Math.max(1000,pgBetMax()));
-  $('#pgBetV').textContent=fmt(pgBetV)+'원';
-  const can=S.money>=1000&&S.mics>0;
-  $('#pgStart').disabled=!can;$('#pgBm').disabled=pgBetV<=1000||!can;$('#pgBp').disabled=pgBetV+100>pgBetMax();$('#pgBb').disabled=pgBetV+500>pgBetMax();
+  $('#pgStart').disabled=!(S.money>=bet&&S.mics>0);
 }
-$('#pgBm').addEventListener('click',()=>{pgBetV=Math.max(1000,pgBetV-100);renderPumpCard();});
-$('#pgBp').addEventListener('click',()=>{pgBetV=Math.min(pgBetMax(),pgBetV+100);renderPumpCard();});
-$('#pgBb').addEventListener('click',()=>{pgBetV=Math.min(pgBetMax(),pgBetV+500);renderPumpCard();});
 $('#pgSpdM').addEventListener('click',()=>{PGO.spd--;pgOptSave();renderPumpCard();});
 $('#pgSpdP').addEventListener('click',()=>{PGO.spd++;pgOptSave();renderPumpCard();});
 $('#pgOffM').addEventListener('click',()=>{PGO.off-=10;pgOptSave();renderPumpCard();});
@@ -156,8 +165,8 @@ function pgNewGame(sg,bet,before){
 function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는 건너뛰고) 들어온 경우. 버튼 클릭 땐 이벤트 객체가 와요 */
   if(!pgUnlocked()||!USER||mode!=='hub'||JG.on)return;
   micTick();pgOptFix();
-  const sg=pgPick(PGO.song,PGO.diff),bet=Math.min(pgBetV,pgBetMax());
-  if(S.money<1000||bet<1000){sfx('deny');return;}
+  const sg=pgPick(PGO.song,PGO.diff),bet=pgBet(PGO.diff);
+  if(S.money<bet){sfx('deny');toast(`판돈 ${fmt(bet)}원이 필요해요.`);return;}
   if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
