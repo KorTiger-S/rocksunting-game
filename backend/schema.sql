@@ -309,10 +309,12 @@ begin
 end $$;
 
 -- 내부 도우미: 모든 플레이어 기록을 초기화하고 시즌 키를 바꾼다(계정·비밀번호는 그대로).
+-- Supabase는 WHERE 없는 UPDATE를 막으므로(pg_safeupdate) 모든 행에 맞는 조건을 붙인다.
 create or replace function public.rk_reset_players(k text) returns void
 language sql security definer set search_path = public as $$
   update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
     data = public.rk_default_data(), season_key = k, updated_at_ms = (extract(epoch from now()) * 1000)::bigint, updated_at = now()
+  where id is not null
 $$;
 
 -- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
