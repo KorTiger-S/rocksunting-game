@@ -389,7 +389,9 @@ function pgFinish(failed,quit){
     h+=`<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(g.bet)}원</td></tr>`+(win&&grade==='S'?`<tr><td>S 랭크 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
        `<tr><td>소지금</td><td>${fmt(g.before)} → ${fmt(S.money)}원</td></tr>`;
     $('#pgRTab').innerHTML=h;
-    $('#pgRSay').textContent='호우: '+pick(say);
+    const line=pick(say);$('#pgRSay').textContent='호우: '+line;
+    g.share={title,grade,score,win,bonus:win&&grade==='S'?bonus:0,badge:allP?'ALL PERFECT!':fc?'FULL COMBO!':'',line,face:failed?'panic':grade==='S'?'excited':win?'happy':'frustrated'};
+    pgShareMake(g);   /* 공유 이미지는 미리 만들어 둬요(버튼을 누른 순간 바로 공유창을 열어야 해서) */
     $('#pgResult').hidden=false;
   },failed?500:1500);
 }
@@ -405,6 +407,100 @@ function pgExit(){
   showPump(false);toHub();
 }
 $('#pgRBack').addEventListener('click',pgExit);
+
+/* ---------- 결과 공유 (이미지) ----------
+   결과 화면을 세로 카드 이미지(PNG)로 그려서
+   - 📋 복사: 클립보드에 이미지로 복사 → 카톡 대화창 등에 붙여넣기
+   - 💬 카톡으로 보내기: 휴대폰 공유창(Web Share API)을 열어요. 카카오톡을 고르면 사진으로 보내져요.
+   둘 다 안 되는 브라우저(예: 일부 PC 브라우저)는 이미지 파일로 저장해요. */
+const PGSH_W=720,PGSH_H=1120;
+function pgShareMake(g){
+  g.shareBlob=null;
+  const png=cv=>new Promise((ok,no)=>cv.toBlob(b=>b?ok(b):no(new Error('toBlob')),'image/png'));
+  /* 얼굴 사진을 못 쓰는 환경(파일로 직접 연 경우 등)에서는 캔버스를 내보낼 수 없어서, 얼굴 없이 다시 그려요 */
+  g.shareP=pgShareDraw(g).then(png).catch(()=>pgShareDraw(g,true).then(png)).then(b=>(g.shareBlob=b));
+  g.shareP.catch(e=>console.error(e));
+}
+async function pgShareDraw(g,noFace){
+  const r=g.share,cv=document.createElement('canvas');cv.width=PGSH_W;cv.height=PGSH_H;
+  const c=cv.getContext('2d'),W=PGSH_W,DISP="'Black Han Sans','Noto Sans KR',sans-serif",BODY="'Noto Sans KR',sans-serif";
+  try{await document.fonts.load(`40px 'Black Han Sans'`);await document.fonts.load(`700 20px 'Noto Sans KR'`);}catch(e){}
+  const im=new Image();if(!noFace){im.src=IMGDATA[r.face];try{await im.decode();}catch(e){}}
+  const T=(t,x,y,size,col,align,font,weight)=>{c.font=`${weight||''} ${size}px ${font||DISP}`;c.fillStyle=col;c.textAlign=align||'left';c.textBaseline='middle';c.fillText(t,x,y);};
+  const box=(x,y,w,h,rad,fill)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,rad);else c.rect(x,y,w,h);c.fillStyle=fill;c.fill();};
+  /* 배경 */
+  const bg=c.createLinearGradient(0,0,0,PGSH_H);bg.addColorStop(0,'#1c2350');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,W,PGSH_H);
+  c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);
+  c.fillStyle='#ffd23f';c.fillRect(0,0,W,8);
+  /* 머리: 게임 이름 · 곡 */
+  T('호우와 소리새 펌프',W/2,62,38,'#ffd23f','center');
+  T('롹순팅 키우기 · 시즌2',W/2,102,18,'#9aa3c2','center',BODY,700);
+  T(g.sg.name,W/2,170,46,'#fff','center');
+  T(`${PG_DIFFS[g.sg.diff]} ★${g.sg.stars} · BPM ${g.sg.bpm}`,W/2,218,22,'#c9d3ff','center',BODY,700);
+  /* 랭크 + 점수 */
+  box(40,262,W-80,230,22,'rgba(255,255,255,.06)');
+  const gc={S:'#ffd23f',A:'#7bed9f',B:'#6ec8ff',C:'#c9d3ff',D:'#9aa3c2',F:'#ff6b6b'}[r.grade]||'#fff';
+  c.save();c.shadowColor=gc;c.shadowBlur=30;T(r.grade,190,382,190,gc,'center');c.restore();
+  T('SCORE',480,318,20,'#9aa3c2','center',BODY,700);
+  T(fmt(r.score),480,372,62,'#fff','center');
+  T(`호우 목표 ${fmt(g.sg.target)}점`,480,420,18,r.score>=g.sg.target?'#7bed9f':'#9aa3c2','center',BODY,700);
+  if(r.badge)T(r.badge,480,458,26,'#ff7aa2','center');
+  /* 판정 */
+  box(40,516,W-80,316,22,'rgba(255,255,255,.06)');
+  const rows=PGJN.map((n,i)=>[n,String(g.cnt[i]),PGJC[i]]).concat([['MAX COMBO',`${g.maxCombo} / ${g.total}`,'#fff']]);
+  if(g.ok+g.ng)rows.push(['롱노트',`성공 ${g.ok} · 실패 ${g.ng}`,'#c9d3ff']);
+  const rh=Math.min(42,288/rows.length);
+  rows.forEach((w,i)=>{const y=546+i*rh;T(w[0],80,y,24,w[2]);T(w[1],W-80,y,24,'#fff','right');});
+  /* 내기 결과 */
+  box(40,852,W-80,92,22,r.win?'rgba(61,220,132,.16)':'rgba(255,90,90,.16)');
+  T(r.title,72,898,34,r.win?'#7bed9f':'#ff8a8a');
+  T(`판돈 ${r.win?'+':'-'}${fmt(g.bet+r.bonus)}원`,W-72,898,30,r.win?'#7bed9f':'#ff8a8a','right');
+  /* 호우 한마디 */
+  c.save();c.beginPath();c.arc(96,1010,44,0,6.2832);c.clip();c.fillStyle='#f4f1ee';c.fillRect(52,966,88,88);
+  if(im.naturalWidth){const s=Math.min(im.naturalWidth,im.naturalHeight);c.drawImage(im,(im.naturalWidth-s)/2,im.naturalHeight*.02,s,s,52,966,88,88);}
+  c.restore();c.beginPath();c.arc(96,1010,44,0,6.2832);c.lineWidth=4;c.strokeStyle='#e2334d';c.stroke();
+  c.font=`700 21px ${BODY}`;const say='호우: '+r.line,lines=[];let cur='';
+  for(const ch of say){if(c.measureText(cur+ch).width>W-220){lines.push(cur);cur=ch.trim()?ch:'';}else cur+=ch;}
+  if(cur)lines.push(cur);
+  lines.slice(0,3).forEach((l,i,a)=>T(l,164,1010+(i-(a.length-1)/2)*30,21,'#eef0f8','left',BODY,700));
+  /* 바닥글 */
+  const d=new Date(),ds=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  T(`${USER?USER.id:''} · ${ds}`,40,PGSH_H-28,18,'#9aa3c2','left',BODY,700);
+  T('kortiger-s.github.io/rocksunting-game',W-40,PGSH_H-28,16,'#6f789a','right',BODY,700);
+  return cv;
+}
+const pgShareName=g=>`소리새펌프_${g.sg.name.replace(/\s+/g,'')}_${g.share.grade}.png`;
+function pgShareSave(g,blob){   /* 복사·공유가 안 되는 브라우저: 파일로 저장 */
+  const a=document.createElement('a'),u=URL.createObjectURL(blob);
+  a.href=u;a.download=pgShareName(g);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+}
+async function pgShareCopy(){
+  const g=PG;if(!g||!g.shareP)return;
+  try{
+    if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
+    await navigator.clipboard.write([new ClipboardItem({'image/png':g.shareP})]);   /* 이미지가 아직 안 만들어졌어도 Promise째 넘기면 돼요(사파리 대응) */
+    sfx('coin');toast('📋 결과 이미지를 복사했어요! 카톡 대화창에 붙여넣기 하세요.');
+  }catch(e){
+    try{pgShareSave(g,await g.shareP);sfx('coin');toast('이 브라우저는 이미지 복사가 안 돼서 파일로 저장했어요.');}catch(_){sfx('error');toast('이미지를 만들지 못했어요.');}
+  }
+}
+async function pgShareSend(){
+  const g=PG;if(!g||!g.shareP)return;
+  let blob=g.shareBlob;
+  try{if(!blob)blob=await g.shareP;}catch(e){sfx('error');toast('이미지를 만들지 못했어요.');return;}
+  const file=new File([blob],pgShareName(g),{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:'소리새 펌프 결과',text:`${USER?USER.id+'의 ':''}소리새 펌프 결과: ${g.sg.name}(${PG_DIFFS[g.sg.diff]}) ${g.share.grade} ${fmt(g.share.score)}점`});
+      sfx('swish');
+    }catch(e){if(e&&e.name!=='AbortError'){pgShareSave(g,blob);toast('공유창을 열지 못해서 이미지를 저장했어요. 카톡에서 사진으로 보내 주세요.');}}
+    return;
+  }
+  pgShareSave(g,blob);sfx('coin');
+  toast('이 기기에서는 공유창을 열 수 없어서 이미지를 저장했어요. 카톡에서 사진으로 보내 주세요.');
+}
+$('#pgRCopy').addEventListener('click',pgShareCopy);
+$('#pgRShare').addEventListener('click',pgShareSend);
 
 /* ---------- 그리기 ---------- */
 function pgNoteShape(c,lane,x,y,s){
