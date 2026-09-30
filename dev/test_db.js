@@ -196,6 +196,28 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     'next_season으로 다음 시즌 이름·게임·마감일을 정할 수 있고, 마감된 시즌 기록은 원래 이름 그대로');
   ok((await db.query(`select 1 from public.rk_config where key = 'next_season'`)).rows.length === 0 && (await load('철수')).season === '2099-01', 'next_season은 한 번 쓰면 지워지고 플레이어도 새 시즌 키로 바뀜');
   ok((await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r.closed === false, '새 시즌은 정한 마감일 전까지 닫히지 않음(바로 다시 마감되지 않음)');
+  // 연습 기간: 지금 마감 → practice_until까지는 '<key>-practice'로 기록 → 지나면 스냅샷 없이 한 번 더 초기화하고 진짜 시즌 키로
+  const soon = new Date(Date.now() + 3600e3).toISOString().slice(0, 19) + 'Z';
+  await db.query(`insert into public.rk_config (key, value) values ('next_season', $1::jsonb) on conflict (key) do update set value = excluded.value`,
+    [JSON.stringify({ key: '2099-02', game: 'pump', game_name: '소리새 펌프', ends_at: farEnd, practice_until: soon })]);
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{ends_at}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  const nSeasons = (await db.query('select count(*)::int as n from public.rk_seasons')).rows[0].n;
+  const cp1 = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  ok(cp1.closed && cp1.season.key === '2099-01' && cp1.next.key === '2099-02-practice' && cp1.next.practiceUntil === soon && cp1.next.endsAt === farEnd, '연습 기간이 있으면 새 시즌 키가 -practice로 시작');
+  r = await save('철수', Date.now() + 10000, { money: 55555, wins: 3 }, P, '2099-02-practice');
+  ok(r.ok && !r.conflict && (await load('철수')).data.money === 55555, '연습 기간에도 저장·플레이는 정상');
+  ok((await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r.closed === false && (await rpc('season_get')).season.key === '2099-02-practice', '연습 기간이 끝나기 전에는 아무 것도 안 바뀜');
+  await db.exec(`update public.rk_config set value = jsonb_set(value, '{practice_until}', to_jsonb(to_char(now() at time zone 'utc' - interval '1 second', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))) where key = 'season'`);
+  const cp2 = (await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r;
+  r = await load('철수');
+  ok(cp2.ok && cp2.reset && !cp2.closed && cp2.next.key === '2099-02' && !cp2.next.practiceUntil && cp2.next.number === cp1.next.number && cp2.next.endsAt === farEnd, '연습 기간이 지나면 진짜 시즌 키로 바뀌고 번호·마감일은 그대로');
+  ok(r.season === '2099-02' && r.data.money === 10000 && r.data.wins === 0, '연습 기간 기록은 모두 초기화됨');
+  ok((await db.query('select count(*)::int as n from public.rk_seasons')).rows[0].n === nSeasons + 1, '연습 기간은 시즌 기록(스냅샷·뱃지)을 남기지 않음');
+  r = await save('철수', Date.now() + 20000, { money: 99999 }, P, '2099-02-practice');
+  ok(r.conflict && r.data.money === 10000 && r.season === '2099-02', '연습 기간 화면이 저장하면 거부되고 초기화된 기록을 돌려줌');
+  ok((await db.query(`select public.rk_close_season('{}'::jsonb) as r`)).rows[0].r.closed === false, '초기화 뒤 바로 다시 마감되지 않음');
+  let denied4 = false; await db.exec('set role anon'); try { await db.query(`select public.rk_reset_players('x')`); } catch (e) { denied4 = true; } await db.exec('reset role');
+  ok(denied4, 'anon은 기록 초기화 도우미를 부를 수 없음');
   bd = await rpc('badges', { id: cl2.players[0].id });
   ok(bd.list.some(b => b.number === 2 && b.rank === 1) && bd.list.every((b, i, a) => !i || a[i - 1].number <= b.number), '시즌마다 뱃지가 쌓이고 시즌 순으로 나옴');
 
@@ -228,7 +250,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     const files = fs.readdirSync(outDir);
     ok(!x.err && files.some(f => f.endsWith('.md')) && files.some(f => f.endsWith('.csv')) && files.includes('issue.md'), '마감일이 지나면 스크립트가 보고서 파일을 만듦');
     const md = fs.readFileSync(path.join(outDir, files.find(f => f.endsWith('.md') && f !== 'issue.md')), 'utf8');
-    ok(md.includes('시즌4'), '스크립트가 만든 보고서가 4번째 시즌 마감 결과 (앞에서 3번 마감함)');
+    ok(md.includes('시즌5'), '스크립트가 만든 보고서가 5번째 시즌 마감 결과 (앞에서 4번 마감함)');
     x = await run({ REPORT_KEY: SEASON });
     ok(!x.err && x.so.includes(`${SEASON}_season1_football`), '이미 마감된 시즌의 보고서를 다시 만들 수 있음');
     x = await run({ SUPABASE_SERVICE_KEY: '' });

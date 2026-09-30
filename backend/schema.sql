@@ -167,7 +167,7 @@ end $$;
 create or replace function public.rk_season_json() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object('key', value->>'key', 'number', (value->>'number')::int, 'game', value->>'game',
-                            'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at')
+                            'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at', 'practiceUntil', value->>'practice_until')
   from public.rk_config where key = 'season'
 $$;
 
@@ -308,20 +308,40 @@ begin
   return public.rk_season_json();
 end $$;
 
+-- 내부 도우미: 모든 플레이어 기록을 초기화하고 시즌 키를 바꾼다(계정·비밀번호는 그대로).
+create or replace function public.rk_reset_players(k text) returns void
+language sql security definer set search_path = public as $$
+  update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
+    data = public.rk_default_data(), season_key = k, updated_at_ms = (extract(epoch from now()) * 1000)::bigint, updated_at = now()
+$$;
+
 -- 시즌 마감(자동화 전용: GitHub Actions가 service_role 키로 매일 호출). 마감일 전이면 아무 것도 하지 않는다.
 -- 마감 시: 랭킹 스냅샷을 rk_seasons에 저장 → 모든 플레이어 기록 초기화 → 다음 시즌 시작.
 -- 다음 시즌 설정(선택): rk_config 'next_season'에 넣어 두면 마감 때 그 값으로 시작하고 지운다. 없는 항목은 이번 시즌 값/자동 계산.
 --   insert into public.rk_config (key, value) values ('next_season',
 --     '{"key":"2026-10","game":"pump","game_name":"소리새 펌프","ends_at":"2026-10-31T15:00:00Z"}')
 --   on conflict (key) do update set value = excluded.value;
+-- 연습 기간(선택): next_season에 "practice_until"(예: "2026-09-30T15:00:00Z")을 넣으면, 새 시즌은 그때까지 연습 기간이에요.
+--   연습 기간의 기록은 시즌 키 '<key>-practice'로 따로 쌓이고, practice_until이 지난 뒤 첫 호출(매일 00:10 자동화)에서
+--   스냅샷·뱃지 없이 모두 한 번 더 초기화한 뒤 진짜 시즌 키로 시작해요.
 create or replace function public.rk_close_season(p jsonb default '{}') returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
 declare
-  cfg jsonb; nx jsonb; ends timestamptz; players jsonb; mc int; nxt_key text; nxt_ends timestamptz; i int := 1; nowms bigint;
+  cfg jsonb; nx jsonb; ends timestamptz; players jsonb; mc int; nxt_key text; nxt_ends timestamptz; i int := 1; pu timestamptz;
 begin
   select value into cfg from public.rk_config where key = 'season' for update;
   select value into nx from public.rk_config where key = 'next_season';
   nx := coalesce(nx, '{}'::jsonb);
+  -- 연습 기간이 끝났으면: 기록만 초기화하고 진짜 시즌 키로 바꾼다(스냅샷·보고서·뱃지 없음)
+  if cfg ? 'practice_until' then
+    pu := (cfg->>'practice_until')::timestamptz;
+    if now() < pu then return jsonb_build_object('ok', true, 'closed', false, 'practiceUntil', cfg->>'practice_until', 'endsAt', cfg->>'ends_at'); end if;
+    update public.rk_config set value = (value - 'practice_until' - 'real_key')
+        || jsonb_build_object('key', cfg->>'real_key', 'started_at', cfg->>'practice_until')
+    where key = 'season';
+    perform public.rk_reset_players(cfg->>'real_key');
+    return jsonb_build_object('ok', true, 'closed', false, 'reset', true, 'next', public.rk_season_json());
+  end if;
   ends := (cfg->>'ends_at')::timestamptz;
   if now() < ends then return jsonb_build_object('ok', true, 'closed', false, 'endsAt', cfg->>'ends_at'); end if;
 
@@ -348,16 +368,21 @@ begin
     if nxt_ends <= now() then nxt_ends := (date_trunc('month', now() at time zone 'Asia/Seoul') + interval '1 month') at time zone 'Asia/Seoul'; end if;
   end if;
 
-  update public.rk_config set value = jsonb_build_object('key', nxt_key, 'number', (cfg->>'number')::int + 1,
+  -- 연습 기간: 지금보다 뒤이고 마감보다 앞일 때만
+  begin pu := (nx->>'practice_until')::timestamptz; exception when others then pu := null; end;
+  if pu is not null and (pu <= now() or pu >= nxt_ends) then pu := null; end if;
+
+  update public.rk_config set value = jsonb_build_object('key', case when pu is null then nxt_key else nxt_key || '-practice' end,
+      'number', (cfg->>'number')::int + 1,
       'game', coalesce(nullif(nx->>'game', ''), cfg->>'game'), 'game_name', coalesce(nullif(nx->>'game_name', ''), cfg->>'game_name'),
       'started_at', to_char(ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
       'ends_at', to_char(nxt_ends at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))
+    || case when pu is null then '{}'::jsonb else jsonb_build_object('real_key', nxt_key,
+         'practice_until', to_char(pu at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) end
   where key = 'season';
   delete from public.rk_config where key = 'next_season';   -- 한 번 쓰면 지운다
 
-  nowms := (extract(epoch from now()) * 1000)::bigint;
-  update public.rk_users set money = 10000, wins = 0, losses = 0, best_pts = 0, week = 1, cleared = false,
-    data = public.rk_default_data(), season_key = nxt_key, updated_at_ms = nowms, updated_at = now();
+  perform public.rk_reset_players(public.rk_season_json()->>'key');
 
   return jsonb_build_object('ok', true, 'closed', true,
     'season', jsonb_build_object('key', cfg->>'key', 'number', (cfg->>'number')::int, 'game', cfg->>'game', 'gameName', cfg->>'game_name',
@@ -746,7 +771,7 @@ begin
 end $$;
 
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
-revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text) from public, anon, authenticated;
+revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text), public.rk_reset_players(text) from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
