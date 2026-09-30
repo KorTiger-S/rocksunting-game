@@ -845,7 +845,9 @@ async function logout(){
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
   '2.3.1':{sub:'헛다리짚기 훈련 발판 수정 🔧',items:[
-    '🔧 화면이 낮은 휴대폰(아이폰 SE·13 등)에서 아래쪽 발판(↙ ↘)이 화면 밖으로 밀려나 누를 수 없던 문제를 고쳤어요. 이제 발판이 화면 크기에 맞춰 줄어들어요.'
+    '🔧 노래를 시작하자마자 게이지가 0이 되며 끝나던 문제를 고쳤어요. 화면이 잠깐 멈추면(알림·제어 센터 등) 멈추기 직전 위치로 되돌려 자동으로 일시정지해요.',
+    '🔧 아이폰에서 소리가 멈춰 있다 깨어날 때 곡 시계가 어긋나지 않게, 소리가 실제로 흐르는 걸 확인한 뒤 카운트다운을 시작해요.',
+    '🔧 화면이 낮은 휴대폰(아이폰 SE·13 등)과 아이폰 사파리 아래 툴바 때문에 아래쪽 발판(↙ ↘)이 가려지던 문제를 고쳤어요. 발판이 화면 크기에 맞춰 줄어들어요.'
   ]},
   '2.3.0':{sub:'어디서든 홈으로 🏠 · 연습 기간은 무한 도전!',items:[
     '🏠 화면 위쪽에 "🏠 홈" 버튼이 생겼어요. 게임 고르다가, 난이도 고르다가, 상점에서도 바로 홈으로 돌아가요.',
@@ -3384,7 +3386,7 @@ function pgHeard(){
   }catch(e){}
   return cur-clamp((AC.baseLatency||0)+(AC.outputLatency||0),0,.3);
 }
-const pgNow=()=>PG.paused?PG.frozen:pgHeard()-PG.t0-PG.off;
+const pgNow=()=>PG.paused?PG.frozen:PG.t0==null?-PG.lead:pgHeard()-PG.t0-PG.off;   /* 시작 시각을 잡기 전(오디오가 깨어나는 중)엔 카운트다운 직전에 머물러요 */
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
@@ -3420,13 +3422,28 @@ function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는
   })();
 }
 function pgBegin(){
-  const g=PG,a=actx(),lead=Math.max(3.2,g.approach+1.2);
+  const g=PG,a=actx();
+  g.lead=Math.max(3.2,g.approach+1.2);
   g.off=PGO.off/1000;   /* 기기 지연은 pgHeard()가 알아서 반영해요. 여기는 사용자가 옵션에서 맞춘 싱크만 */
-  g.t0=pgClock()+lead;g.nextT=g.t0;
+  g.t0=null;g.anchorCur=-1;   /* 시작 시각은 오디오 시계가 실제로 흐르는 걸 확인한 뒤에 잡아요(pgAnchor) */
   if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
+  pgAnchor(g);
+}
+/* 곡 시작 시각(t0) 잡기. 아이폰 사파리는 페이지를 나갔다 오면 AudioContext가 멈춰 있고, "노래 시작"을 눌러 깨우는 순간
+   멈춰 있던 currentTime을 기준으로 시작 시각을 잡으면 깨어난 뒤 시계가 확 앞으로 가서 노트가 한꺼번에 지나가요
+   (카운트다운 없이 게이지가 바로 0이 되던 버그). 그래서 시계가 "running"이고 실제로 흐르는 게 보인 다음에 잡아요. */
+function pgAnchor(g){
+  if(g.t0!=null)return true;
+  if(AC){
+    if(AC.state!=='running'){AC.resume().catch(()=>{});g.anchorCur=-1;return false;}
+    const cur=AC.currentTime;
+    if(g.anchorCur<0||cur<=g.anchorCur){g.anchorCur=cur;return false;}   /* 한 번 더 봐서 시계가 앞으로 갔을 때만 */
+  }
+  g.t0=pgClock()+g.lead;g.nextT=g.t0;g.lastNow=-g.lead;g.lastPn=performance.now();   /* 튀는 시계 안전장치가 첫 프레임부터 작동하게 */
+  return true;
 }
 function pgSched(){   /* 곡의 다음 몇 칸을 미리 예약해 둬요 (배경음악과 같은 방식) */
-  const g=PG;if(!g||!g.tg||g.paused||g.state==='end')return;
+  const g=PG;if(!g||!g.tg||g.paused||g.state==='end'||g.t0==null)return;
   const T=BGMT[g.sg.id];
   while(g.step<T.len&&g.nextT<AC.currentTime+.3){bstep(T,g.step,g.nextT,g.sg.spb,g.tg);g.step++;g.nextT+=g.sg.spb;}
 }
@@ -3505,7 +3522,10 @@ function pgResize(){
   const coarse=touchy(),pad=$('#pgPad'),row=$('#pgRow');
   const lay=coarse?'below':window.innerWidth>=860?'side':'none';   /* 발판: 모바일은 화면 아래, PC는 넓으면 옆(키 안내 겸용), 좁으면 숨김 */
   pad.hidden=lay==='none';row.classList.toggle('side',lay==='side');
-  const vh=window.innerHeight,top=$('#pumpWrap .gtop').offsetHeight+14;
+  /* 아이폰 사파리는 아래 툴바가 화면 위에 떠 있어서(innerHeight에 툴바 자리까지 들어가요) 아래 발판을 가려요 → 그만큼 비워 둬요 */
+  const vv=window.visualViewport,ios=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  let standalone=!!navigator.standalone;try{standalone=standalone||matchMedia('(display-mode: standalone)').matches;}catch(e){}
+  const vh=Math.min(window.innerHeight,vv?vv.height:1e9)-(ios&&!standalone&&lay==='below'?60:0),top=$('#pumpWrap .gtop').offsetHeight+14;
   let w=Math.min(window.innerWidth-32-(lay==='side'?256:0),520);
   /* 화면이 낮은 폰(아이폰 SE·13 사파리 등)에서 아래 발판이 화면 밖으로 밀려나 ↙ ↘를 못 누르던 문제:
      발판 칸 높이를 76px에서 최소 54px까지 줄이고, 그래도 모자라면 플레이 화면 폭을 줄여서 발판까지 한 화면에 다 들어오게 해요 */
@@ -3529,9 +3549,10 @@ function pgTogglePause(){
   if(g.paused&&g.resumeAt)return;   /* 이어하기 카운트다운 중 */
   if(g.paused)pgResume();else pgPause();
 }
-function pgPause(){
+function pgPause(at){   /* at: 이 곡 위치로 되돌려서 멈춰요(화면이 멈췄던 동안 지나간 노트를 살리려고). 없으면 지금 위치 */
   const g=PG;if(!g||g.paused||g.state==='end')return;
-  g.frozen=pgNow();g.pauseAt=pgClock();g.pauseAudio=g.pauseAt-g.t0;g.paused=true;g.resumeAt=0;
+  const nowV=pgNow(),back=at!=null&&g.t0!=null?Math.max(0,nowV-at):0;
+  g.frozen=nowV-back;g.pauseAt=pgClock()-back;g.pauseAudio=g.t0==null?0:g.pauseAt-g.t0;g.paused=true;g.resumeAt=0;
   g.held=[false,false,false,false,false];
   /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
      이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
@@ -3566,10 +3587,12 @@ function pgUpdate(){
       const left=g.resumeAt-performance.now(),n=Math.ceil(left/1000);
       if(n!==g.cd&&n>0){g.cd=n;sfx('pgcount',n===1?880:660);}
       if(left<=0){
-        g.t0+=pgClock()-g.pauseAt;g.resumeAt=0;g.paused=false;
-        if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 */
+        g.resumeAt=0;g.paused=false;g.lastPn=0;
+        if(g.t0!=null)g.t0+=pgClock()-g.pauseAt;   /* 시작 시각을 잡기 전에 멈췄다면 pgAnchor가 새로 잡아요 */
+        if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 (시작 전이었다면 처음부터) */
           g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
-          g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;
+          if(g.t0!=null){g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;}
+          else g.step=0;
         }
         g.grace=g.frozen+1;   /* 롱노트를 누르던 중이었다면 다시 누를 시간을 줘요 */
       }
@@ -3577,13 +3600,27 @@ function pgUpdate(){
     return;
   }
   if(g.state==='end')return;
+  if(!pgAnchor(g))return;
   let now=pgNow();
   /* 안전장치: 곡 시계는 실제 시간보다 빨리 갈 수 없어요. 1초 넘게 앞으로 튀면(오디오 시계 오류) 그만큼 시작 시각과
      곡 예약 위치를 함께 뒤로 밀어서, 노트가 한꺼번에 지나가 MISS가 쏟아지지 않게 해요. (pgHeard의 보정 폭은 0.6초라 평소엔 안 걸려요)
      멈춰 있다 풀리는 건(시계가 덜 가는 쪽) 그대로 둬요. */
   const pn=performance.now();
   if(g.lastPn){const jump=(now-g.lastNow)-(pn-g.lastPn)/1000;if(jump>1){g.t0+=jump;g.nextT+=jump;now-=jump;}}
+  /* 화면(자바스크립트)이 0.7초 넘게 멈췄다 돌아왔는데(제어 센터·알림·툴바 애니메이션·폰이 잠깐 버벅임) 곡은 계속 흘렀다면,
+     그 사이 노트가 한꺼번에 MISS가 돼 게이지가 바로 0이 될 수 있어요 → 멈추기 직전 위치로 되돌려 자동 일시정지해요 */
+  if(g.lastPn&&pn-g.lastPn>700&&now-g.lastNow>.5&&now>-.5){
+    const at=g.lastNow;g.lastNow=now;g.lastPn=pn;
+    pgPause(at);toast('화면이 잠깐 멈춰서 일시정지했어요. 이어하기를 누르면 3초 뒤에 계속해요.',3500);
+    return;
+  }
   g.lastNow=now;g.lastPn=pn;
+  /* 카운트다운 중인데 곡 위치가 이미 0을 한참 넘었으면 시계가 잘못된 거예요 → 시작 시각을 다시 잡아요(노트가 한꺼번에 MISS 되지 않게) */
+  if(g.state==='count'&&now>.5){
+    g.t0=null;g.anchorCur=-1;g.step=0;
+    if(g.tg&&AC){try{g.tg.disconnect();}catch(e){}g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);}   /* 미리 예약해 둔 곡 소리도 버리고 처음부터 */
+    return;
+  }
   if(now<0){const n=Math.ceil(-now);if(n<=3&&n!==g.cd){g.cd=n;sfx('pgcount',n===1?880:660);}}
   else if(!g.go){g.go=true;sfx('pggo');}
   if(g.state==='count'&&now>=-g.W.bad)g.state='play';
