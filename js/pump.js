@@ -409,10 +409,9 @@ function pgExit(){
 $('#pgRBack').addEventListener('click',pgExit);
 
 /* ---------- 결과 공유 (이미지) ----------
-   결과 화면을 세로 카드 이미지(PNG)로 그려서
-   - 📋 복사: 클립보드에 이미지로 복사 → 카톡 대화창 등에 붙여넣기
-   - 💬 카톡으로 보내기: 휴대폰 공유창(Web Share API)을 열어요. 카카오톡을 고르면 사진으로 보내져요.
-   둘 다 안 되는 브라우저(예: 일부 PC 브라우저)는 이미지 파일로 저장해요. */
+   결과 화면을 세로 카드 이미지(PNG)로 그려서 휴대폰 공유창(Web Share API)을 열어요. 카카오톡을 고르면 사진으로 보내져요.
+   공유창이 없는 브라우저(예: 일부 PC 브라우저)는 이미지 파일로 저장해요.
+   (클립보드 이미지 복사는 기기·앱마다 붙여넣기가 안 되는 경우가 많아서 넣지 않았어요) */
 const PGSH_W=720,PGSH_H=1120;
 function pgShareMake(g){
   g.shareBlob=null;
@@ -470,19 +469,9 @@ async function pgShareDraw(g,noFace){
   return cv;
 }
 const pgShareName=g=>`소리새펌프_${g.sg.name.replace(/\s+/g,'')}_${g.share.grade}.png`;
-function pgShareSave(g,blob){   /* 복사·공유가 안 되는 브라우저: 파일로 저장 */
+function pgShareSave(g,blob){   /* 공유창이 없는 브라우저: 파일로 저장 */
   const a=document.createElement('a'),u=URL.createObjectURL(blob);
   a.href=u;a.download=pgShareName(g);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
-}
-async function pgShareCopy(){
-  const g=PG;if(!g||!g.shareP)return;
-  try{
-    if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
-    await navigator.clipboard.write([new ClipboardItem({'image/png':g.shareP})]);   /* 이미지가 아직 안 만들어졌어도 Promise째 넘기면 돼요(사파리 대응) */
-    sfx('coin');toast('📋 결과 이미지를 복사했어요! 카톡 대화창에 붙여넣기 하세요.');
-  }catch(e){
-    try{pgShareSave(g,await g.shareP);sfx('coin');toast('이 브라우저는 이미지 복사가 안 돼서 파일로 저장했어요.');}catch(_){sfx('error');toast('이미지를 만들지 못했어요.');}
-  }
 }
 async function pgShareSend(){
   const g=PG;if(!g||!g.shareP)return;
@@ -499,7 +488,6 @@ async function pgShareSend(){
   pgShareSave(g,blob);sfx('coin');
   toast('이 기기에서는 공유창을 열 수 없어서 이미지를 저장했어요. 카톡에서 사진으로 보내 주세요.');
 }
-$('#pgRCopy').addEventListener('click',pgShareCopy);
 $('#pgRShare').addEventListener('click',pgShareSend);
 
 /* ---------- 그리기 ---------- */

@@ -208,4 +208,3 @@ html.pgplay #pumpWrap{touch-action:none}
 #pumpWrap .gtop h2{font-size:18px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pumpWrap .gtop .go{flex:none}
 .pgdev{padding:6px 10px;border-radius:8px;background:#fff4c9;color:#3a2c00!important;font-weight:700}
-.pgshare{flex-wrap:nowrap}.pgshare .go{flex:1 1 0;min-width:0;max-width:200px;padding-left:8px;padding-right:8px;font-size:15px;line-height:1.25;word-break:keep-all}   /* 결과 공유 버튼 두 개를 폰에서도 한 줄로 */
