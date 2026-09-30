@@ -112,6 +112,7 @@ function shopAction(){
   const it=SHOP_BY[shopSel];if(!it)return;
   const d=itemsOf(S);
   if(!shopHas(it.id)){
+    if(isPractice()){sfx('deny');toast('연습 기간에는 살 수 없어요. 정규 시즌이 시작되면 열려요! (입혀 보기·가진 아이템 장착은 돼요)');return;}
     if(S.money-it.price<SHOP_KEEP){sfx('deny');toast(`사고 나서도 ${fmt(SHOP_KEEP)}원은 남아야 해요. (판돈용)`);return;}
     const before=S.money;S.money-=it.price;d.own.push(it.id);d.eq[it.slot]=it.id;S.items=d;
     save();sfx('coin');setTimeout(()=>sfx('sparkle'),120);
@@ -142,11 +143,11 @@ function renderShop(){
   setFace(ava,'happy',tryEq);
   const nm=$('#shopName');nm.className='shopname '+nameCls(tryEq);nm.textContent=USER?USER.id:'롹순팅';
   const it=SHOP_BY[shopSel],act=$('#shopAct'),off=$('#shopOff');
-  $('#shopMoney').textContent=`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
+  $('#shopMoney').textContent=isPractice()?'🔒 연습 기간에는 살 수 없어요. 입혀 보기와 가진 아이템 장착은 돼요.':`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
   if(!it){$('#shopSelN').textContent='아이템을 골라 입혀 보세요';$('#shopSelD').textContent=SEASON&&SEASON.metric==='pumpBest'?'이번 시즌 우승은 헛다리짚기 훈련 최고점으로 겨뤄요. 마음껏 꾸며 보세요!':'사면 소지금이 줄어서 시즌 순위도 내려가요. 꾸밀래, 우승할래?';act.hidden=true;off.hidden=true;return;}
   $('#shopSelN').textContent=`${it.name} · ${fmt(it.price)}원`;$('#shopSelD').textContent=it.desc;
   const own=shopHas(it.id),on=eq[it.slot]===it.id;
   act.hidden=false;off.hidden=!on;
   act.textContent=on?'장착 중':own?'장착하기':`사기 (${fmt(it.price)}원)`;
-  act.disabled=on||(!own&&S.money-it.price<SHOP_KEEP);
+  act.disabled=on||(!own&&(isPractice()||S.money-it.price<SHOP_KEEP));
 }
