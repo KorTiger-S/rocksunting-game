@@ -19,6 +19,10 @@ const LEGACY_SEASON='2026-09';   /* 시즌 기능이 생기기 전에 저장된 
 let SEASON=null;                  /* {key,number,game,gameName,startedAt,endsAt} */
 try{SEASON=JSON.parse(lsGet('rk:season')||'null');}catch(e){}
 const KST_MS=9*3600e3,DAY_MS=864e5;
+/* 연습 기간(프리시즌): 내 기록의 시즌 키가 '-practice'로 끝나는 동안 (서버가 연습 기간이 끝나면 초기화하면서 진짜 키로 바꿔요).
+   도전 횟수(마이크·축구공)와 소지금이 무한이고, 상점은 잠겨요(아이템은 시즌이 끝나도 남아서 공짜로 사면 안 돼요). */
+const PRACTICE_MONEY=9999999;
+const isPractice=()=>/-practice$/.test(USER?(USER.season||''):((SEASON&&SEASON.key)||''));
 function setSeason(s){if(!s||!s.key)return;SEASON=s;lsSet('rk:season',JSON.stringify(s));renderSeason();}
 function renderSeason(){
   const chip=$('#hSeason'),rk=$('#rkSeason');

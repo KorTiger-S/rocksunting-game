@@ -261,7 +261,7 @@ html.pgplay #pumpWrap{touch-action:none}
     <div class="logo" aria-hidden="true"></div>
     <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
+    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="homeBtn">🏠 홈</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
   </div>
 </header>
 
@@ -585,7 +585,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='2.2.2';
+const APP_VERSION='2.3.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,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",
@@ -632,6 +632,10 @@ const LEGACY_SEASON='2026-09';   /* 시즌 기능이 생기기 전에 저장된 
 let SEASON=null;                  /* {key,number,game,gameName,startedAt,endsAt} */
 try{SEASON=JSON.parse(lsGet('rk:season')||'null');}catch(e){}
 const KST_MS=9*3600e3,DAY_MS=864e5;
+/* 연습 기간(프리시즌): 내 기록의 시즌 키가 '-practice'로 끝나는 동안 (서버가 연습 기간이 끝나면 초기화하면서 진짜 키로 바꿔요).
+   도전 횟수(마이크·축구공)와 소지금이 무한이고, 상점은 잠겨요(아이템은 시즌이 끝나도 남아서 공짜로 사면 안 돼요). */
+const PRACTICE_MONEY=9999999;
+const isPractice=()=>/-practice$/.test(USER?(USER.season||''):((SEASON&&SEASON.key)||''));
 function setSeason(s){if(!s||!s.key)return;SEASON=s;lsSet('rk:season',JSON.stringify(s));renderSeason();}
 function renderSeason(){
   const chip=$('#hSeason'),rk=$('#rkSeason');
@@ -840,6 +844,11 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '2.3.0':{sub:'어디서든 홈으로 🏠 · 연습 기간은 무한 도전!',items:[
+    '🏠 화면 위쪽에 "🏠 홈" 버튼이 생겼어요. 게임 고르다가, 난이도 고르다가, 상점에서도 바로 홈으로 돌아가요.',
+    '♾ 연습 기간(프리시즌)에는 마이크·축구공이 줄지 않고 소지금도 무한이에요. 마음껏 연습하세요! (상점에서 사는 것만 정규 시즌부터)',
+    '🎤 헛다리짚기 훈련에서 호우를 이기면(목표 점수 이상) 쓴 마이크를 돌려받아요.'
+  ]},
   '2.2.2':{sub:'헛다리짚기 훈련 버그 수정 🔧',items:[
     '🔧 곡을 시작하자마자 3·2·1 카운트다운 없이 노트가 빠르게 쏟아지고 F로 끝나던 문제를 고쳤어요. (휴대폰에서 소리가 잠깐 끊겼다 돌아온 뒤에 생기던 문제)'
   ]},
@@ -2221,8 +2230,9 @@ function openHubCard(id){
 document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>openHubCard(b.dataset.card)));
 document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
+  if(practiceFill())save();
   renderDuelCard();renderPumpCard();renderShop();renderMyFace();
-  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
+  const mtxt=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#hMoney').textContent=mtxt;$('#pfMoney').textContent=mtxt;
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   ballTick();renderBalls();
@@ -2244,7 +2254,8 @@ function ballTick(){   /* 지난 시간만큼 공을 채워요. 개수가 늘었
   }else S.ballAt=0;
   S.balls=b;return up;
 }
-function ballUse(){   /* 도전 시작할 때 1개 써요. 공이 없으면 false */
+function ballUse(){   /* 도전 시작할 때 1개 써요. 공이 없으면 false (연습 기간엔 줄지 않아요) */
+  if(isPractice())return true;
   ballTick();if(S.balls<=0)return false;
   if(S.balls>=BALL_MAX)S.ballAt=ballMin();   /* 가득 찬 상태에서 쓰면 이때부터 30분을 세요 */
   S.balls--;return true;
@@ -2314,14 +2325,14 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',homeBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list){
@@ -2341,6 +2352,15 @@ function renderBadges(){
     .catch(()=>{if(!BADGES||BADGES.id!==id)$('#pfBadgeSec').hidden=true;});   /* 서버에 rk_badges가 없거나 오프라인이면 조용히 숨겨요 */
 }
 function closeProfile(){$('#profile').hidden=true;}
+/* 연습 기간: 도전 횟수·소지금을 가득 채워 둬요. 바뀐 게 있으면 true */
+function practiceFill(){
+  if(!USER||!isPractice())return false;
+  const ch=S.money!==PRACTICE_MONEY||S.balls!==BALL_MAX||S.mics!==MIC_MAX;
+  S.money=PRACTICE_MONEY;S.balls=BALL_MAX;S.ballAt=0;S.mics=MIC_MAX;S.micAt=0;
+  return ch;
+}
+/* 🏠 홈 버튼: 게임 카드·난이도 선택·상점 어디에서든 홈(게임 목록)으로 (게임 중에는 헤더가 숨어서 '포기하기'로 나가요) */
+$('#homeBtn').addEventListener('click',()=>{if(mode!=='hub')return;pgStep=0;openHubCard(null);window.scrollTo(0,0);});
 $('#bigface').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)]);$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});
@@ -2460,6 +2480,7 @@ function shopAction(){
   const it=SHOP_BY[shopSel];if(!it)return;
   const d=itemsOf(S);
   if(!shopHas(it.id)){
+    if(isPractice()){sfx('deny');toast('연습 기간에는 살 수 없어요. 정규 시즌이 시작되면 열려요! (입혀 보기·가진 아이템 장착은 돼요)');return;}
     if(S.money-it.price<SHOP_KEEP){sfx('deny');toast(`사고 나서도 ${fmt(SHOP_KEEP)}원은 남아야 해요. (판돈용)`);return;}
     const before=S.money;S.money-=it.price;d.own.push(it.id);d.eq[it.slot]=it.id;S.items=d;
     save();sfx('coin');setTimeout(()=>sfx('sparkle'),120);
@@ -2490,13 +2511,13 @@ function renderShop(){
   setFace(ava,'happy',tryEq);
   const nm=$('#shopName');nm.className='shopname '+nameCls(tryEq);nm.textContent=USER?USER.id:'롹순팅';
   const it=SHOP_BY[shopSel],act=$('#shopAct'),off=$('#shopOff');
-  $('#shopMoney').textContent=`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
+  $('#shopMoney').textContent=isPractice()?'🔒 연습 기간에는 살 수 없어요. 입혀 보기와 가진 아이템 장착은 돼요.':`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
   if(!it){$('#shopSelN').textContent='아이템을 골라 입혀 보세요';$('#shopSelD').textContent=SEASON&&SEASON.metric==='pumpBest'?'이번 시즌 우승은 헛다리짚기 훈련 최고점으로 겨뤄요. 마음껏 꾸며 보세요!':'사면 소지금이 줄어서 시즌 순위도 내려가요. 꾸밀래, 우승할래?';act.hidden=true;off.hidden=true;return;}
   $('#shopSelN').textContent=`${it.name} · ${fmt(it.price)}원`;$('#shopSelD').textContent=it.desc;
   const own=shopHas(it.id),on=eq[it.slot]===it.id;
   act.hidden=false;off.hidden=!on;
   act.textContent=on?'장착 중':own?'장착하기':`사기 (${fmt(it.price)}원)`;
-  act.disabled=on||(!own&&S.money-it.price<SHOP_KEEP);
+  act.disabled=on||(!own&&(isPractice()||S.money-it.price<SHOP_KEEP));
 }
 
 'use strict';
@@ -3227,6 +3248,7 @@ function micTick(){   /* 지난 시간만큼 마이크를 채워요. 개수가 �
   S.mics=b;return up;
 }
 function micUse(){
+  if(isPractice())return true;   /* 연습 기간엔 마이크가 줄지 않아요 */
   micTick();if(S.mics<=0)return false;
   if(S.mics>=MIC_MAX)S.micAt=micMin();
   S.mics--;return true;
@@ -3592,11 +3614,15 @@ function pgFinish(failed,quit){
   g.settled=true;g.score=score;g.grade=grade;g.win=win;
   S.money=Math.max(0,S.money+delta);
   if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
+  /* 호우를 이기면(목표 점수 이상) 이번 판에 쓴 마이크를 돌려받아요 */
+  let micBack=false;
+  if(win&&!isPractice()){const had=S.mics||0;S.mics=Math.min(MIC_MAX,had+1);if(S.mics>=MIC_MAX)S.micAt=0;micBack=S.mics>had;}
   S.plays=(S.plays||0)+1;
   if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
   cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
   sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
+  if(micBack)setTimeout(()=>{toast('🎤 호우를 이겨서 마이크를 돌려받았어요!',3000);sfx('ping');},900);
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
   const title=quit?'포기…':failed?'STAGE BREAK…':win&&grade==='S'?'완승! S 랭크':win?'내기 승리!':'호우에게 졌다…';
   const say=(quit||failed)?HOU_FAIL:win?(grade==='S'?HOU_BIG:HOU_WIN):HOU_LOSE;

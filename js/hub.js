@@ -17,8 +17,9 @@ function openHubCard(id){
 document.querySelectorAll('.gopen').forEach(b=>b.addEventListener('click',()=>openHubCard(b.dataset.card)));
 document.querySelectorAll('.gback').forEach(b=>b.addEventListener('click',()=>openHubCard(null)));
 function renderHub(){
+  if(practiceFill())save();
   renderDuelCard();renderPumpCard();renderShop();renderMyFace();
-  $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
+  const mtxt=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#hMoney').textContent=mtxt;$('#pfMoney').textContent=mtxt;
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   ballTick();renderBalls();
@@ -40,7 +41,8 @@ function ballTick(){   /* 지난 시간만큼 공을 채워요. 개수가 늘었
   }else S.ballAt=0;
   S.balls=b;return up;
 }
-function ballUse(){   /* 도전 시작할 때 1개 써요. 공이 없으면 false */
+function ballUse(){   /* 도전 시작할 때 1개 써요. 공이 없으면 false (연습 기간엔 줄지 않아요) */
+  if(isPractice())return true;
   ballTick();if(S.balls<=0)return false;
   if(S.balls>=BALL_MAX)S.ballAt=ballMin();   /* 가득 찬 상태에서 쓰면 이때부터 30분을 세요 */
   S.balls--;return true;
@@ -110,14 +112,14 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',homeBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list){
@@ -137,6 +139,15 @@ function renderBadges(){
     .catch(()=>{if(!BADGES||BADGES.id!==id)$('#pfBadgeSec').hidden=true;});   /* 서버에 rk_badges가 없거나 오프라인이면 조용히 숨겨요 */
 }
 function closeProfile(){$('#profile').hidden=true;}
+/* 연습 기간: 도전 횟수·소지금을 가득 채워 둬요. 바뀐 게 있으면 true */
+function practiceFill(){
+  if(!USER||!isPractice())return false;
+  const ch=S.money!==PRACTICE_MONEY||S.balls!==BALL_MAX||S.mics!==MIC_MAX;
+  S.money=PRACTICE_MONEY;S.balls=BALL_MAX;S.ballAt=0;S.mics=MIC_MAX;S.micAt=0;
+  return ch;
+}
+/* 🏠 홈 버튼: 게임 카드·난이도 선택·상점 어디에서든 홈(게임 목록)으로 (게임 중에는 헤더가 숨어서 '포기하기'로 나가요) */
+$('#homeBtn').addEventListener('click',()=>{if(mode!=='hub')return;pgStep=0;openHubCard(null);window.scrollTo(0,0);});
 $('#bigface').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)]);$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});

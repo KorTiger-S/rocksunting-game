@@ -78,6 +78,9 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
 | 시즌 우승 기준(소지금/펌프 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
 | 시작 화면(가을 테마·시즌 표시·낙엽) | `spAutumnSky()`, `SP_LEAVES`, `spLeaf()`, `spDraw()` (`js/splash.js`) |
+| 연습 기간(프리시즌) 규칙: 도전 횟수·소지금 무한, 상점에서 사기만 잠금 | `isPractice()`(내 시즌 키가 `-practice`로 끝나면), `PRACTICE_MONEY` (`js/save.js`), `practiceFill()` (`js/hub.js`), `ballUse()`/`micUse()`, 상점 `shopAction()` |
+| 호우를 이기면 마이크 돌려받기 | `pgFinish()`의 `micBack` (`js/pump.js`) |
+| 🏠 홈 버튼(어디서든 게임 목록으로) | `#homeBtn` (index.html, `js/hub.js`) |
 | 클라우드(Supabase) 주소/키 | `CLOUD_DEFAULT` (`js/cloud.js`) |
 | 캐릭터 이미지 추가 | `IMGDATA`(`js/util.js`)에 경로 등록 후 `assets/faces/`에 파일 추가 |
 

@@ -19,6 +19,7 @@ function micTick(){   /* 지난 시간만큼 마이크를 채워요. 개수가 �
   S.mics=b;return up;
 }
 function micUse(){
+  if(isPractice())return true;   /* 연습 기간엔 마이크가 줄지 않아요 */
   micTick();if(S.mics<=0)return false;
   if(S.mics>=MIC_MAX)S.micAt=micMin();
   S.mics--;return true;
@@ -384,11 +385,15 @@ function pgFinish(failed,quit){
   g.settled=true;g.score=score;g.grade=grade;g.win=win;
   S.money=Math.max(0,S.money+delta);
   if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
+  /* 호우를 이기면(목표 점수 이상) 이번 판에 쓴 마이크를 돌려받아요 */
+  let micBack=false;
+  if(win&&!isPractice()){const had=S.mics||0;S.mics=Math.min(MIC_MAX,had+1);if(S.mics>=MIC_MAX)S.micAt=0;micBack=S.mics>had;}
   S.plays=(S.plays||0)+1;
   if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
   cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
   sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
+  if(micBack)setTimeout(()=>{toast('🎤 호우를 이겨서 마이크를 돌려받았어요!',3000);sfx('ping');},900);
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
   const title=quit?'포기…':failed?'STAGE BREAK…':win&&grade==='S'?'완승! S 랭크':win?'내기 승리!':'호우에게 졌다…';
   const say=(quit||failed)?HOU_FAIL:win?(grade==='S'?HOU_BIG:HOU_WIN):HOU_LOSE;
