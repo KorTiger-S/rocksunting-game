@@ -1,6 +1,6 @@
 'use strict';
 /* ---------- 로그인 ---------- */
-let LG={id:'',pin:'',ph:'',local:null,offline:false};
+let LG={id:'',pin:'',ph:'',local:null,offline:false,mode:'login'},LGMODE='login';
 function lgStep(s){
   [['choice','lgChoice'],['main','lgMain'],['busy','lgBusy'],['new','lgNew'],['off','lgOff']].forEach(a=>{$('#'+a[1]).hidden=a[0]!==s;});
 }
@@ -8,11 +8,20 @@ function lgModeText(){$('#lgMode').textContent=cloudUrl()?'저장 방식: 클라
 function showLogin(){
   $('#login').hidden=false;lgStep('choice');lgModeText();$('#lgMsg').textContent='';$('#lgPin').value='';LG.pin='';LG.ph='';
   const last=lsGet('rk:last');const b=$('#lgResume');
-  if(last&&ID_RE.test(last)){b.hidden=false;b.textContent=`${last} (으)로 계속하기`;b.dataset.id=last;}else b.hidden=true;
+  if(last&&ID_RE.test(last)){b.textContent=`${last} (으)로 계속하기`;b.dataset.id=last;}else b.dataset.id='';
   if(!SP.on)setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},50);   /* 스플래시가 떠 있을 땐 스플래시가 끝날 때 포커스 */
 }
-function goLoginForm(){
-  lgStep('main');
+function setLgMode(m){   /* 'login' | 'signup' : 같은 입력 칸을 로그인/회원가입에 같이 써요 */
+  LGMODE=m;const su=m==='signup';
+  $('#lgTitle').textContent=su?'📝 회원가입':'🔑 로그인';
+  $('#lgGo').textContent=su?'가입하고 시작하기':'로그인';
+  $('#lgSwitch').textContent=su?'이미 ID가 있어요 → 로그인':'처음이에요 → 회원가입';
+  $('#lgPin2').hidden=!su;$('#lgPin2').value='';$('#lgTipIn').hidden=su;$('#lgTipUp').hidden=!su;
+  const b=$('#lgResume');b.hidden=su||!b.dataset.id;
+  $('#lgMsg').textContent='';
+}
+function goLoginForm(m){
+  setLgMode(m||'login');lgStep('main');
   setTimeout(()=>{try{($('#lgId').value?$('#lgPin'):$('#lgId')).focus();}catch(e){}},30);
 }
 function enterGuest(){
@@ -22,24 +31,35 @@ function enterGuest(){
   sfx('chime');toast('Guest로 시작해요. 기록은 저장되지 않아요.');
   maybeShowNotes(false);maybeLoan();
 }
-async function startLogin(raw,rawPin){
+async function startLogin(raw,rawPin,rawPin2){
   let id=String(raw||'').trim();if(id.normalize)id=id.normalize('NFC');
   const pin=String(rawPin||'').trim();
   if(!ID_RE.test(id)){$('#lgMsg').textContent='ID는 2~12자, 한글·영문·숫자·_ 만 쓸 수 있어요.';return;}
   if(/^(guest|게스트)$/i.test(id)){$('#lgMsg').textContent='이 ID는 쓸 수 없어요. (Guest는 따로 시작할 수 있어요)';return;}
   if(!PIN_RE.test(pin)){$('#lgMsg').textContent='비밀번호는 숫자 4자리로 입력해 주세요.';return;}
-  LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false};
-  lgStep('busy');$('#lgBusyTx').textContent='기록을 찾는 중…';
+  if(LGMODE==='signup'&&pin!==String(rawPin2||'').trim()){$('#lgMsg').textContent='비밀번호 확인이 맞지 않아요. 같은 숫자 4자리를 두 번 넣어 주세요.';$('#lgPin2').value='';try{$('#lgPin2').focus();}catch(e){}return;}
+  LG={id,pin,ph:pinHash(id,pin),local:readLocal(id),offline:false,mode:LGMODE};
+  const su=LG.mode==='signup';
+  lgStep('busy');$('#lgBusyTx').textContent=su?'ID를 확인하는 중…':'기록을 찾는 중…';
   let cloud=null;
   if(cloudUrl()){
     try{cloud=await api('load',{id,pin});setSeason(cloud.current);LG.season=cloud.exists?cloud.season:(cloud.current&&cloud.current.key);}
     catch(e){
+      if(su&&(e.message==='bad_pin'||e.message==='locked')){idTaken();return;}   /* 비밀번호가 다르다 = 누군가 이미 쓰는 ID */
       if(e.message==='bad_pin'){pinFail();return;}
       if(e.message==='locked'){pinFail('비밀번호를 여러 번 틀려서 5분 동안 잠겼어요. 잠시 후 다시 시도해 주세요.');return;}
       sfx('error');lgStep('off');return;
     }
   }
+  if(su){if((cloud&&cloud.exists)||LG.local)idTaken();else signupNew();return;}
   finishLogin(cloud);
+}
+function idTaken(){sfx('error');lgStep('main');$('#lgMsg').textContent='이미 사용 중인 ID예요. 다른 ID를 골라 주세요. (내 ID라면 로그인으로 들어오세요)';try{$('#lgId').focus();}catch(e){}}
+function idMissing(){sfx('error');lgStep('main');$('#lgMsg').textContent='없는 ID예요. 처음이라면 회원가입을 해 주세요.';try{$('#lgId').focus();}catch(e){}}
+function signupNew(){
+  const raw=lsGet(LEGACY_KEY),done=lsGet('rk:legacyDone');let leg=null;
+  try{if(raw&&!done)leg=JSON.parse(raw);}catch(e){}
+  if(leg)showNew(LG.id);else createUser(false);   /* 이 기기에 예전 기록이 있을 때만 가져올지 물어봐요 */
 }
 function pinFail(msg){sfx('error');lgStep('main');$('#lgMsg').textContent=msg||'ID 또는 비밀번호가 맞지 않아요.';$('#lgPin').value='';try{$('#lgPin').focus();}catch(e){}}
 function finishLogin(cloud){
@@ -48,7 +68,7 @@ function finishLogin(cloud){
   if(local&&local.pin&&!cloud&&local.pin!==LG.ph){pinFail();return;}   /* 클라우드 확인을 못 했을 때는 이 기기의 저장값으로 확인 */
   if(local&&cEx&&(local.season||LEGACY_SEASON)!==cloud.season){local=null;stale=true;}   /* 이 기기의 기록이 지난 시즌 것이면 버려요 */
   if(!LG.season)LG.season=(local&&local.season)||(SEASON&&SEASON.key)||LEGACY_SEASON;
-  if(!local&&!cEx){showNew(id);return;}
+  if(!local&&!cEx){idMissing();return;}
   const lAt=local?(local.updatedAt||0):0,cAt=cEx?(cloud.updatedAt||0):0;
   let data,name,at,news=null;
   if(cEx&&cAt>lAt){data=mergeData(cloud.data);name=cloud.name||id;at=cAt;if(stale)news='새 시즌이 시작되어 모든 기록이 초기화됐어요. 처음부터 다시!';}
@@ -56,7 +76,7 @@ function finishLogin(cloud){
   enter(name,data,at,news);
 }
 function showNew(id){
-  lgStep('new');$('#lgNewTx').textContent=`"${id}" 은(는) 새 ID예요. 이 ID로 새로 시작할까요?`;
+  lgStep('new');$('#lgNewTx').textContent=`"${id}" (으)로 가입해요.`;
   const raw=lsGet(LEGACY_KEY),done=lsGet('rk:legacyDone');let leg=null;
   try{if(raw&&!done)leg=JSON.parse(raw);}catch(e){}
   LG.legacy=leg;$('#lgImport').hidden=!leg;$('#lgLegacy').hidden=!leg;
@@ -161,21 +181,24 @@ function maybeShowNotes(isNew){
 function closeNotes(){$('#wn').hidden=true;if(USER)lsSet(seenKey(),APP_VERSION);maybeLoan();}
 $('#wnOk').addEventListener('click',closeNotes);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
-const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value);
+const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value,$('#lgPin2').value);
 $('#lgGo').addEventListener('click',lgSubmit);
 $('#lgId').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#lgPin').focus();}});
-$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
-$('#lgPin').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);});
+$('#lgPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(LGMODE==='signup')$('#lgPin2').focus();else lgSubmit();}});
+$('#lgPin2').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lgSubmit();}});
+['#lgPin','#lgPin2'].forEach(q=>$(q).addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);}));
 $('#lgResume').addEventListener('click',e=>{$('#lgId').value=e.currentTarget.dataset.id;$('#lgPin').focus();});
-$('#lgToLogin').addEventListener('click',goLoginForm);
+$('#lgToLogin').addEventListener('click',()=>goLoginForm('login'));
+$('#lgToSignup').addEventListener('click',()=>goLoginForm('signup'));
+$('#lgSwitch').addEventListener('click',()=>goLoginForm(LGMODE==='signup'?'login':'signup'));
 $('#lgGuest').addEventListener('click',enterGuest);
 $('#lgBackChoice').addEventListener('click',()=>{$('#lgMsg').textContent='';lgStep('choice');setTimeout(()=>{try{$('#lgToLogin').focus();}catch(e){}},30);});
 $('#lgCreate').addEventListener('click',()=>createUser(false));
 $('#lgImport').addEventListener('click',()=>createUser(true));
 $('#lgBack1').addEventListener('click',()=>lgStep('main'));
 $('#lgBack2').addEventListener('click',()=>lgStep('main'));
-$('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin));
-$('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.local)finishLogin(null);else showNew(LG.id);});
+$('#lgRetry').addEventListener('click',()=>startLogin(LG.id,LG.pin,LG.pin));
+$('#lgOffline').addEventListener('click',()=>{LG.offline=true;if(LG.mode==='signup'){if(LG.local)idTaken();else signupNew();}else if(LG.local)finishLogin(null);else idMissing();});
 $('#outBtn').addEventListener('click',logout);
 /* ---------- 비밀번호 변경 ---------- */
 function openPinChange(){
