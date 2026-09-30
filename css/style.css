@@ -59,7 +59,7 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .grow{padding:12px 14px;display:flex;align-items:center;gap:12px}
 .grow .gi{font-size:30px;line-height:1;flex:none}
 .grow>div{flex:1;min-width:0}
-.grow h2{margin:0;font-family:var(--display);font-weight:400;font-size:21px;line-height:1.25}
+.grow h2{margin:0;font-family:var(--display);font-weight:400;font-size:21px;line-height:1.25;word-break:keep-all}   /* 긴 한글 제목이 낱말 중간에서 줄바꿈되지 않게 */
 .grow p{margin:2px 0 0;color:var(--muted);font-size:13px}
 .grow .go{flex:none}
 #soonList .list{gap:6px}
@@ -110,6 +110,15 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .sumtab tr.me td{background:rgba(226,51,77,.12)}
 .plus{color:var(--ok)}.minus{color:var(--ring)}
 .btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start}
+.badge{display:inline-flex;flex-direction:column;align-items:flex-start;padding:6px 10px;border:2px solid var(--line);border-radius:10px;box-shadow:2px 2px 0 var(--line);font-weight:700;font-size:14px;line-height:1.3}
+.badge small{font-weight:400;font-size:11px;opacity:.8}
+.badge.b1{background:linear-gradient(#ffe38a,#e8a91c);color:#3b2a00}
+.badge.b2{background:linear-gradient(#f4f6f9,#b9c0cc);color:#232a45}
+.rbadge{display:inline-flex;align-items:baseline;gap:1px;padding:0 5px;margin-left:2px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;line-height:1.5;cursor:pointer;vertical-align:1px}
+.rbadge small{font-size:11px;font-weight:700}
+.rbadge.b1{background:#ffd966;color:#3b2a00}.rbadge.b2{background:#dfe3ea;color:#232a45}
+.dialog .badges .none{margin:0;font-size:13px;text-align:left}
 .tip{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
 #toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:80;padding:0 12px}
 #toast div{background:var(--line);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500}
@@ -169,6 +178,14 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 @media(max-width:520px){.pgdiffs{grid-template-columns:repeat(2,minmax(0,1fr))}}   /* minmax(0,…): 버튼 글자 때문에 좁은 폰에서 허브 전체가 가로로 넓어지지 않게 */
 .pgdiffs .song{flex-direction:column;justify-content:center;text-align:center;gap:0;padding:8px 6px}
 .pgdiffs .song .stars{margin:0;white-space:normal;font-size:13px;line-height:1.3}
+.pgstep{display:grid;gap:12px}.pgstep[hidden]{display:none}
+.pgst{margin:0!important;font-weight:700;color:var(--ink)!important;font-size:15px!important}
+.pgprev{justify-self:start}
+.pgdiffs .song.poor{opacity:.45}
+.pgdiffs .song.poor::after{content:'소지금 부족';font-size:12px;font-weight:700;color:var(--muted)}
+.pgsum{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--bar)}
+.pgsum b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.2}
+.pgsum span{font-weight:700;color:var(--ring);white-space:nowrap}
 .pgopt{border:2px dashed var(--line);border-radius:12px;padding:8px 12px;font-size:14px}
 .pgopt summary{cursor:pointer;font-weight:700}
 .pgrow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}

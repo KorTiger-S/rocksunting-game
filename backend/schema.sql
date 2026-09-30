@@ -280,12 +280,14 @@ language plpgsql security definer set search_path = public, extensions as $$
 declare m text := coalesce(p->>'metric', 'money'); n int := public.rk_int(p->'limit', 1, 30, 10); res jsonb;
 begin
   select jsonb_build_object('ok', true, 'total', (select count(*) from public.rk_users),
-                            'list', coalesce(jsonb_agg(to_jsonb(t) order by t.v desc, t.at asc), '[]'::jsonb))
+                            'list', coalesce(jsonb_agg((to_jsonb(t) - 'k') || jsonb_build_object('badges', public.rk_badge_list(t.k))
+                                                       order by t.v desc, t.at asc), '[]'::jsonb))   -- badges: 지난 시즌 우승·준우승 (이름 옆에 표시)
   into res from (
     select name as id, money, wins, losses, best_pts as "bestPts", week, cleared, updated_at_ms as at,
            case m when 'wins' then wins when 'bestPts' then best_pts
                   when 'pumpBest' then coalesce((data->>'pumpBest')::int, 0) else money end as v,
-           coalesce((data->>'pumpBest')::int, 0) as "pumpBest"     -- v가 9번째 열이어야 아래 order by 9가 맞아요
+           coalesce((data->>'pumpBest')::int, 0) as "pumpBest",     -- v가 9번째 열이어야 아래 order by 9가 맞아요
+           id as k
     from public.rk_users
     order by 9 desc, updated_at_ms asc
     limit n) t;
@@ -371,6 +373,22 @@ begin
       'gameName', r.game_name, 'startedAt', r.started_at, 'endedAt', r.ended_at),
     'players', r.snapshot->'players', 'matchCount', r.match_count);
 end $$;
+
+-- 시즌 뱃지: 마감된 시즌의 스냅샷(소지금 순)에서 1등 = 우승, 2등 = 준우승. 프로필에서 보여 준다.
+-- 스냅샷에서 바로 계산하므로 시즌 마감 함수는 건드리지 않고, 마감이 끝나면 저절로 생긴다. 랭킹처럼 공개 정보라 비밀번호는 받지 않는다.
+-- 내부 도우미: 한 사람(소문자 ID)의 뱃지 목록. 프로필(rk_badges)과 랭킹(rk_top)이 같이 쓴다.
+create or replace function public.rk_badge_list(k text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'key', s.season_key, 'number', s.number, 'gameName', s.game_name, 'rank', x.pos) order by s.number, x.pos), '[]'::jsonb)
+  from public.rk_seasons s
+  cross join lateral jsonb_array_elements(s.snapshot->'players') with ordinality as x(pl, pos)
+  where x.pos <= 2 and lower(x.pl->>'id') = k
+$$;
+create or replace function public.rk_badges(p jsonb) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('ok', true, 'list', public.rk_badge_list(lower(public.rk_norm_id(p->>'id'))))
+$$;
 
 -- ---------- 1:1 페널티킥 대결 ----------
 -- 피파 온라인 방식: 슈터는 골대 안에서 조준(ax, ay) + 파워 게이지(pw), 골키퍼는 다이브 칸(0~5)을 고른다.
@@ -725,17 +743,17 @@ begin
 end $$;
 
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
-revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data() from public, anon, authenticated;
+revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text) from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb),
+                       public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb), public.rk_badges(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
                        public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                        public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb) from public;
 revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
-                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb),
+                          public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb), public.rk_badges(jsonb),
                           public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                           public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb)
   to anon, authenticated;
