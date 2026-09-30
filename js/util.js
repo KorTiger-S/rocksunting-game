@@ -28,6 +28,5 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rand=(a,b)=>a+Math.random()*(b-a);
 const fmt=n=>Math.floor(n).toLocaleString('ko-KR');
 const FACES=['base','angry','surprise','panic','happy','sad','tired','doubt','resolve','excited','frustrated','worn'];
-const CONDS=['매우나쁨','나쁨','보통','좋음','매우좋음'];   /* 컨디션 5단계 (0~4) */
 function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*v);}
 

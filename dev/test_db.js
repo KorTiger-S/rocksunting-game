@@ -145,6 +145,9 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   r = await load('철수');
   ok(r.data.money === 10000 && r.data.wins === 0 && r.data.week === 1 && r.data.up.shoes === 0 && r.season === cl.next.key, '마감 뒤 모든 플레이어 기록이 초기화됨');
   ok(r.data.pumpBest === 0 && r.data.mics === 5 && r.data.micAt === 0, '마감 뒤 소리새 펌프 최고점·마이크도 초기화됨');
+  ok(['str', 'stam', 'mood', 'cond', 'fatigue', 'hosp', 'gymGap', 'bbqGap'].every(k => !(k in r.data)), '시즌2부터 없앤 능력치(근력·체력·기분·컨디션·피로도)는 초기 데이터에 없음');
+  r = await save('짱구', Date.now(), { money: 10000, str: 90, stam: 80, mood: 10, cond: 0, fatigue: 2 }, P, cl.next.key);
+  ok(r.ok && !('str' in (await load('짱구')).data) && !('fatigue' in (await load('짱구')).data), '예전 화면이 능력치를 보내도 저장하지 않음');
   ok(cl.players.find(x => x.id === '철수').pumpBest === 903210, '시즌 스냅샷에 펌프 최고점이 들어감');
   ok((await rpc('top', { metric: 'money' })).list.every(x => x.money === 10000 && x.wins === 0), '랭킹도 초기화됨');
   ok((await load('철수')).data.plays === 0 && (await load('짱구')).name === '짱구', '계정(ID)은 유지됨');

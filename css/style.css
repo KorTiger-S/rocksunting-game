@@ -29,7 +29,7 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .board .sub{margin:0;font-size:13px;opacity:.85}
 .hud{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 /* 게임 제목(h1)의 약 2배 높이로, 헤더 우측 상단에 고정 배치해요(칩이 줄바꿈돼도 항상 같은 자리).
-   누르면 표정이 바뀌면서 소지금/스탯/로그아웃 같은 프로필 정보 팝업이 함께 열려요. */
+   누르면 표정이 바뀌면서 소지금/뱃지/로그아웃 같은 프로필 정보 팝업이 함께 열려요. */
 .hubface{position:absolute;top:8px;right:16px;width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--ring);background:#f4f1ee;cursor:pointer}
 /* 칩이 줄바꿈되는 좁은 화면에서만, 아이콘 아래로 살짝 내려서 겹치지 않게 해요.
    (아이콘은 헤더 맨 위 72px만 차지하는데, 이전엔 폭 전체에 여백을 둬서 줄바꿈된 칩들이 불필요하게 좁아졌어요) */
@@ -39,10 +39,8 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 #hub{max-width:1040px;margin:0 auto;padding:16px;display:grid;gap:16px}
 .prog{height:14px;background:var(--bar);border:2px solid var(--line);border-radius:99px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ring);width:0}
-.prog.stat{height:10px;margin-bottom:4px}
 #stamBar{background:var(--ok)}
 #strBar{background:var(--gold)}
-.itemicon{width:20px;height:20px;vertical-align:-5px;margin-right:5px;border-radius:50%;background:#fff}
 .sec{margin:14px 0 8px;font-size:14px;font-weight:700;color:var(--muted);text-align:left}
 .list{display:grid;gap:10px}
 .go{padding:8px 14px;border:2px solid var(--line);background:var(--ring);color:#fff;border-radius:10px;font-weight:700;min-width:76px;box-shadow:2px 2px 0 var(--line)}

@@ -5,8 +5,7 @@
    - 시계: 곡이 흐르는 AudioContext 시간(AC.currentTime)을 기준으로 삼아서, 화면·소리·판정이 어긋나지 않아요.
      탭이 가려지면 AudioContext가 멈추면서 게임도 같이 멈춰요.
    - 판돈은 시작할 때 미리 빼고 저장해요. (중간에 새로고침해서 되돌리는 부정행위 방지: 프리킥과 같아요)
-   - 도전 횟수: 마이크 🎤 5개, 시작할 때마다 1개씩 쓰고 30분마다 1개 충전 (프리킥의 축구공과 같은 방식)
-   - 몸 관리 연동: 체력 → 시작 게이지, 컨디션 → 판정 폭 */
+   - 도전 횟수: 마이크 🎤 5개, 시작할 때마다 1개씩 쓰고 30분마다 1개 충전 (프리킥의 축구공과 같은 방식) */
 const MIC_MAX=5,MIC_MIN=30;
 const micMin=()=>Math.floor(Date.now()/60000);
 function micTick(){   /* 지난 시간만큼 마이크를 채워요. 개수가 늘었으면 true */
@@ -49,8 +48,7 @@ function pgOptFix(){
 }
 pgOptFix();
 const pgOptSave=()=>lsSet('rk:pump',JSON.stringify(PGO));
-const pgLife0=()=>Math.round(40+clamp(S.stam==null?25:S.stam,0,100)*.3);      /* 체력 25% → 48, 100% → 70 */
-const pgWinScale=()=>[.9,.95,1,1.05,1.1][clamp(S.cond==null?2:S.cond,0,4)];   /* 컨디션이 좋을수록 판정이 넉넉해요 */
+const PG_LIFE0=55;   /* 시작 게이지(%) */
 
 /* ---------- 허브 카드: 곡 선택(0) → 난이도 선택(1, 난이도마다 판돈 고정) → 게임 설명 + 노래 시작(2) ---------- */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
@@ -91,7 +89,7 @@ function renderPumpCard(){
   if(pgStep===2&&S.money<pgBet(PGO.diff))pgStep=1;   /* 돈이 모자라 이 난이도를 못 하게 되면 난이도 선택으로 돌아가요 */
   [0,1,2].forEach(i=>{$('#pgStep'+i).hidden=i!==pgStep;});
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
-  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),cond=clamp(S.cond==null?2:S.cond,0,4),bet=pgBet(PGO.diff);
+  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),bet=pgBet(PGO.diff);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도를 골라요`;
   [...$('#pgDiffs').children].forEach((b,i)=>{
     const d=sg.diffs[i],poor=S.money<pgBet(i);
@@ -103,7 +101,6 @@ function renderPumpCard(){
   $('#pgSumB').textContent=`판돈 ${fmt(bet)}원`;
   $('#pgIntroBtn').hidden=!sg.intro;if(sg.intro)$('#pgIntroBtn').textContent=INTROS[sg.intro].btn;
   $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
-  $('#pgBody').textContent=`체력 ${Math.round(S.stam==null?25:S.stam)}% → 시작 게이지 ${pgLife0()}% · 컨디션 ${CONDS[cond]} → 판정이 ${cond>2?'넉넉해요':cond<2?'빡빡해요':'보통이에요'}`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
   $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
   $('#pgStart').disabled=!(S.money>=bet&&S.mics>0);
@@ -152,13 +149,13 @@ const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.m
 
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
 function pgNewGame(sg,bet,before){
-  const ch=pgChart(sg),lanes=[[],[],[],[],[]],sc=pgWinScale();
+  const ch=pgChart(sg),lanes=[[],[],[],[],[]];
   const notes=ch.notes.map(n=>({t:n.t,lane:n.lane,hold:n.hold,res:-1,hs:0}));   /* hs: 0 대기 · 1 누르는 중 · 2 성공 · 3 실패 */
   notes.forEach(n=>lanes[n.lane].push(n));
   lanes.forEach(a=>a.sort((x,y)=>x.t-y.t));
   return{sg,bet,before,notes,lanes,ptr:[0,0,0,0,0],hold:[null,null,null,null,null],held:[false,false,false,false,false],pressAt:[0,0,0,0,0],
-    total:ch.total,endT:ch.end+1.2,cnt:[0,0,0,0,0],ok:0,ng:0,wsum:0,done:0,combo:0,maxCombo:0,life:pgLife0(),life0:pgLife0(),
-    W:{perfect:.06*sc,great:.10*sc,good:.14*sc,bad:.18*sc},approach:sg.approach/PG_SPEEDS[PGO.spd],
+    total:ch.total,endT:ch.end+1.2,cnt:[0,0,0,0,0],ok:0,ng:0,wsum:0,done:0,combo:0,maxCombo:0,life:PG_LIFE0,life0:PG_LIFE0,
+    W:{perfect:.06,great:.10,good:.14,bad:.18},approach:sg.approach/PG_SPEEDS[PGO.spd],
     state:'count',paused:false,frozen:0,pauseAt:0,resumeAt:0,grace:0,pop:null,fx:[],missAt:0,comboAt:0,cd:99,go:false,err:0,settled:false,
     t0:0,off:0,step:0,nextT:0,timer:0,tg:null,ptrs:{}};
 }
@@ -372,12 +369,9 @@ function pgFinish(failed,quit){
   const score=pgScore(g),grade=failed?'F':pgGrade(score),win=!failed&&score>=g.sg.target,bonus=Math.round(g.bet*.5/100)*100;
   const delta=win?2*g.bet+(grade==='S'?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+S랭크 보너스)만 더해요 */
   g.settled=true;g.score=score;g.grade=grade;g.win=win;
-  S.fatigue=Math.max(0,(S.fatigue||0)-1);
   S.money=Math.max(0,S.money+delta);
-  if(win)S.mood=clamp((S.mood==null?50:S.mood)+6,0,100);else S.mood=clamp((S.mood==null?50:S.mood)-6,0,100);
   if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
   S.plays=(S.plays||0)+1;
-  dayStats();
   if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
   cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
