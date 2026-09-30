@@ -11,7 +11,6 @@ function renderGameList(){
   $('#glPumpT').textContent=open?'호우와 소리새 헛다리짚기 훈련':'???';
   $('#glPump').textContent=open?`🎤 남은 마이크 ${S.mics==null?5:S.mics}/5 · 발판 리듬 게임`:'준비 중 · 관리자 번호로 입장';
   $('#glDuel').textContent=duOk()?'방 코드로 친구와 실시간 승부':'로그인하면 친구와 대결할 수 있어요';
-  $('#glCare').textContent=`근력 ${Math.round(clamp(S.str==null?25:S.str,0,100))}% · 체력 ${Math.round(clamp(S.stam==null?25:S.stam,0,100))}% · 컨디션 ${CONDS[clamp(S.cond==null?2:S.cond,0,4)]}`;
 }
 function openHubCard(id){
   hubCard=id;renderGameList();
@@ -23,8 +22,6 @@ function renderHub(){
   renderDuelCard();renderPumpCard();
   $('#hMoney').textContent=fmt(S.money)+'원';$('#pfMoney').textContent=fmt(S.money)+'원';
   $('#chat').innerHTML=`<b>${chatCur.n}</b>: ${chatCur.t}`;
-  const f=S.fatigue||0;$('#fat').textContent='●'.repeat(f)+'○'.repeat(Math.max(0,3-f))+(f>=2?' (위험!)':'');
-  renderStats();
   $('#prog').style.width=clamp(S.money/1000000*100,0,100)+'%';$('#goalTxt').textContent=`${fmt(S.money)} / 1,000,000원 (승 ${S.wins} · 패 ${S.losses})`;
   betV=clamp(betV,1000,Math.max(1000,betMax()));
   $('#betV').textContent=fmt(betV)+'원';
@@ -64,84 +61,7 @@ setInterval(()=>{
   if(!USER||mode!=='hub')return;
   if(ballTick()){save();renderHub();sfx('ping');toast('⚽ 도전 횟수가 하나 충전됐어요!');}else renderBalls();
 },1000);
-/* ---------- 몸 관리: 쇠질하기(근력)·난지바베큐(체력)는 한 판을 쓰고, 소리새가서 노래부르기(컨디션)·디델리(기분)는 즉시 사 먹어요 ---------- */
-const GYM_COST=1500,BBQ_COST=2000,DRINK_COST=700,TTEOK_COST=1000;
-const TTEOK_IMG='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><ellipse cx="32" cy="46" rx="26" ry="14" fill="#e8562c"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="#f2703f"/><rect x="14" y="18" width="7" height="26" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="28" y="14" width="7" height="30" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><rect x="42" y="20" width="7" height="24" rx="3.5" fill="#fff" stroke="#d9c9b0" stroke-width="1.5"/><circle cx="24" cy="40" r="2.4" fill="#c2321a"/><circle cx="36" cy="36" r="2.4" fill="#c2321a"/><circle cx="30" cy="44" r="2" fill="#c2321a"/><ellipse cx="32" cy="42" rx="26" ry="13" fill="none" stroke="#a8391c" stroke-width="2"/></svg>');
-$('#tteokIcon').src=TTEOK_IMG;
-const moodLabel=m=>CONDS[clamp(Math.floor(clamp(m,0,100)/20),0,4)];   /* 기분(0~100)을 컨디션과 같은 5단계 라벨로 */
-function renderStats(){
-  const stam=clamp(S.stam==null?25:S.stam,0,100),str=clamp(S.str==null?25:S.str,0,100),mood=clamp(S.mood==null?50:S.mood,0,100),cond=clamp(S.cond==null?2:S.cond,0,4);
-  $('#statStam').textContent=Math.round(stam)+'%';$('#stamBar').style.width=stam+'%';
-  $('#statStr').textContent=Math.round(str)+'%';$('#strBar').style.width=str+'%';
-  $('#statMood').textContent=moodLabel(mood);
-  $('#statCond').textContent=CONDS[cond];
-  $('#gymBtn').disabled=S.money<GYM_COST;$('#bbqBtn').disabled=S.money<BBQ_COST;
-  $('#drinkBtn').disabled=S.money<DRINK_COST||cond>=4;$('#tteokBtn').disabled=S.money<TTEOK_COST||mood>=100;
-}
-/* 돈을 쓰는 순간 무엇이 얼마나 바뀌었는지 바로 보이도록, 동전 소리 + 효과별 소리 + 토스트 알림을 함께 띄워요 */
-function spendToast(msg){sfx('coin');setTimeout(()=>sfx('coin'),110);toast(msg);}
-function gymAction(){
-  if(S.money<GYM_COST)return;
-  const before=Math.round(clamp(S.str==null?25:S.str,0,100));
-  S.str=clamp((S.str==null?25:S.str)+10,0,100);S.gymGap=-1;
-  spendToast(`💪 헬스장 이용료 ${fmt(GYM_COST)}원 지불 · 근력 ${before}% → ${Math.round(S.str)}%`);
-  dayAction(-GYM_COST,false);
-}
-function bbqAction(){
-  if(S.money<BBQ_COST)return;
-  const before=Math.round(clamp(S.stam==null?25:S.stam,0,100));
-  S.stam=clamp((S.stam==null?25:S.stam)+12,0,100);S.bbqGap=-1;
-  spendToast(`🍖 고기값 ${fmt(BBQ_COST)}원 지불 · 체력 ${before}% → ${Math.round(S.stam)}%`);
-  dayAction(-BBQ_COST,false);
-}
-function buyDrink(){
-  if(S.money<DRINK_COST||(S.cond==null?2:S.cond)>=4)return;
-  const before=CONDS[clamp(S.cond==null?2:S.cond,0,4)];
-  S.money-=DRINK_COST;S.cond=clamp((S.cond==null?2:S.cond)+1,0,4);
-  spendToast(`🎤 소리새 노래방비 ${fmt(DRINK_COST)}원 지불 · 컨디션 ${before} → ${CONDS[S.cond]}`);
-  save();renderHub();
-}
-function buyTteok(){
-  if(S.money<TTEOK_COST||(S.mood==null?50:S.mood)>=100)return;
-  const before=moodLabel(S.mood==null?50:S.mood);
-  S.money-=TTEOK_COST;S.mood=clamp((S.mood==null?50:S.mood)+15,0,100);
-  spendToast(`🍢 디델리 라볶이 ${fmt(TTEOK_COST)}원 지불 · 기분 ${before} → ${moodLabel(S.mood)}`);
-  save();renderHub();
-}
-$('#gymBtn').addEventListener('click',gymAction);
-$('#bbqBtn').addEventListener('click',bbqAction);
-$('#drinkBtn').addEventListener('click',buyDrink);
-$('#tteokBtn').addEventListener('click',buyTteok);
 function toHub(){mode='hub';if(pendingCloud){const r=pendingCloud;pendingCloud=null;adoptCloud(r);}chatCur=randChat();C=null;K=null;$('#skip').hidden=true;$('#ovSet').hidden=true;showGame(false);renderHub();maybeLoan();}
-function dayAction(gain,job){
-  if(gain)S.money+=gain;
-  if(job)S.fatigue=(S.fatigue||0)+1;else S.fatigue=Math.max(0,(S.fatigue||0)-1);
-  chatCur=randChat();
-  dayStats();
-  if(job&&S.fatigue>=3){hospitalize();return;}
-  save();renderHub();
-}
-const VISIT=[
- {n:'겨맘',t:'내가 죽 끓여왔어, 원기회복엔 이만한 게 없다니까! 얼른 낫고 같이 운동장 뛰자~ (죽을 놓고 갔다)'},
- {n:'히통',t:'병원비 모자라면 빌려줄게. 이자는 10%… 퇴원 기념으로 9.9%.'},
- {n:'주멘',t:'이건 계획에 없었는데… 알바 스케줄부터 다시 짜자.'},
- {n:'머호',t:'세상은 어차피 다 5할이야. 쓰러질 확률도 5할이었던 거지~'},
- {n:'주스',t:'아픈 놈은 안 깨문다. 다 나으면 깨물어버린다!'},
- {n:'ㅈㄱ',t:'…(말없이 이상해씨 카드를 두고 갔다)'},
- {n:'씨붕',t:'인마, 몸 관리 좀 하랬지?! …아, 됐고. 죽 식기 전에 얼른 먹어.'}
-];
-function hospitalize(){
-  const before=S.money,fee=Math.min(8000,Math.max(2000,Math.round(S.money*.35/100)*100)),paid=Math.min(S.money,fee),short=fee-paid;
-  S.money-=paid;const afterFee=S.money;S.fatigue=0;S.hosp=(S.hosp||0)+1;
-  dayStats();dayStats();const v=pick(VISIT);
-  const pages=[
-    {img:'worn',sfx:'siren',title:'과로로 쓰러졌다…',text:'매점 알바를 쉬지 않고 이어서 하다가, 계산대 앞에서 그대로 쓰러지고 말았다.'},
-    {img:'sad',title:'병원에서 눈을 떴다',who:v.n,text:v.t},
-    {img:'frustrated',sfx:'deny',title:'병원비 정산',text:`병원비 ${fmt(fee)}원이 나갔다. (소지금 ${fmt(before)} → ${fmt(afterFee)}원)`+(short>0?` 모자란 ${fmt(short)}원은 병원에서 사정을 봐줬다.`:'')+' 알바는 쉬엄쉬엄 하자.'}
-  ];
-  save();
-  showStory(pages,()=>{chatCur=randChat();renderHub();maybeLoan();},'sad');
-}
 let STORY=null;
 function showStory(pages,done,bgm){STORY={pages,i:0,done,bgm};renderStory();$('#story').hidden=false;}
 function renderStory(){const p=STORY.pages[STORY.i];$('#stT').textContent=p.title;$('#stImg').src=p.src||IMGDATA[p.img||'base'];
@@ -198,15 +118,14 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',
-  gymBtn:'none',bbqBtn:'none',drinkBtn:'none',tteokBtn:'none'};   /* 소리는 spendToast()/showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',bMinus:'tick',bPlus:'tick',bBig:'tick',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
-/* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/스탯/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){renderStats();$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+/* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
+function openProfile(){$('#pfMoney').textContent=fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list){

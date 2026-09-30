@@ -24,7 +24,8 @@ function setOutput(k, v) { if (process.env.GITHUB_OUTPUT) fs.appendFileSync(proc
 (async () => {
   const reportKey = (process.env.REPORT_KEY || '').trim();
   const r = reportKey ? await rpc('rk_season_report', { key: reportKey }) : await rpc('rk_close_season');
-  if (!reportKey && !r.closed) { console.log(`아직 시즌이 끝나지 않았어요. (마감: ${r.endsAt})`); setOutput('closed', 'false'); return; }
+  if (!reportKey && r.reset) { console.log(`연습 기간이 끝나서 모든 기록을 초기화했어요. 시즌${r.next.number} (${r.next.key}) 시작, 마감 ${r.next.endsAt}`); setOutput('closed', 'false'); return; }
+  if (!reportKey && !r.closed) { console.log(`아직 시즌이 끝나지 않았어요. (마감: ${r.endsAt}${r.practiceUntil ? `, 연습 기간 ~${r.practiceUntil}` : ''})`); setOutput('closed', 'false'); return; }
   const rep = renderReport(r);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, rep.name + '.md'), rep.md);

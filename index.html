@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>롹순팅 키우기 - 프리킥 내기</title>
+<title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 내기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1.8.22">
+<link rel="stylesheet" href="css/style.css?v=2.0.0">
 </head>
 <body>
 <header class="board">
@@ -25,7 +25,6 @@
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
-      <div class="card grow"><span class="gi" aria-hidden="true">💪</span><div><h2>몸 관리</h2><p id="glCare"></p></div><button class="go alt gopen" data-card="careCard">관리하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
@@ -72,7 +71,6 @@
           <div class="pgsum"><b id="pgSumT"></b><span id="pgSumB"></span></div>
           <p id="pgInfo"></p>
           <button class="linkbtn" id="pgIntroBtn" hidden style="justify-self:start">🎬 ㅈㄱ와 파이리 이야기 보기</button>
-          <p id="pgBody"></p>
           <ul class="rules">
             <li>오락실 펌프처럼 5개 발판 <b>↙ ↖ ● ↗ ↘</b>을 밟아서 리듬을 맞춰요. 노트가 위쪽 발판에 닿는 순간 밟아요.</li>
             <li>키보드는 <b>Z Q S E C</b>(숫자패드 <b>1 7 5 9 3</b>), 모바일은 화면 아래 발판을 터치! (<b>Esc</b>: 일시정지)</li>
@@ -116,20 +114,6 @@
         <button class="go alt" id="duJoin">참가하기</button>
       </div>
       <p id="duNote"></p>
-    </div>
-    <div class="card chall gdet" id="careCard" hidden>
-      <button class="linkbtn gback">← 게임 목록</button>
-      <h2>몸 관리</h2>
-      <p>근력은 쇠질하기, 체력은 난지바베큐로 올려요. 주기적으로 하지 않으면 서서히 떨어져요.</p>
-      <div class="acts">
-        <button class="go alt" id="gymBtn">🏋 쇠질하기 (헬스장 이용료 1,500원)</button>
-        <button class="go alt" id="bbqBtn">🍖 난지바베큐 (고기값 2,000원)</button>
-      </div>
-      <p>컨디션은 매일 랜덤으로 바뀌고 난이도에 영향을 줘요. 기분이 나쁘면 컨디션도 잘 안 좋아져요.</p>
-      <div class="acts">
-        <button class="go ghost" id="drinkBtn">🎤 소리새가서 노래부르기 (700원)</button>
-        <button class="go ghost" id="tteokBtn"><img class="itemicon" id="tteokIcon" alt="">디델리 라볶이 (1,000원)</button>
-      </div>
     </div>
     <div id="soonList">
       <div class="sec" style="margin-top:0">다른 내기 (준비 중)</div>
@@ -218,7 +202,7 @@
   <div class="card dialog" style="max-width:400px">
     <div class="logo" style="margin:0 auto 6px;border-color:var(--ring)"></div>
     <h2>롹순팅 키우기</h2>
-    <p>머대부속 고등학교 · 시즌1 프리킥</p>
+    <p>머대부속 고등학교 · 시즌2 헛다리짚기 훈련</p>
     <div id="lgChoice">
       <button class="go" id="lgToLogin" style="width:100%;margin:6px 0">🔑 로그인</button>
       <button class="go alt" id="lgToSignup" style="width:100%;margin:6px 0">📝 회원가입</button>
@@ -284,14 +268,6 @@
     <div class="sec">목표: 100만 원</div>
     <div class="prog"><i id="prog"></i></div>
     <p id="goalTxt"></p>
-    <div class="sec">피로도 <span id="fat"></span></div>
-    <p style="margin:0 0 4px">알바만 계속하면 과로로 쓰러져요.</p>
-    <div class="sec">체력 <span id="statStam"></span></div>
-    <div class="prog stat"><i id="stamBar"></i></div>
-    <div class="sec">근력 <span id="statStr"></span></div>
-    <div class="prog stat"><i id="strBar"></i></div>
-    <div class="sec">기분 <span id="statMood"></span></div>
-    <div class="sec">컨디션 <span id="statCond"></span></div>
     <div class="btns"><button class="go" id="pfClose">닫기</button></div>
   </div>
 </div>
@@ -360,24 +336,24 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=1.8.22"></script>
-<script src="js/save.js?v=1.8.22"></script>
-<script src="js/cloud.js?v=1.8.22"></script>
-<script src="js/login.js?v=1.8.22"></script>
-<script src="js/rank.js?v=1.8.22"></script>
-<script src="js/audio.js?v=1.8.22"></script>
-<script src="js/input.js?v=1.8.22"></script>
-<script src="js/render.js?v=1.8.22"></script>
-<script src="js/kick-data.js?v=1.8.22"></script>
-<script src="js/kick.js?v=1.8.22"></script>
-<script src="js/hub.js?v=1.8.22"></script>
-<script src="js/splash.js?v=1.8.22"></script>
-<script src="js/duel.js?v=1.8.22"></script>
-<script src="js/pump-data.js?v=1.8.22"></script>
-<script src="js/pump.js?v=1.8.22"></script>
-<script src="js/jgintro.js?v=1.8.22"></script>
-<script src="js/lateintro.js?v=1.8.22"></script>
-<script src="js/main.js?v=1.8.22"></script>
+<script src="js/util.js?v=2.0.0"></script>
+<script src="js/save.js?v=2.0.0"></script>
+<script src="js/cloud.js?v=2.0.0"></script>
+<script src="js/login.js?v=2.0.0"></script>
+<script src="js/rank.js?v=2.0.0"></script>
+<script src="js/audio.js?v=2.0.0"></script>
+<script src="js/input.js?v=2.0.0"></script>
+<script src="js/render.js?v=2.0.0"></script>
+<script src="js/kick-data.js?v=2.0.0"></script>
+<script src="js/kick.js?v=2.0.0"></script>
+<script src="js/hub.js?v=2.0.0"></script>
+<script src="js/splash.js?v=2.0.0"></script>
+<script src="js/duel.js?v=2.0.0"></script>
+<script src="js/pump-data.js?v=2.0.0"></script>
+<script src="js/pump.js?v=2.0.0"></script>
+<script src="js/jgintro.js?v=2.0.0"></script>
+<script src="js/lateintro.js?v=2.0.0"></script>
+<script src="js/main.js?v=2.0.0"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
