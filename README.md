@@ -18,12 +18,13 @@ js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 �
 assets/faces/*.jpg    캐릭터 표정 12종
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
 assets/theme/*.jpg    소리새 펌프 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
+assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 시각·현재 채보)
 assets/music/*.mp3    음원 파일 곡 (소리새 펌프 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
 assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성 (GitHub Actions가 실행)
 .github/workflows/   시즌 자동 마감 워크플로우
-dev/                  개발 도구 (빌드, 백엔드 테스트)
+dev/                  개발 도구 (빌드, 백엔드 테스트, 채보 메이커 chart-maker.html · apply_chart.js)
 dist/                 빌드 결과 (단일 HTML 파일)
 ```
 
@@ -73,6 +74,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 업데이트 내역(v2.0.0부터 안 읽은 것을 차례대로) | `RELEASE_NOTES`, `NOTES_FROM`, `maybeShowNotes()`/`showNextNote()`/`closeNotes()` (`js/login.js`), 읽은 버전은 `rk:seen:ID` |
 | 소리새 펌프 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
 | 소리새 펌프 음원(mp3) 곡 | `PGSONGS`의 `audio`·`bpmx`·`audioOff` + 시각으로 적은 채보 `PG_CHART`(가사 음절에 맞춘 난이도 4개, 표기는 주석 참고) (`js/pump-data.js`), 재생은 `pgAudLoad()`/`pgAudPlay()`/`pgAudStop()` (`js/pump.js`). `index.html`을 파일로 직접 열면(file://) 음원을 못 읽어요 |
+| 소리새 펌프 채보 직접 만들기(채보 메이커) | `dev/chart-maker.html` — 로컬 서버(`npm run serve`)나 GitHub Pages에서 `…/dev/chart-maker.html`로 열어요. 노래를 들으며 게임 키로 플레이하면 녹음되고, 내 싱크 → 평균 오차 → 곡 박자 지도(16분/8분 칸) 순서로 보정해요. 곡 데이터는 `assets/music/<곡>.json`(beats 8분음표 시각, lyrics 가사 음절 시각, levels 현재 채보). 💾 저장한 파일은 `node dev/apply_chart.js 파일.json`으로 `PG_CHART`에 들어가요('시각/발판[:롱노트]') |
 | 소리새 펌프 곡 테마(그 곡에서만 배경 그림·색) | `PGSONGS`의 `theme` + `PG_THEMES`, `pgThemeApply()`(화면·결과표), `pgDraw()`·`pgShareDraw()`(캔버스) (`js/pump.js`), 색은 `.pgth` (`css/style.css`) |
 | 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
 | 소리새 펌프 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |

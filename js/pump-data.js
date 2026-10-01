@@ -271,6 +271,8 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
            [2] 어려움 = 모든 음절 + 노래가 쉬는 틈은 킥·스네어 8분 박자로 채우고, 후렴 줄 첫 음절·외치는 끝음절(모여! 외쳐! 찾는다! 불태워!)은 점프
            [3] 매우 어려움 = 16분 음절까지 전부 + 킥·스네어 + 후렴은 박마다 끝 16분(하이햇)까지 따-닥, 후렴 스네어 백비트도 점프
    노트 표기: 음원 시각(ms), 뒤에 *는 점프(발판 두 개), :숫자는 롱노트 길이(ms). 발판(↙↖●↗↘)은 다른 곡처럼 pgChart가 패턴으로 정해요.
+     채보 메이커(dev/chart-maker.html)로 직접 만든 채보는 '시각/발판' 표기예요(예: 1230/2:400 = 1.23초 가운데 발판 0.4초 롱노트, 같은 시각 두 개 = 점프).
+     메이커에서 저장한 파일은 node dev/apply_chart.js 파일.json 으로 여기에 넣어요.
    음원을 바꾸면 이 채보도 다시 만들어야 박자가 맞아요. */
 const PG_CHART={pg13:{dur:59.8,lv:[
   '1358:595 2173 3293 4018 4933 5553 6353 8393 9213 9923 10843 11643 12353 12873 13483:690 14393 15103 16113 16733 17853 18763 19868 21488:1725 23813 26233 27033 27643 28023 28843:1190 30253 31063 31568 32273 32883 34083 34493 35493:990 36703 39123 39923 40523 40933 41733 42333 43143 43753 44753 45763 46363 47573 48173 49573:1470 51263:1380 52863:2170 55253',
@@ -334,10 +336,10 @@ function pgChart(sg){
   /* 1) 노트 자리: {s 칸, t 시각, hold 롱노트 길이(없으면 아래에서 확률로), jump 점프 여부(없으면 확률로)} */
   let items;
   const EX=PG_CHART[sg.id];
-  if(EX){   /* 음원 곡: 적어 둔 채보 그대로 (시각·점프·롱노트 모두 정해져 있어요) */
+  if(EX){   /* 음원 곡: 적어 둔 채보 그대로 (시각·점프·롱노트 모두 정해져 있어요. 발판까지 적힌 노트는 그 발판 그대로) */
     items=EX.lv[lv-1].trim().split(/\s+/).map(w=>{
-      const m=/^(\d+)(\*?)(?::(\d+))?$/.exec(w),t=(+m[1])/1000-(sg.audioOff||0);
-      return {t,s:Math.round(t/spb),hold:m[3]?(+m[3])/1000:0,jump:!!m[2]};
+      const m=/^(\d+)(?:\/([0-4]))?(\*?)(?::(\d+))?$/.exec(w),t=(+m[1])/1000-(sg.audioOff||0);
+      return {t,s:Math.round(t/spb),hold:m[4]?(+m[4])/1000:0,jump:!!m[3],lane:m[2]==null?null:+m[2]};
     });
   }else{
     const T=BGMT[sg.id],lead=T.L.find(l=>l.n==='lead').a,bass=T.L.find(l=>l.n==='bass').a,steps=[];
@@ -374,6 +376,7 @@ function pgChart(sg){
   };
   items.forEach(it=>{
     const {s,t,hold}=it;curS=s;
+    if(it.lane!=null){notes.push({t,lane:it.lane,hold,s});last=it.lane;pat=null;return;}   /* 채보 메이커로 직접 찍은 노트 */
     if(it.jump){   /* 점프: 두 발판을 동시에 */
       const j=PGJUMPS[Math.floor(R()*PGJUMPS.length)];
       j.forEach(l=>notes.push({t,lane:l,hold:0,s}));
