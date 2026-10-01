@@ -1,6 +1,6 @@
 {
   "name": "rocksunting-game",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "private": true,
   "description": "롹순팅 키우기 - 머대부속 고등학교 프리킥 내기 · 헛다리짚기 훈련",
   "scripts": {

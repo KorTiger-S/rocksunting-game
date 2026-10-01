@@ -17,6 +17,7 @@ css/style.css         스타일
 js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
 assets/faces/*.jpg    캐릭터 표정 12종
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
+assets/music/*.mp3    음원 파일 곡 (소리새 펌프 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
 assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성 (GitHub Actions가 실행)
@@ -47,6 +48,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `pump.js` | 소리새 펌프 — 허브 카드, 입력, 판정, 그리기, 정산, 마이크(도전 횟수) |
 | `jgintro.js` | 곡 인트로 애니메이션 엔진(`INTROS`, `jgPlay`) + 'ㅈㄱ의 카드 모험' 이야기(`JGS`, 음악 `BGMT.jg`) |
 | `lateintro.js` | '등굣길 뜀박질' 인트로(지각 → 두발 검사 → 담 넘기 → 주스), 장면 목록 `LTS` |
+| `narakintro.js` | '나락쓰레기장' 인트로(사무실 → 6시 퇴근 → 집안일 → 밤 9시 게임 접속 → 10시 친구들 로그인), 장면 목록 `NKS`, 친구 이름 `NK_FRIENDS` |
 | `main.js` | 메인 루프(`frame()`)와 최초 실행(부트스트랩) — **항상 맨 마지막에 로드돼야 해요** |
 
 ## 자주 고치는 곳
@@ -69,6 +71,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 프리킥 골키퍼 민첩성(판돈 없이 고정) | `FREE_LEVEL`, `applyBet()` (`js/kick.js`) |
 | 업데이트 내역(v2.0.0부터 안 읽은 것을 차례대로) | `RELEASE_NOTES`, `NOTES_FROM`, `maybeShowNotes()`/`showNextNote()`/`closeNotes()` (`js/login.js`), 읽은 버전은 `rk:seen:ID` |
 | 소리새 펌프 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
+| 소리새 펌프 음원(mp3) 곡 | `PGSONGS`의 `audio`·`bpmx`·`audioOff` + 채보 재료 `PG_GRID` (`js/pump-data.js`), 재생은 `pgAudLoad()`/`pgAudPlay()`/`pgAudStop()` (`js/pump.js`). `index.html`을 파일로 직접 열면(file://) 음원을 못 읽어요 |
 | 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
 | 소리새 펌프 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |
 | 소리새 펌프 판돈 정산·S 랭크 보너스·시작 게이지 | `pgFinish()`, `PG_LIFE0`(시작 게이지 55%) (`js/pump.js`) |

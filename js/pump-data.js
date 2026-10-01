@@ -6,7 +6,8 @@
      level 2 : 멜로디 음마다 노트                         → 보통
      level 3 : 멜로디 + 베이스 음 전부 + 틈을 채운 노트(마디 뒤 절반은 0.4초, 앞 절반은 0.55초까지), 점프(동시 두 발판)가 자주 나와요 → 어려움
      level 4 : 틈을 0.3초까지 촘촘히 채우고, 반 마디마다 점프, 롱노트는 줄이고 발판을 크게 건너뛰는 흐름까지 → 매우 어려움
-   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 4개 포함) 추가하면 돼요. */
+   새 곡은 pgBuild()로 BGMT에 악보를 등록하고 PGSONGS에 한 줄(난이도 4개 포함) 추가하면 돼요.
+   음원 파일(mp3) 곡도 넣을 수 있어요: PGSONGS에 audio·bpmx·audioOff를 적고, 채보 재료는 PG_GRID에 칸마다 x/.로 적어요(아래 '나락쓰레기장'). */
 /* ---------- 시즌2 잠금 ----------
    허브에는 제목이 "???"로 가려진 카드만 보이고, 관리자 번호(숫자 4자리)를 입력해야 플레이할 수 있어요.
    번호는 소스에 남기지 않고 확인값(PUMP_KEY)만 남겨요. 바꾸려면: node dev/pump_key.js 새번호
@@ -258,6 +259,16 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
   form:['A:main:0','B:main:1','C:main:2','D:soft:3','A:main:0','B:main:1','C:main:2','C:main:2'],
   end:'D6 . . . . . . .',endChord:'D',endBass:'D3'});
 
+/* 13) 나락쓰레기장 — 우리끼리 직접 만든 노래(음원 파일 assets/music/narak.mp3). 합성 악보가 없어서 채보 재료(grid)를 따로 적어요.
+   음원을 분석(dev 밖에서 한 번: 스펙트럼 변화로 박자·소리 시작점 찾기)해서 BPM 148.92, 첫 박 0.21초를 찾고,
+   8분음표 한 칸마다 소리가 새로 시작되면 x를 찍었어요. lead = 전체 음역(목소리·멜로디), bass = 저음(킥·베이스).
+   소리가 길게 이어지는 마디(시작점이 거의 없는 곳)는 lead에 마디 첫 박·셋째 박을 넣어 롱노트로 이어지게 했어요.
+   음원을 바꾸면 이 grid도 다시 만들어야 박자가 맞아요. */
+const PG_GRID={pg13:{
+  lead:'xx.xxx.. x...x..x x...x..x .x...x.. x...x... x...x... x...x... x...x... x...x... ..x...x. x.x..x.. x....xx. xx....x. xx...... ..xxxxx. x.x...x. x...xx.x xx..x.x. .x..xx.. xxx.xx.x xxx.x.x. .xxx.x.. xx.xx.x. ..x...x. x...x..x ..x.x.x. .x...x.x x..xx..x x...xx.x x.x.x.xx x...x... x.x..... x...x... x...x... xx..x... .x....x. x.......',
+  bass:'x.xx.x.x xx.x...x ........ ......x. .....x.x x......x ........ ........ ......x. ..x.x.x. x.x.xxx. x.x.xx.. x.x...x. ..x....x ......x. x.....x. x.x.x.x. x...x.x. ..x.xx.. ..x.x.x. ..x...x. ..x.x.x. x..x.x.x ..x....x x.xxx.xx .....xxx .x...x.. ..x...xx ..x...x. .xxxxxx. ..xx..x. x.x.x..x x.xx...x .x....x. .x.....x ...x.... ........'}};
+Object.values(PG_GRID).forEach(g=>{g.lead=g.lead.replace(/ /g,'');g.bass=g.bass.replace(/ /g,'');g.len=g.lead.length;});
+
 /* 곡 목록. 곡마다 난이도 4개(diffs[0]=쉬움 · [1]=보통 · [2]=어려움 · [3]=매우 어려움)가 있어요.
    stars = 별 개수. 채보의 초당 노트 수·4초 최대 밀도·점프 비율·노트 속도로 난이도를 재서, 교가 쉬움 = ★1 · 교가 롹 버전 매우 어려움(v1.8.9 채보) = ★11을
    기준으로 맞춘 값이에요(v1.8.10에서 어려움부터 채보가 촘촘해져서 그보다 어려운 채보는 11을 넘어요). 채보를 바꾸면 별도 다시 매겨 주세요, target = 호우의 목표 점수(이 이상이면 내기 승리), approach = 노트가 화면 아래에서 발판까지 올라오는 시간(초, 속도 ×1 기준) */
@@ -269,6 +280,8 @@ const PGSONGS=[
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
   {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
   {id:'pg12',name:'ㅈㄱ의 카드 모험',sub:'파이리와 함께하는 모험 테마',seed:1212,intro:'jg',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:6,target:750000,approach:1.6},{stars:9,target:780000,approach:1.4}]},
+  {id:'pg13',name:'나락쓰레기장',sub:'퇴근하고 롤 켜는 우리들의 노래',seed:1313,intro:'narak',audio:'assets/music/narak.mp3',bpmx:148.92,audioOff:.21,
+   diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:8,target:760000,approach:1.55},{stars:10,target:790000,approach:1.4}]},
   {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
   {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:4,target:720000,approach:1.7},{stars:8,target:750000,approach:1.5},{stars:10,target:790000,approach:1.35}]},
   {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:7,target:740000,approach:1.7},{stars:9,target:780000,approach:1.5},{stars:12,target:800000,approach:1.35}]},
@@ -277,7 +290,12 @@ const PGSONGS=[
   {id:'pg3',name:'운명의 페널티킥',sub:'호우의 진짜 실력',seed:303,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:9,target:800000,approach:1.5},{stars:12,target:820000,approach:1.3}]},
   {id:'pg7',name:'왕벌의 비행',sub:'림스키코르사코프 · 보스곡',seed:707,diffs:[{stars:5,target:700000,approach:1.8},{stars:11,target:760000,approach:1.6},{stars:14,target:800000,approach:1.4},{stars:15,target:830000,approach:1.25}]}
 ];
-PGSONGS.forEach(s=>{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;s.secs=Math.round(s.len*s.spb);});
+/* 음원 파일 곡(audio): bpmx = 정확한 BPM(화면엔 반올림), audioOff = 음원에서 첫 박(채보 0초)이 나오는 시각(초), 채보 재료는 PG_GRID */
+PGSONGS.forEach(s=>{
+  if(s.audio){s.bpm=Math.round(s.bpmx);s.spb=60/s.bpmx/2;s.len=PG_GRID[s.id].len;}
+  else{s.bpm=BGMT[s.id].bpm;s.spb=60/s.bpm/2;s.len=BGMT[s.id].len;}
+  s.secs=Math.round(s.len*s.spb);
+});
 /* 곡 + 난이도 → 한 판에 쓰는 설정(level 1~4, 별·목표·속도). 채보는 곡 id + 난이도(key)마다 따로 만들어요. */
 function pgPick(si,di){
   const s=PGSONGS[si],d=s.diffs[di];
@@ -300,7 +318,8 @@ const PGGAP_HEAD=.55;           /* 어려움은 마디 앞 절반만 조금 느�
 const PGCHARTS={};
 function pgChart(sg){
   if(PGCHARTS[sg.key])return PGCHARTS[sg.key];
-  const T=BGMT[sg.id],lead=T.L.find(l=>l.n==='lead').a,bass=T.L.find(l=>l.n==='bass').a,R=pgRng(sg.seed),lv=sg.level,spb=sg.spb;
+  const T=PG_GRID[sg.id]||BGMT[sg.id],R=pgRng(sg.seed),lv=sg.level,spb=sg.spb;   /* 음원 곡은 PG_GRID 문자열('.'= 없음), 합성 곡은 악보 칸 배열 */
+  const lead=T.L?T.L.find(l=>l.n==='lead').a:T.lead,bass=T.L?T.L.find(l=>l.n==='bass').a:T.bass;
   const lib=lv===1?PGPAT1:lv===2?PGPAT2:lv===3?PGPAT3:PGPAT4,steps=[];
   for(let s=0;s<T.len;s++){
     const hasL=lead[s]!=='.',hasB=bass[s]!=='.';
