@@ -239,6 +239,7 @@ function showNextNote(){
   $('#wnT').textContent='🎉 업데이트 v'+NOTE_CUR+(NOTE_N>1?` (${NOTE_N-NOTE_Q.length}/${NOTE_N})`:'');$('#wnSub').textContent=n.sub||'';
   const ul=$('#wnList');ul.textContent='';n.items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
   $('#wnOk').textContent=NOTE_Q.length?'다음 업데이트 보기':'확인';
+  $('#wnAll').hidden=!NOTE_Q.length;$('#wnAll').textContent=`남은 ${NOTE_Q.length}개 모두 닫기`;   /* 쌓인 업데이트가 많을 때 한 번에 */
   $('#wn').hidden=false;sfx(NOTE_N-NOTE_Q.length>1?'page':'chime');setTimeout(()=>{try{$('#wnOk').focus();}catch(e){}},30);
 }
 function closeNotes(){
@@ -248,6 +249,7 @@ function closeNotes(){
   NOTE_CUR=null;$('#wn').hidden=true;maybeLoan();
 }
 $('#wnOk').addEventListener('click',closeNotes);
+$('#wnAll').addEventListener('click',()=>{NOTE_Q=[];closeNotes();});   /* 남은 업데이트를 건너뛰고 모두 읽은 걸로 */
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#wn').hidden)closeNotes();});
 const lgSubmit=()=>startLogin($('#lgId').value,$('#lgPin').value,$('#lgPin2').value);
 $('#lgGo').addEventListener('click',lgSubmit);
