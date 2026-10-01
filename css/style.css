@@ -24,7 +24,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .board{background:var(--board);color:var(--chalk);border-bottom:8px solid var(--wood);padding:14px 16px 12px;position:relative}
 .board-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.logo{width:38px;height:38px;border-radius:50%;border:9px solid var(--ring);flex:none}
+.logo{width:44px;height:44px;flex:none}   /* 대표 로고: 머대부속고 교표 (assets/logo.svg) */
 .board h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(26px,5vw,38px);line-height:1.1}
 .board .sub{margin:0;font-size:13px;opacity:.85}
 .hud{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -98,6 +98,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .dialog h2{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2}
 .dialog p{margin:6px 0;color:var(--muted);font-size:15px}
 .dialog img{width:104px;height:104px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--ring);margin:4px auto;display:block;background:#f4f1ee}
+.dialog img.logo{width:56px;height:56px;border:0;border-radius:0;background:none;margin:0 auto 6px}
 .sumtab{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px;text-align:left}
 .sumtab td{padding:5px 4px;border-bottom:1px solid var(--bar)}
 .sumtab td:last-child{text-align:right;font-weight:700}
