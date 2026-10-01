@@ -193,6 +193,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .pgprev{justify-self:start}
 .pgdiffs .song.poor{opacity:.45}
 .pgdiffs .song.poor::after{content:'소지금 부족';font-size:12px;font-weight:700;color:var(--muted)}
+.pgdiffs .song.wip{opacity:.45;cursor:not-allowed}   /* 채보 작업 중 난이도 */
 .pgsum{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--bar)}
 .pgsum b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.2}
 .pgsum span{font-weight:700;color:var(--ring);white-space:nowrap}

@@ -289,7 +289,7 @@ const PG_BET=[1000,2000,3000,4000];   /* 난이도별 판돈(원, 고정). 쉬�
 const PGSONGS=[
   /* 새로 나온 곡은 맨 위에 두고 isNew:true로 곡 목록에 NEW 태그를 달아요(다음 신곡이 나오면 내려 주세요) */
   {id:'pg13',isNew:true,name:'나락쓰레기장',sub:'퇴근하고 롤 켜는 우리들의 노래',seed:1313,intro:'narak',theme:'narak',audio:'assets/music/narak.mp3',audioHead:.14,bpmx:148.93,audioOff:0,
-   diffs:[{stars:4,target:680000,approach:1.9},{stars:5,target:710000,approach:1.75},{stars:7,target:760000,approach:1.55},{stars:9,target:790000,approach:1.42}]},
+   diffs:[{stars:4,target:680000,approach:1.9},{stars:5,target:710000,approach:1.75,wip:true},{stars:7,target:760000,approach:1.55,wip:true},{stars:9,target:790000,approach:1.42,wip:true}]},   /* wip: 채보 작업 중 — 허브에서 '🚧 채보 작업 중'으로 보이고 고를 수 없어요 */
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
