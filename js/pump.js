@@ -286,13 +286,21 @@ function pgAudLoad(sg){
   e=PGAUD[sg.audio]={buf:null,err:false};
   fetch(sg.audio).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
     .then(ab=>new Promise((ok,no)=>{const p=a.decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no);}))   /* 옛 사파리는 콜백만 돼요 */
-    .then(b=>{e.buf=b;}).catch(err=>{console.error(err);e.err=true;});
+    .then(b=>{e.buf=b;e.lag=pgAudLag(b,sg);}).catch(err=>{console.error(err);e.err=true;});
   return e;
+}
+/* 브라우저마다 mp3를 풀 때 맨 앞의 인코더 지연(빈 소리 수십 ms)을 잘라 내는지가 달라요(크롬은 잘라요 = 분석과 같음).
+   첫 소리가 나오는 위치를 재서, 분석 때(audioHead ms)보다 늦으면 그만큼 음원을 뒤에서부터 틀어 맞춰요. 5~150ms일 때만 믿어요 */
+function pgAudLag(b,sg){
+  if(sg.audioHead==null)return 0;
+  const L=b.getChannelData(0),R=b.numberOfChannels>1?b.getChannelData(1):L,n=Math.min(L.length,Math.round(b.sampleRate*.3));
+  for(let i=0;i<n;i++)if(Math.abs(L[i]+R[i])/2>.01){const lag=i/b.sampleRate-sg.audioHead/1000;return lag>.005&&lag<.15?lag:0;}
+  return 0;
 }
 function pgAudPlay(g){
   if(g.src)return;
   const e=PGAUD[g.sg.audio];if(!e||!e.buf)return;
-  const off=g.sg.audioOff,T=Math.max(AC.currentTime+.05,g.t0-off),at=Math.max(0,T-g.t0+off);   /* 컨텍스트 시각 T에 음원의 at초 지점을 틀어요(소수 오차로 -0.000…이 되면 start가 실패해서 0으로) */
+  const off=g.sg.audioOff+(e.lag||0),T=Math.max(AC.currentTime+.05,g.t0-off),at=Math.max(0,T-g.t0+off);   /* 컨텍스트 시각 T에 음원의 at초 지점을 틀어요(소수 오차로 -0.000…이 되면 start가 실패해서 0으로) */
   if(at>=e.buf.duration)return;
   const s=AC.createBufferSource();s.buffer=e.buf;s.connect(g.tg);s.start(T,at);g.src=s;
 }
