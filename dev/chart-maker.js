@@ -224,6 +224,7 @@ window.addEventListener('keydown',e=>{
   if(l!==undefined&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();if(!e.repeat)press(l,e.timeStamp);return;}
   if((e.ctrlKey||e.metaKey)&&e.code==='KeyZ'){e.preventDefault();e.shiftKey?redo():undo();return;}
   if((e.ctrlKey||e.metaKey)&&e.code==='KeyY'){e.preventDefault();redo();return;}
+  if((e.ctrlKey||e.metaKey)&&e.code==='KeyC'&&!getSelection().toString()){e.preventDefault();copyLevel();return;}
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   const bl=M.beats.length>1?(M.beats[1]-M.beats[0])*2:.4;
   if(e.code==='Space'){e.preventDefault();M.playing?stop():play(M.pos);}
@@ -445,13 +446,37 @@ $('#bUndo').addEventListener('click',undo);$('#bRedo').addEventListener('click',
 $('#bClear').addEventListener('click',()=>{if(!chart().length)return;if(!confirm(`${LV_NAMES[M.lv]} 채보를 모두 지울까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();M.charts[M.lv]=[];changed(`${LV_NAMES[M.lv]} 채보를 비웠어요.`);});
 $('#bBase').addEventListener('click',()=>{if(!confirm(`${LV_NAMES[M.lv]}를 지금 게임에 들어 있는 채보로 바꿀까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();
   M.charts[M.lv]=(M.data.levels[M.lv]||[]).map(a=>({t:a[0]/1000,lane:a[1],hold:(a[2]||0)/1000}));fixHolds(chart());changed('게임 채보를 불러왔어요.');});
-const exportText=()=>JSON.stringify({song:M.song.id,name:M.song.name,file:M.song.file,made:new Date().toISOString(),levels:exportLevels(),lyrics:exportLyrics()});
+const exportText=()=>JSON.stringify({song:M.song.id,name:M.song.name,file:M.song.file,from:M.lv,made:new Date().toISOString(),levels:exportLevels(),lyrics:exportLyrics()});
 $('#bSave').addEventListener('click',()=>{
   const blob=new Blob([exportText()],{type:'application/json'}),a=document.createElement('a'),u=URL.createObjectURL(blob);
   a.href=u;a.download=`${M.song.file}-chart.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
   say(`${M.song.file}-chart.json 으로 저장했어요. node dev/apply_chart.js 로 게임에 넣어요.`);
 });
-$('#bCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(exportText());say('채보를 복사했어요. 그대로 붙여 넣어 전달하면 돼요.');}catch(e){say('복사하지 못했어요. 파일 저장을 써 주세요.',true);}});
+$('#bCopy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(exportText());say('전체 채보(4개 난이도 + 가사)를 복사했어요. 그대로 붙여 넣어 전달하면 돼요.');}catch(e){say('복사하지 못했어요. 파일 저장을 써 주세요.',true);}});
+/* 난이도 복사·붙여넣기: 메이커 안 클립보드(MCLIP)에 담고, 시스템 클립보드에도 글자로 넣어 둬요(다른 탭·브라우저에서도 붙여넣기) */
+let MCLIP=null;
+async function copyLevel(){
+  sortChart(chart());
+  MCLIP={kind:'rk-level',song:M.song.id,from:M.lv,notes:chart().map(n=>[Math.round(n.t*1000),n.lane,Math.round(n.hold*1000)])};
+  try{await navigator.clipboard.writeText(JSON.stringify(MCLIP));}catch(e){}
+  say(`${LV_NAMES[M.lv]} 채보(노트 ${MCLIP.notes.length}개)를 복사했어요. 다른 난이도로 바꾸고 📥 붙여넣기(Ctrl+V)를 누르세요.`);
+}
+async function pasteLevel(text){
+  let clip=null;
+  try{const o=JSON.parse(text!=null?text:await navigator.clipboard.readText());
+    if(o&&o.kind==='rk-level'&&Array.isArray(o.notes))clip=o;
+    else if(o&&Array.isArray(o.levels))clip={song:o.song,from:o.from!=null?o.from:M.lv,notes:o.levels[o.from!=null?o.from:M.lv]||[]};   /* 전체 복사한 것도 받아요 */
+  }catch(e){}
+  clip=clip||MCLIP;
+  if(!clip||!clip.notes.length){say('붙여 넣을 채보가 없어요. 먼저 📋 이 난이도 복사를 눌러 주세요.',true);return;}
+  if(clip.song&&clip.song!==M.song.id&&!confirm('다른 곡에서 복사한 채보예요. 그래도 붙여 넣을까요?'))return;
+  if(chart().length&&!confirm(`${LV_NAMES[M.lv]} 채보(노트 ${chart().length}개)를 복사한 ${LV_NAMES[clip.from]||''} 채보(노트 ${clip.notes.length}개)로 바꿀까요? (되돌리기로 살릴 수 있어요)`))return;
+  pushUndo();
+  M.charts[M.lv]=clip.notes.map(a=>({t:a[0]/1000,lane:clamp(a[1]|0,0,4),hold:(a[2]||0)/1000}));fixHolds(chart());
+  changed(`${LV_NAMES[clip.from]||'복사한'} 채보를 ${LV_NAMES[M.lv]}에 붙여 넣었어요 (노트 ${chart().length}개).`);
+}
+$('#bLvCopy').addEventListener('click',copyLevel);
+$('#bLvPaste').addEventListener('click',()=>pasteLevel());
 $('#bOpen').addEventListener('click',()=>$('#fOpen').click());
 $('#fOpen').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -480,6 +505,7 @@ $('#bGen').addEventListener('click',()=>{
 const seekEl=$('#seek');
 seekEl.addEventListener('input',()=>{draw.seeking=true;const t=+seekEl.value/1000*M.dur;if(!M.playing){M.pos=t;}});
 seekEl.addEventListener('change',()=>{draw.seeking=false;seek(+seekEl.value/1000*M.dur);});
+document.addEventListener('paste',e=>{if(e.target.tagName==='INPUT'&&e.target.type==='text')return;e.preventDefault();pasteLevel(e.clipboardData?e.clipboardData.getData('text'):null);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&M.playing)stop();});
 
 /* ---------- 곡 불러오기 ---------- */
