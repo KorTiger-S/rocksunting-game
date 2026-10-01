@@ -113,17 +113,18 @@ function fixHolds(c){
     if(nx&&n.t+n.hold>nx.t-.08){n.hold=Math.max(0,nx.t-.08-n.t);if(n.hold<.2)n.hold=0;}
   }
 }
-function snapshot(){return JSON.stringify(M.charts.map(c=>c.map(n=>[n.t,n.lane,n.hold])));}
-function restore(s){M.charts=JSON.parse(s).map(c=>c.map(a=>({t:a[0],lane:a[1],hold:a[2]})));}
+function snapshot(){return JSON.stringify({c:M.charts.map(c=>c.map(n=>[n.t,n.lane,n.hold])),l:M.lyrics});}
+function restore(s){const o=JSON.parse(s);M.charts=o.c.map(c=>c.map(a=>({t:a[0],lane:a[1],hold:a[2]})));M.lyrics=o.l;}
 function pushUndo(){M.undo.push(snapshot());if(M.undo.length>80)M.undo.shift();M.redo=[];}
 function undo(){if(!M.undo.length)return;M.redo.push(snapshot());restore(M.undo.pop());changed('되돌렸어요.');}
 function redo(){if(!M.redo.length)return;M.undo.push(snapshot());restore(M.redo.pop());changed('다시 했어요.');}
 let saveT=0;
 function changed(msg){
   if(msg)say(msg);ui();
-  clearTimeout(saveT);saveT=setTimeout(()=>lsSet('rk:mk:'+M.song.id,JSON.stringify({saved:Date.now(),levels:exportLevels()})),300);
+  clearTimeout(saveT);saveT=setTimeout(()=>lsSet('rk:mk:'+M.song.id,JSON.stringify({saved:Date.now(),levels:exportLevels(),lyrics:exportLyrics()})),300);
 }
 const exportLevels=()=>M.charts.map(c=>{sortChart(c);return c.map(n=>[Math.round(n.t*1000),n.lane,Math.round(n.hold*1000)]);});
+const exportLyrics=()=>M.lyrics.map(([s,t])=>[s,Math.round(t*1000)]);
 const importLevels=lv=>{M.charts=[0,1,2,3].map(i=>(lv[i]||[]).map(a=>({t:a[0]/1000,lane:clamp(a[1]|0,0,4),hold:(a[2]||0)/1000})));M.charts.forEach(fixHolds);};
 function addNote(t,lane,hold,extra){
   const c=chart();
@@ -138,10 +139,13 @@ function startRec(){
   pushUndo();
   const bl=M.beats.length>1?(M.beats[1]-M.beats[0])*2:.4;   /* 한 박 길이 */
   M.rec=true;M.recFrom=M.pos;M.eraseFrom=M.pos;M.pass=[];M.held=[null,null,null,null,null];
+  M.lrec=$('#oLyrRec').checked;M.lpass=[];
+  M.lyrIdx=Math.max(0,M.lyrics.findIndex(([,t])=>t>=M.pos-.05));if(M.lyrIdx<0)M.lyrIdx=M.lyrics.length;
   play(M.pos-PREROLL*bl);
-  say(`● 녹음 중 (${LV_NAMES[M.lv]}) · ${PREROLL}박 듣고 시작해요. Enter = 끝`);
+  say(M.lrec?`● 가사 녹음 중 · 「${(M.lyrics[M.lyrIdx]||['끝'])[0]}」부터, 음절마다 아무 발판 키나 눌러요. Enter = 끝`:`● 녹음 중 (${LV_NAMES[M.lv]}) · ${PREROLL}박 듣고 시작해요. Enter = 끝`);
 }
 function finishRec(){
+  if(M.lrec)return finishLyricRec();
   const end=songPos();
   M.held.forEach((h,l)=>{if(h)release(l,null,end);});
   M.rec=false;
@@ -171,6 +175,11 @@ function press(l,perfMs){
   const raw=songPos(perfMs)-M.off/1000;
   if(raw<M.recFrom-.08){beep(220,.05,.08,null,'sine');return;}   /* 미리 듣는 구간 */
   beep(180,.06,.14,null,'sine');
+  if(M.lrec){   /* 가사 녹음: 누를 때마다 다음 음절이 그 순간으로 */
+    if(M.lpass.length&&raw-M.lpass[M.lpass.length-1].raw<.06)return;   /* 동시에 누른 키는 한 번으로 */
+    if(M.lyrIdx<M.lyrics.length){M.lyrics[M.lyrIdx][1]=snapT(raw);M.lpass.push({i:M.lyrIdx,raw});M.lyrIdx++;orderLyrics(M.lyrIdx-1);}
+    return;
+  }
   /* 동시에 누른 키(40ms 안)는 같은 시각 = 점프 */
   const mate=M.pass.find(n=>Math.abs(n.raw-raw)<.04);
   const t=mate?mate.t:snapT(raw);
@@ -184,9 +193,24 @@ function release(l,perfMs,atPos){
   h.n.rawEnd=up;
   if(up-h.down>=HOLD_MIN)h.n.hold=Math.max(slotLen(h.n.t),snapT(up)-h.n.t);
 }
+/* 가사 음절은 항상 앞뒤 순서를 지켜요. i번을 기준으로 뒤 음절이 앞서면 한 칸씩 밀어요 */
+function orderLyrics(i){
+  const L=M.lyrics;
+  for(let k=i+1;k<L.length;k++){if(L[k][1]<=L[k-1][1]+.04)L[k][1]=L[k-1][1]+slotLen(L[k-1][1]);else break;}
+  for(let k=i-1;k>=0;k--){if(L[k][1]>=L[k+1][1]-.04)L[k][1]=L[k+1][1]-slotLen(L[k+1][1]);else break;}
+}
+function finishLyricRec(){
+  M.rec=false;M.lrec=false;const p=M.lpass;let note='';
+  if(p.length>=6&&$('#oAuto').checked){
+    const d=p.map(x=>x.raw-nearest(M.slots,x.raw)).sort((a,b)=>a-b),med=d[d.length>>1];
+    if(Math.abs(med)>=.008){p.forEach(x=>{M.lyrics[x.i][1]=snapT(x.raw-med);});note=` 평균 ${Math.round(Math.abs(med)*1000)}ms ${med>0?'늦게':'일찍'} 눌러서 그만큼 보정했어요.`;}
+  }
+  if(p.length)orderLyrics(p[0].i);p.forEach(x=>orderLyrics(x.i));
+  changed(`가사 녹음 끝: ${p.length}음절을 맞췄어요.`+note);
+}
 /* 녹음하며 지나간 구간의 예전 노트는 지워요(덮어쓰기) */
 function eraseBehind(){
-  if(!M.rec||!$('#oOver').checked)return;
+  if(!M.rec||M.lrec||!$('#oOver').checked)return;
   const p=songPos()-.15;if(p<=M.eraseFrom)return;
   const c=chart();
   for(let i=c.length-1;i>=0;i--){const n=c[i];if(!n.pass&&n.t>=M.eraseFrom-.03&&n.t<p)c.splice(i,1);}
@@ -257,7 +281,9 @@ function draw(){
   /* 가사 */
   if($('#oLyr').checked){
     c.font='bold 16px "Noto Sans KR",sans-serif';c.textAlign='right';c.textBaseline='middle';
-    M.lyrics.forEach(([s,t])=>{if(t<t0-.2||t>t1)return;const y=yOf(t),near=Math.abs(t-M.pos)<.12;c.fillStyle=near?'#ffd23f':'rgba(238,240,248,.75)';c.fillText(s,LX-28,y);
+    M.lyrics.forEach(([s,t],i)=>{if(t<t0-.2||t>t1)return;const y=yOf(t),near=Math.abs(t-M.pos)<.12,drag=M.ldrag&&M.ldrag.i===i;
+      if(drag){c.fillStyle='rgba(255,210,63,.18)';c.fillRect(LX-58,y-13,40,26);}
+      c.fillStyle=drag?'#fff':near?'#ffd23f':'rgba(238,240,248,.75)';c.fillText(s,LX-28,y);
       c.fillStyle='rgba(255,210,63,.35)';c.fillRect(LX-22,y-.5,10,1);});
   }
   /* 녹음 시작 위치 */
@@ -285,7 +311,7 @@ function draw(){
   c.fillStyle='rgba(255,255,255,.5)';c.fillRect(LX,JY-1,LW*5,2);
   c.font='bold 14px "Noto Sans KR",sans-serif';c.textAlign='left';c.textBaseline='top';
   if(M.rec){
-    c.fillStyle='#ff4d6d';c.fillText('● REC '+LV_NAMES[M.lv],12,12);
+    c.fillStyle='#ff4d6d';c.fillText(M.lrec?'● 가사 녹음 · 다음 「'+((M.lyrics[M.lyrIdx]||['끝'])[0])+'」':'● REC '+LV_NAMES[M.lv],12,12);
     if(M.pos<M.recFrom){const bl=M.beats.length>1?(M.beats[1]-M.beats[0])*2:.4,n=Math.ceil((M.recFrom-M.pos)/bl);c.font='64px "Black Han Sans",sans-serif';c.textAlign='center';c.fillText(String(n),LX+LW*2.5,H*.45);}
   }else{c.fillStyle='#9aa3c2';c.fillText(LV_NAMES[M.lv]+' · 노트 '+ch.length,12,12);}
   if(!M.buf){c.fillStyle='#ffd23f';c.font='18px "Noto Sans KR",sans-serif';c.textAlign='center';c.fillText($('#load').textContent,W/2,H/2);}
@@ -296,12 +322,18 @@ function draw(){
 /* 마우스: 빈 곳 클릭 = 추가, 노트 클릭/우클릭 = 삭제, 노트를 아래로 끌기 = 롱노트 */
 function hit(e){
   const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
-  const l=Math.floor((x-LX)/LW);return {l:l>=0&&l<5?l:-1,y,t:M.pos+(y-JY)/M.pps};
+  const l=Math.floor((x-LX)/LW);return {l:l>=0&&l<5?l:-1,x,y,t:M.pos+(y-JY)/M.pps};
 }
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
   if(!M.buf||M.rec)return;
-  const h=hit(e);if(h.l<0)return;e.preventDefault();
+  const h=hit(e);
+  if(h.l<0&&$('#oLyr').checked&&h.x<LX-4){   /* 가사 글자를 위아래로 끌면 그 음절 시각이 바뀌어요(박자 칸에 자동으로 맞춰요) */
+    const i=M.lyrics.findIndex(([,t])=>Math.abs(yOf(t)-h.y)<13);
+    if(i>=0){e.preventDefault();pushUndo();M.ldrag={i,moved:false};try{cv.setPointerCapture(e.pointerId);}catch(_){}}
+    return;
+  }
+  if(h.l<0)return;e.preventDefault();
   const c=chart(),n=c.find(x=>x.lane===h.l&&Math.abs(yOf(x.t)-h.y)<16);
   if(n){
     pushUndo();
@@ -312,11 +344,14 @@ cv.addEventListener('pointerdown',e=>{
   }
 });
 cv.addEventListener('pointermove',e=>{
+  if(M.ldrag){const h=hit(e),L=M.lyrics,i=M.ldrag.i;M.ldrag.moved=true;
+    const lo=i?L[i-1][1]+.05:0,hi=i+1<L.length?L[i+1][1]-.05:M.dur;L[i][1]=clamp(M.snap?snapT(h.t):h.t,lo,hi);return;}
   const d=M.drag;if(!d)return;const h=hit(e);
   if(Math.abs(h.y-d.y)>8)d.moved=true;
   if(d.moved){const end=snapT(h.t);d.n.hold=end-d.n.t>=slotLen(d.n.t)*.9?end-d.n.t:0;ui();}
 });
 cv.addEventListener('pointerup',()=>{
+  if(M.ldrag){const {i,moved}=M.ldrag;M.ldrag=null;if(moved)changed(`가사 「${M.lyrics[i][0]}」를 ${fmtT(M.lyrics[i][1])}로 옮겼어요.`);else M.undo.pop();return;}
   const d=M.drag;if(!d)return;M.drag=null;
   if(!d.moved){chart().splice(chart().indexOf(d.n),1);changed();}else{fixHolds(chart());changed();}
 });
@@ -326,9 +361,66 @@ cv.addEventListener('wheel',e=>{
   seek(M.pos+e.deltaY/M.pps);
 },{passive:false});
 
+
+/* ---------- 다른 난이도 만들기 ----------
+   지금 난이도 채보를 기준으로 다른 난이도를 다시 만들어요.
+   - 더 쉽게: 같은 시각 노트(점프)를 한 묶음으로 보고, 중요한 박부터(마디 첫 박 > 박 > 8분 > 16분, 가사 음절 자리 +) 남기며
+     묶음 사이가 MK_GAP보다 가까운 건 빼요. 쉬움은 점프를 한 발로, 보통은 박 자리 점프만 남겨요. 발판은 원래 채보 그대로.
+   - 더 어렵게: 원래 노트는 그대로 두고, 빈 틈을 8분(매우 어려움은 16분) 칸으로 채우고, 마디 첫 박에 점프를 더해요. */
+const MK_GAP=[.5,.2,.13,.095];            /* 난이도별 노트 묶음 사이 최소 간격(초) */
+const MK_FILL=[0,0,.38,.3];               /* 어려움부터: 이보다 빈 틈은 박자 칸으로 채워요 */
+const MK_STEP=[0,0,.19,.19];              /* 채우는 노트 사이 간격(8분 ≈ 0.2초). 매우 어려움은 박마다 끝 16분도 더해요 */
+const MK_HOLDMIN=[.55,.4,.3,.3];          /* 이보다 짧은 롱노트는 일반 노트로 */
+function beatRank(t){
+  let bi=-1,bd=1;M.beats.forEach((b,i)=>{const d=Math.abs(b-t);if(d<bd){bd=d;bi=i;}});
+  let r=bd<.025?(bi%8===0?4:bi%2===0?3:2):1;
+  if(M.lyrics.some(([,lt])=>Math.abs(lt-t)<.04))r+=.5;   /* 가사 음절 자리 */
+  return r;
+}
+function regen(src,from,to){
+  const ev=[];   /* 같은 시각 묶음 */
+  [...src].sort((a,b)=>a.t-b.t).forEach(n=>{const e=ev[ev.length-1];if(e&&Math.abs(e.t-n.t)<.002)e.notes.push(n);else ev.push({t:n.t,notes:[n]});});
+  ev.forEach(e=>{e.rank=beatRank(e.t);e.end=e.t+Math.max(...e.notes.map(n=>n.hold||0));});
+  let keep;
+  if(to<from){
+    keep=[];
+    [...ev].sort((a,b)=>b.rank-a.rank||a.t-b.t).forEach(e=>{if(keep.every(k=>Math.abs(k.t-e.t)>=MK_GAP[to]))keep.push(e);});
+    keep.sort((a,b)=>a.t-b.t);
+  }else keep=ev.slice();
+  const out=[];
+  keep.forEach(e=>{
+    let ns=e.notes;
+    if(ns.length>1&&(to===0||(to===1&&e.rank<3)))ns=[ns[0]];   /* 쉬움은 점프 없음, 보통은 박 자리 점프만 */
+    ns.forEach(n=>out.push({t:n.t,lane:n.lane,hold:(n.hold||0)>=MK_HOLDMIN[to]?n.hold:0}));
+  });
+  if(to>from){
+    const slots=to>=3?M.slots:M.beats,busy=t=>out.some(n=>n.hold&&t>n.t-.05&&t<n.t+n.hold+.1);
+    const base=[...out].sort((a,b)=>a.t-b.t);let dir=1;
+    for(let i=0;i+1<base.length;i++){
+      const a=base[i],b=base[i+1],aEnd=a.t+(a.hold||0);
+      if(b.t-aEnd<MK_FILL[to])continue;
+      let last=aEnd,lane=a.lane;
+      slots.forEach(t=>{
+        const gallop=to>=3&&M.beats.some((bt,k)=>k%2===0&&bt-t>.07&&bt-t<.13);   /* 매우 어려움: 박 바로 앞 16분 → 따-닥 */
+        if(t<=aEnd+MK_GAP[to]-.005||t>=b.t-MK_GAP[to]+.005||t-last<(gallop?MK_GAP[to]:MK_STEP[to])-.005||busy(t))return;
+        /* 발판: 한 방향으로 걸어가다 끝에서 되돌아와요. 바로 앞 노트·곧 올 노트와 같은 발판은 피해요 */
+        const prev=lane,avoid=b.t-t<.3?b.lane:-1;
+        for(const k of [1,-1,2,-2]){const c=prev+dir*k;if(c>=0&&c<=4&&c!==avoid){lane=c;if(k<0)dir=-dir;break;}}
+        out.push({t,lane,hold:0});last=t;
+      });
+    }
+    M.beats.forEach((b,i)=>{   /* 마디 첫 박 점프 (어려움 2마디마다, 매우 어려움 매 마디) */
+      if(i%(to>=3?8:16)!==0)return;
+      const at=out.filter(n=>Math.abs(n.t-b)<.03);if(at.length!==1||at[0].hold||busy(b+.001))return;
+      const l2=at[0].lane===2?0:4-at[0].lane;if(l2!==at[0].lane)out.push({t:at[0].t,lane:l2,hold:0});
+    });
+  }
+  fixHolds(out);return out;
+}
+
 /* ---------- 버튼 ---------- */
 function say(m,bad){const p=$('#msg');p.textContent=m||'';p.classList.toggle('bad',!!bad);}
-function setLv(i){if(M.rec)stop();M.lv=i;ui();}
+function setLv(i){if(M.rec)stop();M.lv=i;genTargets();ui();}
 function ui(){
   [...$('#lvs').children].forEach((b,i)=>{b.classList.toggle('on',i===M.lv);b.lastChild.textContent='노트 '+M.charts[i].length;});
   $('#bPlay').textContent=M.playing&&!M.rec?'⏸ 정지':'▶ 재생';
@@ -353,7 +445,7 @@ $('#bUndo').addEventListener('click',undo);$('#bRedo').addEventListener('click',
 $('#bClear').addEventListener('click',()=>{if(!chart().length)return;if(!confirm(`${LV_NAMES[M.lv]} 채보를 모두 지울까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();M.charts[M.lv]=[];changed(`${LV_NAMES[M.lv]} 채보를 비웠어요.`);});
 $('#bBase').addEventListener('click',()=>{if(!confirm(`${LV_NAMES[M.lv]}를 지금 게임에 들어 있는 채보로 바꿀까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();
   M.charts[M.lv]=(M.data.levels[M.lv]||[]).map(a=>({t:a[0]/1000,lane:a[1],hold:(a[2]||0)/1000}));fixHolds(chart());changed('게임 채보를 불러왔어요.');});
-const exportText=()=>JSON.stringify({song:M.song.id,name:M.song.name,made:new Date().toISOString(),levels:exportLevels()});
+const exportText=()=>JSON.stringify({song:M.song.id,name:M.song.name,file:M.song.file,made:new Date().toISOString(),levels:exportLevels(),lyrics:exportLyrics()});
 $('#bSave').addEventListener('click',()=>{
   const blob=new Blob([exportText()],{type:'application/json'}),a=document.createElement('a'),u=URL.createObjectURL(blob);
   a.href=u;a.download=`${M.song.file}-chart.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);
@@ -364,7 +456,26 @@ $('#bOpen').addEventListener('click',()=>$('#fOpen').click());
 $('#fOpen').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const o=JSON.parse(await f.text());if(!o||!Array.isArray(o.levels))throw 0;if(o.song&&o.song!==M.song.id&&!confirm(`다른 곡(${o.name||o.song}) 파일이에요. 그래도 불러올까요?`))return;
-    pushUndo();importLevels(o.levels);changed(`${f.name}을(를) 불러왔어요.`);}catch(_){say('채보 파일이 아니에요.',true);}
+    pushUndo();importLevels(o.levels);if(Array.isArray(o.lyrics)&&o.lyrics.length===M.lyrics.length)M.lyrics=o.lyrics.map(a=>[a[0],a[1]/1000]);changed(`${f.name}을(를) 불러왔어요.`);}catch(_){say('채보 파일이 아니에요.',true);}
+});
+$('#bLyrSnap').addEventListener('click',()=>{
+  pushUndo();M.lyrics.forEach(a=>{a[1]=M.snap===8?nearest(M.beats,a[1]):nearest(M.slots,a[1]);});orderLyrics(0);
+  changed(`가사 ${M.lyrics.length}음절을 ${M.snap===8?'8분':'16분'} 박자 칸에 맞췄어요.`);
+});
+$('#bLyrBase').addEventListener('click',()=>{if(!confirm('가사 위치를 처음 분석한 값으로 되돌릴까요? (되돌리기로 살릴 수 있어요)'))return;pushUndo();M.lyrics=(M.data.lyrics||[]).map(a=>[a[0],a[1]/1000]);changed('가사 위치를 처음 값으로 되돌렸어요.');});
+function genTargets(){
+  const box=$('#genTo');box.innerHTML='';
+  LV_NAMES.forEach((n,i)=>{if(i===M.lv)return;const l=document.createElement('label');l.className='chk';l.innerHTML=`<input type="checkbox" value="${i}"> ${n}`;box.appendChild(l);});
+  $('#genFrom').textContent=LV_NAMES[M.lv];
+}
+$('#bGen').addEventListener('click',()=>{
+  const to=[...document.querySelectorAll('#genTo input:checked')].map(x=>+x.value);
+  if(!chart().length){say('지금 난이도에 노트가 없어요. 먼저 채보를 만들어 주세요.',true);return;}
+  if(!to.length){say('만들 난이도를 골라 주세요.',true);return;}
+  if(!confirm(`${LV_NAMES[M.lv]} 채보로 ${to.map(i=>LV_NAMES[i]).join(', ')}을(를) 새로 만들까요? 그 난이도의 지금 채보는 바뀌어요. (되돌리기로 살릴 수 있어요)`))return;
+  pushUndo();
+  const r=to.map(i=>{const before=M.charts[i].length;M.charts[i]=regen(chart(),M.lv,i);return `${LV_NAMES[i]} ${before}→${M.charts[i].length}`;});
+  changed(`만들었어요: ${r.join(' · ')}. 자동으로 만든 거라 한 번 들으며 다듬어 주세요.`);
 });
 const seekEl=$('#seek');
 seekEl.addEventListener('input',()=>{draw.seeking=true;const t=+seekEl.value/1000*M.dur;if(!M.playing){M.pos=t;}});
@@ -381,6 +492,7 @@ async function load(song){
     const buf=await new Promise((ok,no)=>{const p=ac().decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no);});
     M.data=data;M.buf=buf;M.dur=buf.duration;M.beats=data.beats.map(x=>x/1000);M.lyrics=(data.lyrics||[]).map(a=>[a[0],a[1]/1000]);buildSlots();
     let saved=null;try{saved=JSON.parse(lsGet('rk:mk:'+song.id)||'null');}catch(e){}
+    if(saved&&Array.isArray(saved.lyrics)&&saved.lyrics.length===M.lyrics.length)M.lyrics=saved.lyrics.map(a=>[a[0],a[1]/1000]);
     if(saved&&Array.isArray(saved.levels)){importLevels(saved.levels);say(`이 브라우저에 저장해 둔 작업을 불러왔어요 (${new Date(saved.saved).toLocaleString()}).`);}
     else{importLevels(data.levels||[]);say('지금 게임 채보에서 시작해요. 비우고 새로 녹음해도 돼요.');}
     M.undo=[];M.redo=[];M.pos=0;
@@ -389,4 +501,4 @@ async function load(song){
   ui();
 }
 $('#keyTxt').textContent=[0,1,2,3,4].map(l=>KEYS[l].map(keyName).join('/')).join('  ');
-resize();ui();requestAnimationFrame(draw);load(MK_SONGS[0]);
+resize();genTargets();ui();requestAnimationFrame(draw);load(MK_SONGS[0]);

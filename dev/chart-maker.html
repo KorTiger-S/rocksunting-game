@@ -91,6 +91,19 @@ kbd{font-family:inherit;font-size:12px;background:#0b0f1e;border:1px solid var(-
       <div class="row">확대 <button id="zM">−</button><button id="zP">+</button></div>
     </div>
     <div class="box">
+      <h2>가사</h2>
+      <div class="row"><label class="chk"><input type="checkbox" id="oLyrRec"> 가사 타이밍 녹음 (녹음 중 키를 누를 때마다 다음 음절)</label></div>
+      <div class="row"><button id="bLyrSnap">가사 전체 박자 칸에 맞추기</button><button id="bLyrBase">처음 값으로</button></div>
+      <div class="row"><small style="color:var(--muted)">왼쪽 가사 글자를 위아래로 끌면 위치가 바뀌어요(박자 칸에 자동으로 맞춰요).</small></div>
+    </div>
+    <div class="box">
+      <h2>다른 난이도 만들기</h2>
+      <div class="row">지금 채보(<b id="genFrom"></b>)로 →</div>
+      <div class="row" id="genTo"></div>
+      <div class="row"><button id="bGen">⚙ 난이도에 맞게 만들기</button></div>
+      <div class="row"><small style="color:var(--muted)">더 쉬운 난이도는 중요한 박만 남기고, 더 어려운 난이도는 빈 틈을 박자 칸으로 채우고 점프를 더해요.</small></div>
+    </div>
+    <div class="box">
       <h2>편집 · 저장</h2>
       <div class="row"><button id="bUndo" title="Ctrl+Z">↶ 되돌리기</button><button id="bRedo" title="Ctrl+Y">↷ 다시</button><button id="bClear">이 난이도 비우기</button><button id="bBase">게임 채보 불러오기</button></div>
       <div class="row"><button id="bSave">💾 파일 저장</button><button id="bCopy">📋 채보 복사</button><button id="bOpen">📂 파일 불러오기</button><input type="file" id="fOpen" accept=".json,application/json" hidden></div>
@@ -102,7 +115,8 @@ kbd{font-family:inherit;font-size:12px;background:#0b0f1e;border:1px solid var(-
         <li><b>녹음</b>: <kbd>Enter</kbd> → 2박 미리 듣고 시작. 게임과 같은 키(<span id="keyTxt">Z Q S E C</span>)로 플레이하면 노트가 찍혀요. 길게 누르면 롱노트, 동시에 누르면 점프.</li>
         <li><b>부분 녹음</b>: 원하는 곳으로 옮긴 뒤 녹음하면 그 뒤로 지나간 구간만 새로 바뀌어요.</li>
         <li><b>보정</b>: 내 싱크만큼 빼고 → 평균적으로 일찍/늦게 누른 만큼 빼고 → 이 곡의 실제 박자 칸(16분)에 맞춰요.</li>
-        <li><b>편집</b>: 빈 곳 클릭 = 노트 추가, 노트 클릭(또는 우클릭) = 삭제, 노트를 아래로 끌기 = 롱노트.</li>
+        <li><b>편집</b>: 빈 곳 클릭 = 노트 추가, 노트 클릭(또는 우클릭) = 삭제, 노트를 아래로 끌기 = 롱노트. 가사 글자 끌기 = 가사 위치.</li>
+        <li><b>가사 맞추기</b>: '가사 타이밍 녹음'을 켜고 녹음하면, 노래에 맞춰 키를 누를 때마다 다음 음절이 그 순간으로 와요(노트와 같은 방식으로 보정).</li>
         <li><b>이동</b>: 마우스 휠, <kbd>←</kbd><kbd>→</kbd> 1박 (<kbd>Shift</kbd> 1마디), <kbd>Ctrl</kbd>+휠 확대. <kbd>Space</kbd> 재생, <kbd>1</kbd>~<kbd>4</kbd> 난이도.</li>
         <li><b>게임에 넣기</b>: 💾 파일 저장 → <kbd>node dev/apply_chart.js 파일.json</kbd> (또는 파일을 Claude에게 주세요). 작업은 이 브라우저에 자동 저장돼요.</li>
       </ul>

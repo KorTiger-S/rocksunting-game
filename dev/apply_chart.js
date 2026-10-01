@@ -34,4 +34,17 @@ o.levels.slice(0, 4).forEach((lv, i) => {
 });
 js = js.replace(re, (_, a, __, c) => a + out.map(x => '  ' + x).join(',' + NL) + c);
 fs.writeFileSync(src, js);
+// 채보 메이커용 곡 데이터(assets/music/<file>.json)도 맞춰요: 가사 위치 + '게임 채보 불러오기'가 새 채보를 가져오게
+if (o.file && /^[\w-]+$/.test(o.file)) {
+  const dp = path.join(root, 'assets/music', o.file + '.json');
+  if (fs.existsSync(dp)) {
+    const d = JSON.parse(fs.readFileSync(dp, 'utf8'));
+    if (Array.isArray(o.lyrics) && Array.isArray(d.lyrics) && o.lyrics.length === d.lyrics.length) {
+      d.lyrics = o.lyrics.map((a, i) => [d.lyrics[i][0], Math.round(+a[1])]);
+      console.log(`- 가사 ${d.lyrics.length}음절 위치도 저장했어요`);
+    }
+    o.levels.slice(0, 4).forEach((lv, i) => { if (Array.isArray(lv) && lv.length) d.levels[i] = lv.map(a => [Math.round(+a[0]), a[1] | 0, Math.round(+a[2] || 0)]); });
+    fs.writeFileSync(dp, JSON.stringify(d));
+  }
+}
 console.log(`js/pump-data.js에 넣었어요 (${o.name || o.song}). 다음: node dev/build.js — 별 개수(PGSONGS의 stars)도 새 채보에 맞게 확인해 주세요.`);
