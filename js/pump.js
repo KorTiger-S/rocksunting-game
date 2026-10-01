@@ -177,6 +177,27 @@ function pgHeard(){
 const pgNow=()=>PG.paused?PG.frozen:PG.t0==null?-PG.lead:pgHeard()-PG.t0-PG.off;   /* 시작 시각을 잡기 전(오디오가 깨어나는 중)엔 카운트다운 직전에 머물러요 */
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
+/* ---------- 곡 테마 (PGSONGS의 theme) ----------
+   그 곡을 할 때만 배경 그림을 플레이 화면(캔버스 배경·주변)·결과표·공유 이미지에 깔아요.
+   화면 색은 CSS 클래스 .pgth가 색 변수(--card, --ink …)를 어두운 남색 + 금색으로 바꿔서 입혀요(css/style.css). */
+const PG_THEMES={narak:{img:'assets/theme/narak.jpg'}};
+const PGTH_IM={};
+function pgThemeImg(sg){
+  const th=sg&&sg.theme&&PG_THEMES[sg.theme];if(!th)return null;
+  if(!PGTH_IM[th.img]){const im=new Image();im.src=th.img;PGTH_IM[th.img]=im;}
+  const im=PGTH_IM[th.img];return im.complete&&im.naturalWidth?im:null;
+}
+function pgThemeApply(sg){   /* sg가 없으면 테마를 걷어요 */
+  const th=sg&&sg.theme&&PG_THEMES[sg.theme];
+  if(th)pgThemeImg(sg);
+  const bg=th?`linear-gradient(rgba(1,10,19,.72),rgba(1,10,19,.9)),url("${th.img}") center/cover`:'';
+  [$('#pumpWrap'),$('#pgResult .dialog')].forEach(el=>{el.classList.toggle('pgth',!!th);el.style.background=bg;});
+}
+/* 테마 그림을 캔버스에 꽉 차게(넘치는 쪽은 잘라서) 그려요. pan 0~1: 가로로 남는 부분 중 어디를 보여줄지 */
+function pgThemeCover(c,im,w,h,pan){
+  const s=Math.max(w/im.naturalWidth,h/im.naturalHeight),dw=im.naturalWidth*s,dh=im.naturalHeight*s;
+  c.drawImage(im,-(dw-w)*clamp(pan,0,1),-(dh-h)/2,dw,dh);
+}
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
 function pgNewGame(sg,bet,before){
   const ch=pgChart(sg),lanes=[[],[],[],[],[]];
@@ -194,12 +215,12 @@ function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=pgBet(PGO.diff);
   if(S.money<bet){sfx('deny');toast(`판돈 ${fmt(bet)}원이 필요해요.`);return;}
-  pgAudLoad(sg);   /* 음원 곡은 인트로가 도는 동안 불러 둬요 */
+  pgAudLoad(sg);pgThemeImg(sg);   /* 음원·테마 그림은 인트로가 도는 동안 불러 둬요 */
   if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
-  mode='pump';showPump(true);pgResize();
+  mode='pump';pgThemeApply(sg);showPump(true);pgResize();
   $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
   $('#pgResult').hidden=true;$('#pgPause').hidden=true;
   pgBegin();
@@ -531,7 +552,7 @@ function pgExit(){
   const g=PG;if(!g)return;
   if(g.state!=='end'){g.state='end';pgStopAudio(g);}
   PG=null;$('#pgResult').hidden=true;$('#pgPause').hidden=true;
-  showPump(false);toHub();
+  pgThemeApply(null);showPump(false);toHub();
 }
 $('#pgRBack').addEventListener('click',pgExit);
 
@@ -556,8 +577,12 @@ async function pgShareDraw(g,noFace){
   const box=(x,y,w,h,rad,fill)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,rad);else c.rect(x,y,w,h);c.fillStyle=fill;c.fill();};
   /* 배경 */
   const bg=c.createLinearGradient(0,0,0,PGSH_H);bg.addColorStop(0,'#1c2350');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,W,PGSH_H);
-  c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);
-  c.fillStyle='#ffd23f';c.fillRect(0,0,W,8);
+  /* 테마 곡은 테마 그림을 깔아요(얼굴을 못 쓰는 환경이면 그림도 못 써서 빼요) */
+  let th=null;
+  if(!noFace&&g.sg.theme&&PG_THEMES[g.sg.theme]){th=new Image();th.src=PG_THEMES[g.sg.theme].img;try{await th.decode();}catch(e){th=null;}}
+  if(th){pgThemeCover(c,th,W,PGSH_H,.5);const sh=c.createLinearGradient(0,0,0,PGSH_H);sh.addColorStop(0,'rgba(1,10,19,.74)');sh.addColorStop(1,'rgba(1,10,19,.9)');c.fillStyle=sh;c.fillRect(0,0,W,PGSH_H);}
+  else{c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);}
+  c.fillStyle=th?'#c8aa6e':'#ffd23f';c.fillRect(0,0,W,8);
   /* 머리: 게임 이름 · 곡 */
   T('호우와 소리새 펌프',W/2,62,38,'#ffd23f','center');
   T('롹순팅 키우기 · 시즌2',W/2,102,18,'#9aa3c2','center',BODY,700);
@@ -638,12 +663,16 @@ function pgDraw(){
   const now=pgNow(),H=PGH,perf=performance.now(),TR=H-PGRY-10,ap=g.approach;
   PGPADS.forEach((b,l)=>b.classList.toggle('on',g.held[l]));   /* 키보드로 눌러도 발판이 같이 눌려 보여요 */
   /* 배경: 박자에 맞춰 살짝 번쩍여요 */
-  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#161c3d');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,PGW,H);
+  const thIm=pgThemeImg(g.sg);
+  if(thIm){   /* 테마 곡: 그림을 곡 진행에 맞춰 천천히 가로로 훑고, 노트가 잘 보이게 어둡게 덮어요 */
+    pgThemeCover(c,thIm,PGW,H,clamp(now/g.endT,0,1));
+    const sh=c.createLinearGradient(0,0,0,H);sh.addColorStop(0,'rgba(1,10,19,.45)');sh.addColorStop(.35,'rgba(1,10,19,.62)');sh.addColorStop(1,'rgba(1,10,19,.78)');c.fillStyle=sh;c.fillRect(0,0,PGW,H);
+  }else{const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#161c3d');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,PGW,H);}
   const q=now/(2*g.sg.spb),env=now>=0?Math.pow(1-(q-Math.floor(q)),2.5):0;
-  c.fillStyle=`rgba(140,170,255,${.05*env})`;c.fillRect(0,0,PGW,H);
+  c.fillStyle=thIm?`rgba(200,170,110,${.07*env})`:`rgba(140,170,255,${.05*env})`;c.fillRect(0,0,PGW,H);
   for(let l=0;l<5;l++){
     const x=PGX[l]-44,press=g.held[l]?1:Math.max(0,1-(perf-g.pressAt[l])/220);
-    c.fillStyle='rgba(255,255,255,.035)';c.fillRect(x,PGRY-46,88,H);
+    c.fillStyle=thIm?'rgba(1,10,19,.35)':'rgba(255,255,255,.035)';c.fillRect(x,PGRY-46,88,H);
     if(press>0){const lg=c.createLinearGradient(0,PGRY,0,PGRY+260);lg.addColorStop(0,PGCOL[l]);lg.addColorStop(1,'rgba(0,0,0,0)');c.globalAlpha=.28*press;c.fillStyle=lg;c.fillRect(x,PGRY-46,88,306);c.globalAlpha=1;}
   }
   c.fillStyle='rgba(255,255,255,.08)';for(let i=0;i<=5;i++)c.fillRect(PGX[0]-47+i*94-(i===5?3:0),PGRY-46,2,H);

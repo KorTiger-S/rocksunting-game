@@ -45,6 +45,10 @@ js = js.replace(/assets\/intro\/([A-Za-z0-9_-]+)\.png/g, (m, name) => {   // 곡
   const b = fs.readFileSync(path.join(root, 'assets/intro', name + '.png'));
   return 'data:image/png;base64,' + b.toString('base64');
 });
+js = js.replace(/assets\/theme\/([A-Za-z0-9_-]+)\.jpg/g, (m, name) => {   // 소리새 펌프 곡 테마 그림 (pump.js의 PG_THEMES)
+  const b = fs.readFileSync(path.join(root, 'assets/theme', name + '.jpg'));
+  return 'data:image/jpeg;base64,' + b.toString('base64');
+});
 js = js.replace(/assets\/music\/([A-Za-z0-9_-]+)\.mp3/g, (m, name) => {   // 음원 파일 곡 (소리새 펌프 PGSONGS의 audio). fetch()가 data URI도 읽어요
   const b = fs.readFileSync(path.join(root, 'assets/music', name + '.mp3'));
   return 'data:audio/mpeg;base64,' + b.toString('base64');
