@@ -275,13 +275,14 @@ Object.values(PG_GRID).forEach(g=>{g.lead=g.lead.replace(/ /g,'');g.bass=g.bass.
 const PG_DIFFS=['쉬움','보통','어려움','매우 어려움'];
 const PG_BET=[1000,2000,3000,4000];   /* 난이도별 판돈(원, 고정). 쉬운 곡으로 큰돈을 버는 걸 막아요 */
 const PGSONGS=[
+  /* 새로 나온 곡은 맨 위에 두고 isNew:true로 곡 목록에 NEW 태그를 달아요(다음 신곡이 나오면 내려 주세요) */
+  {id:'pg13',isNew:true,name:'나락쓰레기장',sub:'퇴근하고 롤 켜는 우리들의 노래',seed:1313,intro:'narak',theme:'narak',audio:'assets/music/narak.mp3',bpmx:148.92,audioOff:.21,
+   diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:8,target:760000,approach:1.55},{stars:10,target:790000,approach:1.4}]},
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
   {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
   {id:'pg12',name:'ㅈㄱ의 카드 모험',sub:'파이리와 함께하는 모험 테마',seed:1212,intro:'jg',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:6,target:750000,approach:1.6},{stars:9,target:780000,approach:1.4}]},
-  {id:'pg13',name:'나락쓰레기장',sub:'퇴근하고 롤 켜는 우리들의 노래',seed:1313,intro:'narak',theme:'narak',audio:'assets/music/narak.mp3',bpmx:148.92,audioOff:.21,
-   diffs:[{stars:1,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:8,target:760000,approach:1.55},{stars:10,target:790000,approach:1.4}]},
   {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
   {id:'pg4',name:'비창 3악장',sub:'베토벤 · 소나타 8번 (칩튠)',seed:404,diffs:[{stars:3,target:700000,approach:1.9},{stars:4,target:720000,approach:1.7},{stars:8,target:750000,approach:1.5},{stars:10,target:790000,approach:1.35}]},
   {id:'pg5',name:'캉캉',sub:'오펜바흐 · 「천국과 지옥」',seed:505,diffs:[{stars:3,target:680000,approach:1.9},{stars:7,target:740000,approach:1.7},{stars:9,target:780000,approach:1.5},{stars:12,target:800000,approach:1.35}]},

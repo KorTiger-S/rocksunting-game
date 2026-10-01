@@ -65,7 +65,8 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
   PGSONGS.forEach((s,i)=>{
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
-    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
+    n.textContent=s.name;if(s.isNew){const tg=document.createElement('span');tg.className='newtag';tg.textContent='NEW';n.appendChild(tg);}
+    sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
     b.addEventListener('click',()=>{PGO.song=i;pgOptSave();pgAudLoad(s);pgGo(1);});   /* 음원 곡은 고를 때부터 파일을 불러 둬요 */
     box.appendChild(b);
