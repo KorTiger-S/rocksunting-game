@@ -36,6 +36,7 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 /* 칩이 줄바꿈되는 좁은 화면에서만, 아이콘 아래로 살짝 내려서 겹치지 않게 해요.
    (아이콘은 헤더 맨 위 72px만 차지하는데, 이전엔 폭 전체에 여백을 둬서 줄바꿈된 칩들이 불필요하게 좁아졌어요) */
 @media(max-width:859px){.hud{margin-top:6px}}
+@media(min-width:860px) and (max-width:1219px){.board-in{padding-right:84px}}   /* 상단 바가 한 줄일 때 오른쪽 끝 버튼이 아이콘 밑에 깔리지 않게 아이콘 자리를 비워요(넓은 화면은 원래 여백이 충분) */
 /* 상단 바: 정보(누르는 기능 없음)는 칠판 글씨, 켜고 끄기는 점선, 이동 버튼은 입체 버튼으로 모양을 나눠요. 칠판은 테마와 상관없이 같은 색이라 글자색도 고정 */
 .hinfo{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap;font-size:14px}
 .hi{display:inline-flex;align-items:baseline;gap:5px}
@@ -200,6 +201,28 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .pgrow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
 .pgrow .go{min-width:44px;padding:4px 10px}
 .pgrow .val{min-width:84px;text-align:center;font-weight:700}
+/* 설정 > 펌프 키 변경 (배그 키 설정처럼 왼쪽은 이름, 오른쪽은 누르면 키를 기다리는 칸) */
+.setdlg{max-width:480px}
+.settabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin:8px 0 10px}
+.settab{flex:1;background:transparent;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:8px 6px;font-weight:700;font-size:15px;color:var(--muted)}
+.settab.on{color:var(--ink);border-bottom-color:var(--ring)}
+.dialog .setsec{text-align:left;font-weight:700;color:var(--ring);margin:4px 0 6px}
+.keytab{width:100%;border-collapse:collapse;font-size:14px}
+.keytab th,.keytab td{padding:5px 6px;border-bottom:1px solid var(--bar)}
+.keytab thead th{font-size:12px;color:var(--muted);font-weight:700;text-align:center}
+.keytab thead th:first-child,.keytab tbody th{text-align:left}
+.keytab tbody th{font-weight:700;white-space:nowrap}
+.keytab tbody tr:nth-child(odd){background:rgba(127,140,180,.08)}
+.karw{display:inline-block;width:1.3em;text-align:center;font-size:18px;line-height:1}
+.keytab td{width:34%}
+.keyslot{width:100%;min-height:34px;padding:4px 6px;border:2px solid var(--line);border-radius:8px;background:#232a45;color:#f4f6ef;font-weight:700;font-size:14px}
+.keyslot.empty{background:transparent;color:var(--muted);border-style:dashed}
+.keyslot.wait{background:var(--ring);color:#fff;animation:keyWait 1s ease-in-out infinite}
+@keyframes keyWait{50%{opacity:.6}}
+.dialog .setmsg{min-height:22px;margin:8px 0 2px;font-size:14px;font-weight:700;color:var(--ink)}
+.dialog .setmsg.bad{color:var(--ring)}
+.keypre{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.keypre .go{min-width:0;padding:6px 10px;font-size:13px}
 #pumpWrap{max-width:900px;margin:0 auto;padding:12px 16px 24px}
 /* 펌프를 하는 동안은 페이지가 스크롤되지 않게 막아요. 발판 사이 빈칸·여백을 눌러도 스크롤이 시작되면
    그동안 다른 손가락의 발판 입력이 취소돼서 키가 안 눌리는 문제가 있었어요. */
