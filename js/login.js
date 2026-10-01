@@ -98,7 +98,7 @@ function enter(name,data,at,news,isNew){
   maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){
-  $('#hUser').textContent=USER?`👤 ${USER.id}`:'';
+  $('#hUser').textContent=USER?USER.id:'';$('#hUserW').hidden=!USER;
   const pb=$('#pinBtn');if(pb)pb.disabled=!USER;
 }
 async function logout(){
@@ -109,8 +109,10 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
-  '2.3.2':{sub:'롹순팅 키우기에 교표가 생겼어요 🛡',items:[
+  '2.3.2':{sub:'교표가 생기고 위쪽 메뉴가 깔끔해졌어요 🛡',items:[
     '🛡 왼쪽 위 빨간 동그라미가 머대부속고 교표(롹)로 바뀌었어요. 로그인 화면에도 나와요.',
+    '🏠 교표나 "롹순팅 키우기" 제목을 누르면 홈으로 돌아가요.',
+    '👆 위쪽 메뉴에서 누를 수 있는 버튼(홈·랭킹·꾸미기)은 버튼 모양으로, 닉네임·시즌·소지금은 글씨로 바뀌어 구분이 쉬워졌어요. 효과음·음악은 꺼지면 흐리게 보여요.',
     '📱 브라우저 탭과 휴대폰 홈 화면 바로가기에도 같은 교표 아이콘이 보여요.'
   ]},
   '2.3.1':{sub:'헛다리짚기 훈련 발판 수정 🔧',items:[

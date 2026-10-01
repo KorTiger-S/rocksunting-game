@@ -104,7 +104,8 @@ $('#quit').addEventListener('click',askQuit);
 /* 효과음/음악 켜기·끄기: 헤더(🔊 🎵), 로그인 화면, 게임 화면의 버튼이 같은 설정을 써요. 둘은 따로 기억돼요. */
 function renderSound(){
   $('#sndBtn').textContent=muted?'🔇 효과음 꺼짐':'🔊 효과음';$('#mute').textContent=muted?'효과음 켜기':'효과음 끄기';$('#lgSnd').textContent=muted?'🔇 효과음 켜기':'🔊 효과음 끄기';
-  const m=BGM.on;$('#bgmBtn').textContent=m?'🎵 음악':'🎵 음악 꺼짐';$('#bgmMute').textContent=m?'음악 끄기':'음악 켜기';$('#lgBgm').textContent=m?'🎵 음악 끄기':'🎵 음악 켜기';
+  $('#sndBtn').classList.toggle('off',muted);$('#sndBtn').setAttribute('aria-pressed',String(!muted));
+  const m=BGM.on;$('#bgmBtn').classList.toggle('off',!m);$('#bgmBtn').setAttribute('aria-pressed',String(m));$('#bgmBtn').textContent=m?'🎵 음악':'🎵 음악 꺼짐';$('#bgmMute').textContent=m?'음악 끄기':'음악 켜기';$('#lgBgm').textContent=m?'🎵 음악 끄기':'🎵 음악 켜기';
 }
 function setMuted(m){muted=m;lsSet('rk:muted',m?'1':'0');renderSound();if(!m)sfx('click');}
 function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync();}
@@ -148,6 +149,7 @@ function practiceFill(){
 }
 /* 🏠 홈 버튼: 게임 카드·난이도 선택·상점 어디에서든 홈(게임 목록)으로 (게임 중에는 헤더가 숨어서 '포기하기'로 나가요) */
 $('#homeBtn').addEventListener('click',()=>{if(mode!=='hub')return;pgStep=0;openHubCard(null);window.scrollTo(0,0);});
+$('#brandBtn').addEventListener('click',e=>{e.preventDefault();$('#homeBtn').click();});   /* 왼쪽 위 교표·제목도 홈 버튼과 같아요 */
 $('#bigface').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)]);$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});

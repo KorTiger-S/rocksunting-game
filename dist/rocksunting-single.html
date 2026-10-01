@@ -38,6 +38,8 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 .board{background:var(--board);color:var(--chalk);border-bottom:8px solid var(--wood);padding:14px 16px 12px;position:relative}
 .board-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .logo{width:44px;height:44px;flex:none}   /* 대표 로고: 머대부속고 교표 (assets/logo.svg) */
+.brand{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;border-radius:10px}   /* 로고+제목: 누르면 홈으로 */
+.brand:focus-visible{outline:3px solid var(--ring);outline-offset:4px}
 .board h1{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(26px,5vw,38px);line-height:1.1}
 .board .sub{margin:0;font-size:13px;opacity:.85}
 .hud{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -47,7 +49,20 @@ button:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
 /* 칩이 줄바꿈되는 좁은 화면에서만, 아이콘 아래로 살짝 내려서 겹치지 않게 해요.
    (아이콘은 헤더 맨 위 72px만 차지하는데, 이전엔 폭 전체에 여백을 둬서 줄바꿈된 칩들이 불필요하게 좁아졌어요) */
 @media(max-width:859px){.hud{margin-top:6px}}
-.chip{background:rgba(255,255,255,.12);border:1.5px solid rgba(244,246,239,.45);border-radius:999px;padding:4px 12px;font-weight:700;font-size:14px}
+/* 상단 바: 정보(누르는 기능 없음)는 칠판 글씨, 켜고 끄기는 점선, 이동 버튼은 입체 버튼으로 모양을 나눠요. 칠판은 테마와 상관없이 같은 색이라 글자색도 고정 */
+.hinfo{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap;font-size:14px}
+.hi{display:inline-flex;align-items:baseline;gap:5px}
+.hi i{font-style:normal;font-size:11px;opacity:.72;letter-spacing:.04em}
+.hi b{font-weight:700}
+.hsep{width:1.5px;height:22px;background:rgba(244,246,239,.35);margin:0 2px}
+.htg{background:transparent;color:var(--chalk);border:1.5px dashed rgba(244,246,239,.6);border-radius:10px;padding:3px 10px;font-weight:700;font-size:13px;white-space:nowrap}
+.htg.off{opacity:.55}
+.hbtn{background:var(--chalk);color:#1b2033;border:2px solid #232a45;border-radius:10px;padding:4px 11px;font-weight:700;font-size:14px;box-shadow:2px 2px 0 #232a45;white-space:nowrap}
+.hbtn:hover{background:#fff}
+.hbtn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #232a45}
+.hbrk{display:none}
+@media(max-width:859px){.hud{margin-left:0;width:100%}.hbrk{display:block;flex-basis:100%;height:0}}   /* 줄바꿈될 땐 이동 버튼 셋을 한 줄로 모아요 */
+@media(max-width:560px){.hinfo{width:100%}.hsep{display:none}.hbtn{flex:1 1 0}}
 .card{background:var(--card);border:2px solid var(--line);border-radius:14px;box-shadow:4px 4px 0 var(--line)}
 #hub{max-width:1040px;margin:0 auto;padding:16px;display:grid;gap:16px}
 .prog{height:14px;background:var(--bar);border:2px solid var(--line);border-radius:99px;overflow:hidden}
@@ -103,7 +118,6 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .rtabs{display:flex;gap:6px;justify-content:center;margin:6px 0;flex-wrap:wrap}
 .rtabs .go{min-width:0;padding:6px 10px;font-size:14px}
 .rtabs .go.on{background:var(--ring);color:#fff}
-.chipbtn{cursor:pointer;font:inherit;color:inherit}
 .playing .board{display:none}
 @media (pointer:coarse){.playing #gameWrap{padding-bottom:170px}}
 .ov{position:absolute;inset:0;background:rgba(10,13,27,.7);display:grid;place-items:center;padding:12px}
@@ -263,10 +277,17 @@ html.pgplay #pumpWrap{touch-action:none}
 <body>
 <header class="board">
   <div class="board-in">
-    <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgNCBMOTAgMTYgTDkwIDUwIEM5MCA3NCA3MiA5MCA1MCA5NyBDMjggOTAgMTAgNzQgMTAgNTAgTDEwIDE2IFoiIGZpbGw9IiM2ZDFmMzEiIHN0cm9rZT0iI2U4YTkxYyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZmlsbD0iI2Y0ZjZlZiIgZD0iTTY1LjcgMzcuNkw2NS43IDI3LjFMNTYuMyAyNy4xTDU2LjMgNTQuNEw2NS43IDU0LjRMNjUuNyA0NS4xTDY5LjQgNDUuMUw2OS40IDM3LjZMNjUuNyAzNy42Wk00MC41IDQxLjlMNDAuNSA0MC4xTDUyLjMgNDAuMUw1Mi4zIDI3LjdMMzEuNiAyNy43TDMxLjYgMzMuMEw0Mi45IDMzLjBMNDIuOSAzNC44TDMxLjYgMzQuOEwzMS42IDQ3LjJMMzcuOCA0Ny4yTDM3LjggNDguOUwzMC42IDQ4LjlMMzAuNiA1NC40TDU0LjggNTQuNEw1NC44IDQ4LjlMNDcuMiA0OC45TDQ3LjIgNDcuMkw1My4zIDQ3LjJMNTMuMyA0MS45TDQwLjUgNDEuOVpNNTYuMiA2MS42TDU2LjIgNjQuOUw2NS42IDY0LjlMNjUuNiA1Ni4wTDMxLjYgNTYuMEwzMS42IDYxLjZMNTYuMiA2MS42WiIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODEiIHI9IjUuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTIzMzRkIiBzdHJva2Utd2lkdGg9IjMuNSIvPjwvc3ZnPgo=" alt="" aria-hidden="true">
-    <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    <a class="brand" id="brandBtn" href="#hub" title="홈으로">
+      <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAgNCBMOTAgMTYgTDkwIDUwIEM5MCA3NCA3MiA5MCA1MCA5NyBDMjggOTAgMTAgNzQgMTAgNTAgTDEwIDE2IFoiIGZpbGw9IiM2ZDFmMzEiIHN0cm9rZT0iI2U4YTkxYyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZmlsbD0iI2Y0ZjZlZiIgZD0iTTY1LjcgMzcuNkw2NS43IDI3LjFMNTYuMyAyNy4xTDU2LjMgNTQuNEw2NS43IDU0LjRMNjUuNyA0NS4xTDY5LjQgNDUuMUw2OS40IDM3LjZMNjUuNyAzNy42Wk00MC41IDQxLjlMNDAuNSA0MC4xTDUyLjMgNDAuMUw1Mi4zIDI3LjdMMzEuNiAyNy43TDMxLjYgMzMuMEw0Mi45IDMzLjBMNDIuOSAzNC44TDMxLjYgMzQuOEwzMS42IDQ3LjJMMzcuOCA0Ny4yTDM3LjggNDguOUwzMC42IDQ4LjlMMzAuNiA1NC40TDU0LjggNTQuNEw1NC44IDQ4LjlMNDcuMiA0OC45TDQ3LjIgNDcuMkw1My4zIDQ3LjJMNTMuMyA0MS45TDQwLjUgNDEuOVpNNTYuMiA2MS42TDU2LjIgNjQuOUw2NS42IDY0LjlMNjUuNiA1Ni4wTDMxLjYgNTYuMEwzMS42IDYxLjZMNTYuMiA2MS42WiIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODEiIHI9IjUuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTIzMzRkIiBzdHJva2Utd2lkdGg9IjMuNSIvPjwvc3ZnPgo=" alt="" aria-hidden="true">
+      <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    </a>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="homeBtn">🏠 홈</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
+    <div class="hud">
+      <div class="hinfo"><span class="hi" id="hUserW" hidden><i>닉네임</i><b id="hUser"></b></span><span class="hi" id="hSeason" hidden><i id="hSeasonL">시즌</i><b id="hSeasonV"></b></span><span class="hi"><i>소지금</i><b id="hMoney"></b></span></div>
+      <span class="hsep" aria-hidden="true"></span>
+      <button type="button" class="htg" id="sndBtn" aria-pressed="true">🔊 효과음</button><button type="button" class="htg" id="bgmBtn" aria-pressed="true">🎵 음악</button><span class="hbrk" aria-hidden="true"></span>
+      <button type="button" class="hbtn" id="homeBtn">🏠 홈</button><button type="button" class="hbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="hbtn" id="shopBtn">🛍 꾸미기</button>
+    </div>
   </div>
 </header>
 
@@ -650,9 +671,9 @@ function renderSeason(){
   const until=`${lastDay.getUTCMonth()+1}/${lastDay.getUTCDate()}까지`;
   const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
   const pu=Date.parse(SEASON.practiceUntil||'');   /* 연습 기간: 이때까지의 기록은 시즌에 안 들어가고, 지나면 한 번 초기화돼요 */
-  if(pu>Date.now()){const d=new Date(pu+KST_MS);chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} 연습 기간 · ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화`;
+  if(pu>Date.now()){const d=new Date(pu+KST_MS);chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`연습 기간 · ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화`;
     rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 펌프 최고점':''}`;return;}
-  chip.hidden=false;chip.textContent=`🏁 시즌${SEASON.number} · ${until} (${dtxt})`;
+  chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`${until} ${dtxt}`;
   rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} (마감 시 기록 초기화)`;
 }
 function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
@@ -838,7 +859,7 @@ function enter(name,data,at,news,isNew){
   maybeShowNotes(isNew);maybeLoan();
 }
 function updateUserChip(){
-  $('#hUser').textContent=USER?`👤 ${USER.id}`:'';
+  $('#hUser').textContent=USER?USER.id:'';$('#hUserW').hidden=!USER;
   const pb=$('#pinBtn');if(pb)pb.disabled=!USER;
 }
 async function logout(){
@@ -849,8 +870,10 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
-  '2.3.2':{sub:'롹순팅 키우기에 교표가 생겼어요 🛡',items:[
+  '2.3.2':{sub:'교표가 생기고 위쪽 메뉴가 깔끔해졌어요 🛡',items:[
     '🛡 왼쪽 위 빨간 동그라미가 머대부속고 교표(롹)로 바뀌었어요. 로그인 화면에도 나와요.',
+    '🏠 교표나 "롹순팅 키우기" 제목을 누르면 홈으로 돌아가요.',
+    '👆 위쪽 메뉴에서 누를 수 있는 버튼(홈·랭킹·꾸미기)은 버튼 모양으로, 닉네임·시즌·소지금은 글씨로 바뀌어 구분이 쉬워졌어요. 효과음·음악은 꺼지면 흐리게 보여요.',
     '📱 브라우저 탭과 휴대폰 홈 화면 바로가기에도 같은 교표 아이콘이 보여요.'
   ]},
   '2.3.1':{sub:'헛다리짚기 훈련 발판 수정 🔧',items:[
@@ -2331,7 +2354,8 @@ $('#quit').addEventListener('click',askQuit);
 /* 효과음/음악 켜기·끄기: 헤더(🔊 🎵), 로그인 화면, 게임 화면의 버튼이 같은 설정을 써요. 둘은 따로 기억돼요. */
 function renderSound(){
   $('#sndBtn').textContent=muted?'🔇 효과음 꺼짐':'🔊 효과음';$('#mute').textContent=muted?'효과음 켜기':'효과음 끄기';$('#lgSnd').textContent=muted?'🔇 효과음 켜기':'🔊 효과음 끄기';
-  const m=BGM.on;$('#bgmBtn').textContent=m?'🎵 음악':'🎵 음악 꺼짐';$('#bgmMute').textContent=m?'음악 끄기':'음악 켜기';$('#lgBgm').textContent=m?'🎵 음악 끄기':'🎵 음악 켜기';
+  $('#sndBtn').classList.toggle('off',muted);$('#sndBtn').setAttribute('aria-pressed',String(!muted));
+  const m=BGM.on;$('#bgmBtn').classList.toggle('off',!m);$('#bgmBtn').setAttribute('aria-pressed',String(m));$('#bgmBtn').textContent=m?'🎵 음악':'🎵 음악 꺼짐';$('#bgmMute').textContent=m?'음악 끄기':'음악 켜기';$('#lgBgm').textContent=m?'🎵 음악 끄기':'🎵 음악 켜기';
 }
 function setMuted(m){muted=m;lsSet('rk:muted',m?'1':'0');renderSound();if(!m)sfx('click');}
 function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync();}
@@ -2375,6 +2399,7 @@ function practiceFill(){
 }
 /* 🏠 홈 버튼: 게임 카드·난이도 선택·상점 어디에서든 홈(게임 목록)으로 (게임 중에는 헤더가 숨어서 '포기하기'로 나가요) */
 $('#homeBtn').addEventListener('click',()=>{if(mode!=='hub')return;pgStep=0;openHubCard(null);window.scrollTo(0,0);});
+$('#brandBtn').addEventListener('click',e=>{e.preventDefault();$('#homeBtn').click();});   /* 왼쪽 위 교표·제목도 홈 버튼과 같아요 */
 $('#bigface').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)]);$('#bigmsg').textContent=MSGS[Math.floor(Math.random()*MSGS.length)];openProfile();});
 $('#pfClose').addEventListener('click',closeProfile);
 window.addEventListener('pagehide',()=>{save();});

@@ -15,10 +15,17 @@
 <body>
 <header class="board">
   <div class="board-in">
-    <img class="logo" src="assets/logo.svg" alt="" aria-hidden="true">
-    <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    <a class="brand" id="brandBtn" href="#hub" title="홈으로">
+      <img class="logo" src="assets/logo.svg" alt="" aria-hidden="true">
+      <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    </a>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="homeBtn">🏠 홈</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
+    <div class="hud">
+      <div class="hinfo"><span class="hi" id="hUserW" hidden><i>닉네임</i><b id="hUser"></b></span><span class="hi" id="hSeason" hidden><i id="hSeasonL">시즌</i><b id="hSeasonV"></b></span><span class="hi"><i>소지금</i><b id="hMoney"></b></span></div>
+      <span class="hsep" aria-hidden="true"></span>
+      <button type="button" class="htg" id="sndBtn" aria-pressed="true">🔊 효과음</button><button type="button" class="htg" id="bgmBtn" aria-pressed="true">🎵 음악</button><span class="hbrk" aria-hidden="true"></span>
+      <button type="button" class="hbtn" id="homeBtn">🏠 홈</button><button type="button" class="hbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="hbtn" id="shopBtn">🛍 꾸미기</button>
+    </div>
   </div>
 </header>
 
