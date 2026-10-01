@@ -282,3 +282,14 @@ html.pgplay #pumpWrap{touch-action:none}
 .nm-red{color:#e2334d!important;font-weight:700}
 .nm-gold{color:#c98a00!important;font-weight:700;text-shadow:0 0 6px rgba(255,210,63,.45)}
 .nm-rainbow{background:linear-gradient(90deg,#ff4d6d,#e8a91c,#2f8f5b,#3aa0ff,#9b6bff);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:700}
+/* 소리새 펌프 곡 테마(.pgth, js/pump.js의 pgThemeApply): 그 곡을 할 때만 플레이 화면 주변·결과표에 붙어요.
+   배경 그림은 JS가 style.background로 깔고, 여기선 색 변수를 어두운 남색 + 금색으로 바꿔요 */
+.pgth{--card:#0a1428;--ink:#f0e6d2;--muted:#b9b2a0;--bar:rgba(200,170,110,.28);--line:#c8aa6e;--ring:#c8aa6e;color:var(--ink)}
+#pumpWrap.pgth{max-width:none;min-height:100vh;box-sizing:border-box}
+#pumpWrap.pgth .gtop h2{color:#c8aa6e}
+#pumpWrap.pgth #pgStage{border-color:#c8aa6e;box-shadow:0 0 0 1px #010a13,0 0 24px rgba(200,170,110,.35)}
+.dialog.pgth{border-color:#c8aa6e;box-shadow:0 0 0 1px #010a13,0 0 28px rgba(200,170,110,.4)}
+.dialog.pgth h2{color:#c8aa6e}
+.dialog.pgth #pgRSay{color:var(--ink)!important}
+.dialog.pgth .go:not(.ghost){background:#c8aa6e;color:#010a13;border-color:#010a13}
+#pumpWrap.pgth #pgPad{background:rgba(1,10,19,.82);box-shadow:0 0 18px rgba(200,170,110,.3)}

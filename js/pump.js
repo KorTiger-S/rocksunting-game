@@ -65,9 +65,10 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
   PGSONGS.forEach((s,i)=>{
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
-    n.textContent=s.name;sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
+    n.textContent=s.name;if(s.isNew){const tg=document.createElement('span');tg.className='newtag';tg.textContent='NEW';n.appendChild(tg);}
+    sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
-    b.addEventListener('click',()=>{PGO.song=i;pgOptSave();pgGo(1);});
+    b.addEventListener('click',()=>{PGO.song=i;pgOptSave();pgAudLoad(s);pgGo(1);});   /* 음원 곡은 고를 때부터 파일을 불러 둬요 */
     box.appendChild(b);
   });
   /* 곡을 고른 다음 난이도를 골라요 */
@@ -177,6 +178,27 @@ function pgHeard(){
 const pgNow=()=>PG.paused?PG.frozen:PG.t0==null?-PG.lead:pgHeard()-PG.t0-PG.off;   /* 시작 시각을 잡기 전(오디오가 깨어나는 중)엔 카운트다운 직전에 머물러요 */
 const touchy=()=>{try{return matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||'ontouchstart' in window;}catch(e){return false;}};
 
+/* ---------- 곡 테마 (PGSONGS의 theme) ----------
+   그 곡을 할 때만 배경 그림을 플레이 화면(캔버스 배경·주변)·결과표·공유 이미지에 깔아요.
+   화면 색은 CSS 클래스 .pgth가 색 변수(--card, --ink …)를 어두운 남색 + 금색으로 바꿔서 입혀요(css/style.css). */
+const PG_THEMES={narak:{img:'assets/theme/narak.jpg'}};
+const PGTH_IM={};
+function pgThemeImg(sg){
+  const th=sg&&sg.theme&&PG_THEMES[sg.theme];if(!th)return null;
+  if(!PGTH_IM[th.img]){const im=new Image();im.src=th.img;PGTH_IM[th.img]=im;}
+  const im=PGTH_IM[th.img];return im.complete&&im.naturalWidth?im:null;
+}
+function pgThemeApply(sg){   /* sg가 없으면 테마를 걷어요 */
+  const th=sg&&sg.theme&&PG_THEMES[sg.theme];
+  if(th)pgThemeImg(sg);
+  const bg=th?`linear-gradient(rgba(1,10,19,.72),rgba(1,10,19,.9)),url("${th.img}") center/cover`:'';
+  [$('#pumpWrap'),$('#pgResult .dialog')].forEach(el=>{el.classList.toggle('pgth',!!th);el.style.background=bg;});
+}
+/* 테마 그림을 캔버스에 꽉 차게(넘치는 쪽은 잘라서) 그려요. pan 0~1: 가로로 남는 부분 중 어디를 보여줄지 */
+function pgThemeCover(c,im,w,h,pan){
+  const s=Math.max(w/im.naturalWidth,h/im.naturalHeight),dw=im.naturalWidth*s,dh=im.naturalHeight*s;
+  c.drawImage(im,-(dw-w)*clamp(pan,0,1),-(dh-h)/2,dw,dh);
+}
 function showPump(g){$('#hub').hidden=g;$('#pumpWrap').hidden=!g;document.body.classList.toggle('playing',g);document.documentElement.classList.toggle('pgplay',g);window.scrollTo(0,0);}
 function pgNewGame(sg,bet,before){
   const ch=pgChart(sg),lanes=[[],[],[],[],[]];
@@ -194,11 +216,12 @@ function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=pgBet(PGO.diff);
   if(S.money<bet){sfx('deny');toast(`판돈 ${fmt(bet)}원이 필요해요.`);return;}
+  pgAudLoad(sg);pgThemeImg(sg);   /* 음원·테마 그림은 인트로가 도는 동안 불러 둬요 */
   if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
   if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
-  mode='pump';showPump(true);pgResize();
+  mode='pump';pgThemeApply(sg);showPump(true);pgResize();
   $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
   $('#pgResult').hidden=true;$('#pgPause').hidden=true;
   pgBegin();
@@ -214,7 +237,7 @@ function pgBegin(){
   g.lead=Math.max(3.2,g.approach+1.2);
   g.off=PGO.off/1000;   /* 기기 지연은 pgHeard()가 알아서 반영해요. 여기는 사용자가 옵션에서 맞춘 싱크만 */
   g.t0=null;g.anchorCur=-1;   /* 시작 시각은 오디오 시계가 실제로 흐르는 걸 확인한 뒤에 잡아요(pgAnchor) */
-  if(a){g.tg=a.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);g.timer=setInterval(pgSched,30);}
+  if(a){g.tg=pgTrackGain(g);g.timer=setInterval(pgSched,30);pgAudLoad(g.sg);}
   pgAnchor(g);
 }
 /* 곡 시작 시각(t0) 잡기. 아이폰 사파리는 페이지를 나갔다 오면 AudioContext가 멈춰 있고, "노래 시작"을 눌러 깨우는 순간
@@ -222,6 +245,11 @@ function pgBegin(){
    (카운트다운 없이 게이지가 바로 0이 되던 버그). 그래서 시계가 "running"이고 실제로 흐르는 게 보인 다음에 잡아요. */
 function pgAnchor(g){
   if(g.t0!=null)return true;
+  if(AC&&g.sg.audio){   /* 음원 곡: 파일을 다 풀 때까지 기다려요 */
+    const e=PGAUD[g.sg.audio];
+    if(!e||e.err){pgAudFail(g);return false;}
+    if(!e.buf)return false;
+  }
   if(AC){
     if(AC.state!=='running'){AC.resume().catch(()=>{});g.anchorCur=-1;return false;}
     const cur=AC.currentTime;
@@ -232,14 +260,46 @@ function pgAnchor(g){
 }
 function pgSched(){   /* 곡의 다음 몇 칸을 미리 예약해 둬요 (배경음악과 같은 방식) */
   const g=PG;if(!g||!g.tg||g.paused||g.state==='end'||g.t0==null)return;
+  if(g.sg.audio){pgAudPlay(g);return;}
   const T=BGMT[g.sg.id];
   while(g.step<T.len&&g.nextT<AC.currentTime+.3){bstep(T,g.step,g.nextT,g.sg.spb,g.tg);g.step++;g.nextT+=g.sg.spb;}
 }
 function pgStopAudio(g){
   clearInterval(g.timer);
-  const tg=g.tg;g.tg=null;if(!tg||!AC)return;
-  if(AC.state==='running'){const t=AC.currentTime;try{tg.gain.cancelScheduledValues(t);tg.gain.setTargetAtTime(0,t,.2);}catch(e){}setTimeout(()=>{try{tg.disconnect();}catch(e){}},1500);}
-  else{try{tg.disconnect();}catch(e){}AC.resume().catch(()=>{});}   /* 일시정지 중에 나갔다면 예약해 둔 소리가 새어 나오지 않게 끊고 시계를 되살려요 */
+  const tg=g.tg;g.tg=null;if(!tg||!AC){pgAudStop(g);return;}
+  if(AC.state==='running'){const t=AC.currentTime;try{tg.gain.cancelScheduledValues(t);tg.gain.setTargetAtTime(0,t,.2);}catch(e){}pgAudStop(g,t+1.5);setTimeout(()=>{try{tg.disconnect();}catch(e){}},1500);}
+  else{pgAudStop(g);try{tg.disconnect();}catch(e){}AC.resume().catch(()=>{});}   /* 일시정지 중에 나갔다면 예약해 둔 소리가 새어 나오지 않게 끊고 시계를 되살려요 */
+}
+/* 곡 소리를 보내는 통로(tg). 합성 곡은 소리가 작아서 키우고, 음원 곡은 원래 크기 그대로 */
+function pgTrackGain(g){const tg=AC.createGain();tg.gain.value=g.sg.audio?1:1.8;tg.connect(MUSIC);return tg;}
+
+/* ---------- 음원 파일 곡 (mp3) ----------
+   합성 곡은 pgSched가 악보를 칸마다 예약하지만, 음원 곡은 파일을 한 번 풀어 둔 소리(AudioBuffer)를 곡 위치에 맞춰 통째로 틀어요.
+   음원의 audioOff초 지점 = 채보 0초. 멈췄다 이어하거나 시계를 다시 잡으면 소리를 끊고(pgAudStop) 지금 곡 위치부터 다시 틀어요(pgAudPlay).
+   파일은 곡을 고를 때 미리 불러 둬요(pgAudLoad). 다 풀리기 전에는 카운트다운을 시작하지 않아요(pgAnchor).
+   ※ index.html을 파일로 직접 열면(file://) 브라우저가 파일을 못 읽게 해서 이 곡은 못 해요. 서버로 열거나 단일 파일 빌드(dist)를 쓰세요. */
+const PGAUD={};   /* 파일 주소 → {buf: 풀어 둔 소리, err: 실패} */
+function pgAudLoad(sg){
+  if(!sg.audio)return null;
+  const a=actx();if(!a)return null;
+  let e=PGAUD[sg.audio];if(e&&!e.err)return e;
+  e=PGAUD[sg.audio]={buf:null,err:false};
+  fetch(sg.audio).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer();})
+    .then(ab=>new Promise((ok,no)=>{const p=a.decodeAudioData(ab,ok,no);if(p&&p.then)p.then(ok,no);}))   /* 옛 사파리는 콜백만 돼요 */
+    .then(b=>{e.buf=b;}).catch(err=>{console.error(err);e.err=true;});
+  return e;
+}
+function pgAudPlay(g){
+  if(g.src)return;
+  const e=PGAUD[g.sg.audio];if(!e||!e.buf)return;
+  const off=g.sg.audioOff,T=Math.max(AC.currentTime+.05,g.t0-off),at=Math.max(0,T-g.t0+off);   /* 컨텍스트 시각 T에 음원의 at초 지점을 틀어요(소수 오차로 -0.000…이 되면 start가 실패해서 0으로) */
+  if(at>=e.buf.duration)return;
+  const s=AC.createBufferSource();s.buffer=e.buf;s.connect(g.tg);s.start(T,at);g.src=s;
+}
+function pgAudStop(g,when){const s=g.src;g.src=null;if(s)try{s.stop(when||0);}catch(e){}}
+function pgAudFail(g){   /* 음원을 못 불러왔어요: 판돈과 마이크를 돌려주고 나가요 */
+  if(!g.settled){g.settled=true;S.money+=g.bet;if(!isPractice()){S.mics=Math.min(MIC_MAX,(S.mics||0)+1);if(S.mics>=MIC_MAX)S.micAt=0;}save();}
+  g.state='end';pgStopAudio(g);sfx('error');toast('노래 파일을 불러오지 못했어요. 판돈과 마이크를 돌려줬어요.',4000);pgExit();
 }
 
 /* ---------- 입력 ---------- */
@@ -345,6 +405,7 @@ function pgPause(at){   /* at: 이 곡 위치로 되돌려서 멈춰요(화면�
   /* AudioContext를 멈추면 이어하기 카운트다운 소리가 다시 깨워 버려서, 시계는 멈추지 않고 소리만 끊어요.
      이어할 때 멈춰 있던 시간만큼 시작 시각(t0)을 뒤로 밀어요. */
   if(g.tg){try{g.tg.disconnect();}catch(e){}g.tg=null;}
+  pgAudStop(g);
   $('#pgPause').hidden=false;
 }
 function pgResume(){
@@ -378,7 +439,7 @@ function pgUpdate(){
         g.resumeAt=0;g.paused=false;g.lastPn=0;
         if(g.t0!=null)g.t0+=pgClock()-g.pauseAt;   /* 시작 시각을 잡기 전에 멈췄다면 pgAnchor가 새로 잡아요 */
         if(AC){   /* 끊어 둔 곡을 지금 위치의 다음 칸부터 다시 예약해요 (시작 전이었다면 처음부터) */
-          g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);
+          g.tg=pgTrackGain(g);   /* 음원 곡은 pgSched가 지금 위치부터 다시 틀어요 */
           if(g.t0!=null){g.step=Math.max(0,Math.ceil(g.pauseAudio/g.sg.spb-1e-6));g.nextT=g.t0+g.step*g.sg.spb;}
           else g.step=0;
         }
@@ -394,7 +455,7 @@ function pgUpdate(){
      곡 예약 위치를 함께 뒤로 밀어서, 노트가 한꺼번에 지나가 MISS가 쏟아지지 않게 해요. (pgHeard의 보정 폭은 0.6초라 평소엔 안 걸려요)
      멈춰 있다 풀리는 건(시계가 덜 가는 쪽) 그대로 둬요. */
   const pn=performance.now();
-  if(g.lastPn){const jump=(now-g.lastNow)-(pn-g.lastPn)/1000;if(jump>1){g.t0+=jump;g.nextT+=jump;now-=jump;}}
+  if(g.lastPn){const jump=(now-g.lastNow)-(pn-g.lastPn)/1000;if(jump>1){g.t0+=jump;g.nextT+=jump;now-=jump;pgAudStop(g);}}   /* 음원 곡은 밀린 위치에서 다시 틀어요 */
   /* 화면(자바스크립트)이 0.7초 넘게 멈췄다 돌아왔는데(제어 센터·알림·툴바 애니메이션·폰이 잠깐 버벅임) 곡은 계속 흘렀다면,
      그 사이 노트가 한꺼번에 MISS가 돼 게이지가 바로 0이 될 수 있어요 → 멈추기 직전 위치로 되돌려 자동 일시정지해요 */
   if(g.lastPn&&pn-g.lastPn>700&&now-g.lastNow>.5&&now>-.5){
@@ -406,7 +467,8 @@ function pgUpdate(){
   /* 카운트다운 중인데 곡 위치가 이미 0을 한참 넘었으면 시계가 잘못된 거예요 → 시작 시각을 다시 잡아요(노트가 한꺼번에 MISS 되지 않게) */
   if(g.state==='count'&&now>.5){
     g.t0=null;g.anchorCur=-1;g.step=0;
-    if(g.tg&&AC){try{g.tg.disconnect();}catch(e){}g.tg=AC.createGain();g.tg.gain.value=1.8;g.tg.connect(MUSIC);}   /* 미리 예약해 둔 곡 소리도 버리고 처음부터 */
+    pgAudStop(g);
+    if(g.tg&&AC){try{g.tg.disconnect();}catch(e){}g.tg=pgTrackGain(g);}   /* 미리 예약해 둔 곡 소리도 버리고 처음부터 */
     return;
   }
   if(now<0){const n=Math.ceil(-now);if(n<=3&&n!==g.cd){g.cd=n;sfx('pgcount',n===1?880:660);}}
@@ -491,7 +553,7 @@ function pgExit(){
   const g=PG;if(!g)return;
   if(g.state!=='end'){g.state='end';pgStopAudio(g);}
   PG=null;$('#pgResult').hidden=true;$('#pgPause').hidden=true;
-  showPump(false);toHub();
+  pgThemeApply(null);showPump(false);toHub();
 }
 $('#pgRBack').addEventListener('click',pgExit);
 
@@ -516,8 +578,12 @@ async function pgShareDraw(g,noFace){
   const box=(x,y,w,h,rad,fill)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,rad);else c.rect(x,y,w,h);c.fillStyle=fill;c.fill();};
   /* 배경 */
   const bg=c.createLinearGradient(0,0,0,PGSH_H);bg.addColorStop(0,'#1c2350');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,W,PGSH_H);
-  c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);
-  c.fillStyle='#ffd23f';c.fillRect(0,0,W,8);
+  /* 테마 곡은 테마 그림을 깔아요(얼굴을 못 쓰는 환경이면 그림도 못 써서 빼요) */
+  let th=null;
+  if(!noFace&&g.sg.theme&&PG_THEMES[g.sg.theme]){th=new Image();th.src=PG_THEMES[g.sg.theme].img;try{await th.decode();}catch(e){th=null;}}
+  if(th){pgThemeCover(c,th,W,PGSH_H,.5);const sh=c.createLinearGradient(0,0,0,PGSH_H);sh.addColorStop(0,'rgba(1,10,19,.74)');sh.addColorStop(1,'rgba(1,10,19,.9)');c.fillStyle=sh;c.fillRect(0,0,W,PGSH_H);}
+  else{c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);}
+  c.fillStyle=th?'#c8aa6e':'#ffd23f';c.fillRect(0,0,W,8);
   /* 머리: 게임 이름 · 곡 */
   T('호우와 소리새 펌프',W/2,62,38,'#ffd23f','center');
   T('롹순팅 키우기 · 시즌2',W/2,102,18,'#9aa3c2','center',BODY,700);
@@ -598,12 +664,16 @@ function pgDraw(){
   const now=pgNow(),H=PGH,perf=performance.now(),TR=H-PGRY-10,ap=g.approach;
   PGPADS.forEach((b,l)=>b.classList.toggle('on',g.held[l]));   /* 키보드로 눌러도 발판이 같이 눌려 보여요 */
   /* 배경: 박자에 맞춰 살짝 번쩍여요 */
-  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#161c3d');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,PGW,H);
-  const q=now*g.sg.bpm/60,env=now>=0?Math.pow(1-(q-Math.floor(q)),2.5):0;
-  c.fillStyle=`rgba(140,170,255,${.05*env})`;c.fillRect(0,0,PGW,H);
+  const thIm=pgThemeImg(g.sg);
+  if(thIm){   /* 테마 곡: 그림을 곡 진행에 맞춰 천천히 가로로 훑고, 노트가 잘 보이게 어둡게 덮어요 */
+    pgThemeCover(c,thIm,PGW,H,clamp(now/g.endT,0,1));
+    const sh=c.createLinearGradient(0,0,0,H);sh.addColorStop(0,'rgba(1,10,19,.45)');sh.addColorStop(.35,'rgba(1,10,19,.62)');sh.addColorStop(1,'rgba(1,10,19,.78)');c.fillStyle=sh;c.fillRect(0,0,PGW,H);
+  }else{const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#161c3d');bg.addColorStop(1,'#070a18');c.fillStyle=bg;c.fillRect(0,0,PGW,H);}
+  const q=now/(2*g.sg.spb),env=now>=0?Math.pow(1-(q-Math.floor(q)),2.5):0;
+  c.fillStyle=thIm?`rgba(200,170,110,${.07*env})`:`rgba(140,170,255,${.05*env})`;c.fillRect(0,0,PGW,H);
   for(let l=0;l<5;l++){
     const x=PGX[l]-44,press=g.held[l]?1:Math.max(0,1-(perf-g.pressAt[l])/220);
-    c.fillStyle='rgba(255,255,255,.035)';c.fillRect(x,PGRY-46,88,H);
+    c.fillStyle=thIm?'rgba(1,10,19,.35)':'rgba(255,255,255,.035)';c.fillRect(x,PGRY-46,88,H);
     if(press>0){const lg=c.createLinearGradient(0,PGRY,0,PGRY+260);lg.addColorStop(0,PGCOL[l]);lg.addColorStop(1,'rgba(0,0,0,0)');c.globalAlpha=.28*press;c.fillStyle=lg;c.fillRect(x,PGRY-46,88,306);c.globalAlpha=1;}
   }
   c.fillStyle='rgba(255,255,255,.08)';for(let i=0;i<=5;i++)c.fillRect(PGX[0]-47+i*94-(i===5?3:0),PGRY-46,2,H);
@@ -670,6 +740,7 @@ function pgDraw(){
   if(now<0&&!g.paused){
     const n=Math.ceil(-now);
     pgText(c,g.sg.name,PGW/2,H*.42-70,28,'#fff');
+    if(g.t0==null&&g.sg.audio)pgText(c,'노래 불러오는 중…',PGW/2,H*.5,20,'#ffd23f',null,"'Noto Sans KR',sans-serif");
     pgText(c,`${PG_DIFFS[g.sg.diff]} ★${g.sg.stars} · BPM ${g.sg.bpm} · 호우 목표 ${fmt(g.sg.target)}점`,PGW/2,H*.42-36,14,'#c9d3ff',null,"'Noto Sans KR',sans-serif");
     pgText(c,'Z  Q  S  E  C  (숫자패드 1 7 5 9 3) · Esc 일시정지',PGW/2,H*.5+110,13,'#9aa3c2',null,"'Noto Sans KR',sans-serif");
     if(n<=3){const fr=n+now,sc=1+.5*fr;c.save();c.globalAlpha=.4+.6*(1-fr);c.translate(PGW/2,H*.5);c.scale(sc,sc);pgText(c,String(n),0,0,96,'#ffd23f');c.restore();}

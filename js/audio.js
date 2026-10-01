@@ -87,7 +87,14 @@ const SFX={
   chirp(){tone(700,.12,'square',.04,0,1100);tone(900,.24,'square',.04,.14,1350);},                               /* 파이리 울음소리 "파이~!" */
   /* 등굣길 뜀박질 인트로 */
   alarm(){for(let i=0;i<8;i++)tone(i%2?1760:2093,.07,'square',.035,i*.11);},                                    /* 자명종 따르릉 */
-  chomp(){tone(320,.05,'square',.06);noise(.09,.09,.02,1600,450,.8);tone(170,.14,'square',.05,.07,110);}          /* 주스가 앙! 무는 소리 */
+  chomp(){tone(320,.05,'square',.06);noise(.09,.09,.02,1600,450,.8);tone(170,.14,'square',.05,.07,110);},         /* 주스가 앙! 무는 소리 */
+  /* 나락쓰레기장 인트로 */
+  typing(){for(let i=0;i<6;i++)noise(.03,.035,i*.08+(i%3)*.02,3200,1600,1.2);},                                  /* 사무실 키보드 타닥타닥 */
+  offwork(){tone(1319,.5,'sine',.07);tone(1047,.9,'sine',.07,.35);},                                               /* 6시 땡! 띵동 */
+  vacuum(){noise(1.3,.035,0,800,1500,.8,.15);tone(210,1.3,'sawtooth',.012,0,260);},                               /* 청소기 위잉 */
+  washer(){for(let i=0;i<4;i++)tone(95,.24,'sine',.07,i*.3,70);noise(1.2,.025,0,600,380,.6,.2);},                 /* 세탁기 덜컹덜컹 */
+  boot(){tone(392,.25,'triangle',.04);tone(587,.3,'triangle',.04,.12);tone(784,.7,'triangle',.05,.24);},          /* 컴퓨터·게임 켜지는 소리 */
+  friendon(){tone(1175,.08,'square',.035);tone(1568,.2,'square',.035,.08);}                                       /* 친구 로그인 알림 띠링 */
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
@@ -159,6 +166,22 @@ const BGMT={
     {t:'note',wave:'sine',vol:.035,d:1.6,seq:bars('C5 . . . G4 . . .','A4 . . . F4 . . .','G4 . . . E4 . . .','G4 . . . D4 . . .','A4 . . . E4 . . .','A4 . . . F4 . . .','G4 . . . B4 . . .','C5 . G4 . E4 . C4 .')},
     {t:'note',wave:'sine',vol:.08,d:3,seq:bars('C3 . . . G2 . . .','F2 . . . C3 . . .','C3 . . . G2 . . .','G2 . . . D3 . . .','A2 . . . E3 . . .','F2 . . . C3 . . .','G2 . . . D3 . . .','C3 . . . . . . .')},
     {t:'hat',vol:.012,seq:bars(...Array(8).fill('. . x . . . x .'))}
+  ]}),
+  /* 나락쓰레기장 인트로 ① 사무실: 시계 초침처럼 똑딱이는 지루한 곡 (Dm-Am-Bb-C) */
+  office:trk({bpm:76,len:64,L:[
+    {t:'note',wave:'triangle',vol:.035,d:1.8,seq:bars('D5 . . . C5 . . .','A4 . . . . . . .','Bb4 . . . A4 . . .','G4 . . . . . . .','D5 . . . C5 . . .','A4 . . . F4 . . .','D5 . . . Bb4 . . .','C5 . . . . . . .')},
+    {t:'chord',wave:'sine',vol:.025,d:7,att:.2,seq:bars('Dm . . . . . . .','Am . . . . . . .','Bb . . . . . . .','C . . . . . . .','Dm . . . . . . .','Am . . . . . . .','Bb . . . . . . .','C . . . . . . .')},
+    {t:'note',wave:'sine',vol:.08,d:3,seq:bars('D3 . . . A2 . . .','A2 . . . E3 . . .','Bb2 . . . F2 . . .','C3 . . . G2 . . .','D3 . . . A2 . . .','A2 . . . E3 . . .','Bb2 . . . F2 . . .','C3 . . . G2 . . .')},
+    {t:'hat',vol:.014,seq:bars(...Array(8).fill('x . x . x . x .'))}
+  ]}),
+  /* 나락쓰레기장 인트로 ② 밤에 컴퓨터 앞: 친구를 기다리는 두근두근 신스 (Am-F-C-G) */
+  night:trk({bpm:100,len:64,L:[
+    {t:'note',wave:'square',vol:.022,d:.5,seq:bars('A4 C5 E5 C5 A4 C5 E5 C5','F4 A4 C5 A4 F4 A4 C5 A4','C5 E5 G5 E5 C5 E5 G5 E5','G4 B4 D5 B4 G4 B4 D5 B4','A4 C5 E5 C5 A4 C5 E5 C5','F4 A4 C5 A4 F4 A4 C5 A4','C5 E5 G5 E5 C5 E5 G5 E5','G4 B4 D5 G5 D5 B4 G4 B4')},
+    {t:'chord',wave:'sine',vol:.03,d:7,att:.1,seq:bars('Am . . . . . . .','F . . . . . . .','C . . . . . . .','G . . . . . . .','Am . . . . . . .','F . . . . . . .','C . . . . . . .','G . . . . . . .')},
+    {t:'note',wave:'triangle',vol:.08,d:1.5,seq:bars('A2 . . . A2 . . .','F2 . . . F2 . . .','C3 . . . C3 . . .','G2 . . . G2 . . .','A2 . . . A2 . . .','F2 . . . F2 . . .','C3 . . . C3 . . .','G2 . . . G2 . G2 .')},
+    {t:'kick',vol:.1,seq:bars(...Array(8).fill('x . . . x . . .'))},
+    {t:'snare',vol:.03,seq:bars(...Array(8).fill('. . . . x . . .'))},
+    {t:'hat',vol:.014,seq:bars(...Array(8).fill('. x . x . x . x'))}
   ]}),
   ratal:trk({bpm:112,len:64,L:[
     {t:'note',wave:'sawtooth',vol:.03,d:1.3,seq:bars('E5 . E5 . G5 . E5 .','D5 . D5 . B4 . D5 .','E5 . G5 . C6 . G5 .','F5 . D5 . G5 . . .','A5 . A5 . F5 . A5 .','G5 . E5 . C5 . E5 .','D5 . F5 . G5 . B5 .','C6 . G5 . E5 . C5 .')},
