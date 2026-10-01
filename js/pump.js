@@ -66,7 +66,7 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
     const b=document.createElement('button');b.type='button';b.className='song';
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
     n.textContent=s.name;if(s.isNew){const tg=document.createElement('span');tg.className='newtag';tg.textContent='NEW';n.appendChild(tg);}
-    sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.stars).join(' · ');   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
+    sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.wip?'–':d.stars).join(' · ');   /* 작업 중 난이도는 – */   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
     d.appendChild(n);d.appendChild(sm);b.appendChild(d);b.appendChild(st);
     b.addEventListener('click',()=>{PGO.song=i;pgOptSave();pgAudLoad(s);pgGo(1);});   /* 음원 곡은 고를 때부터 파일을 불러 둬요 */
     box.appendChild(b);
@@ -77,7 +77,7 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
     const b=document.createElement('button');b.type='button';b.className='song';
     const t=document.createElement('b'),st=document.createElement('span');t.textContent=n;st.className='stars';
     b.appendChild(t);b.appendChild(st);
-    b.addEventListener('click',()=>{if(S.money<pgBet(i)){sfx('deny');toast(`판돈 ${fmt(pgBet(i))}원이 필요해요.`);return;}PGO.diff=i;pgOptSave();pgGo(2);});
+    b.addEventListener('click',()=>{if(PGSONGS[PGO.song].diffs[i].wip){sfx('deny');toast('이 난이도는 채보 작업 중이에요. 조금만 기다려 주세요!');return;}if(S.money<pgBet(i)){sfx('deny');toast(`판돈 ${fmt(pgBet(i))}원이 필요해요.`);return;}PGO.diff=i;pgOptSave();pgGo(2);});
     dbox.appendChild(b);
   });
 })();
@@ -88,16 +88,17 @@ function renderPumpCard(){
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
   micTick();renderMics();pgOptFix();
+  if(PGSONGS[PGO.song].diffs[PGO.diff].wip){PGO.diff=0;if(pgStep===2)pgStep=1;}   /* 작업 중 난이도는 고를 수 없어요 */
   if(pgStep===2&&S.money<pgBet(PGO.diff))pgStep=1;   /* 돈이 모자라 이 난이도를 못 하게 되면 난이도 선택으로 돌아가요 */
   [0,1,2].forEach(i=>{$('#pgStep'+i).hidden=i!==pgStep;});
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
   const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),bet=pgBet(PGO.diff);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도를 골라요`;
   [...$('#pgDiffs').children].forEach((b,i)=>{
-    const d=sg.diffs[i],poor=S.money<pgBet(i);
-    b.classList.toggle('sel',i===PGO.diff);b.classList.toggle('poor',poor);b.setAttribute('aria-disabled',poor);
-    b.lastChild.textContent=`★${d.stars} · 판돈 ${fmt(pgBet(i))}원`;   /* 돈이 모자라면 CSS(.poor)가 "소지금 부족" 줄을 붙여요 */
-    b.setAttribute('aria-label',`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 ${fmt(pgBet(i))}원${poor?' · 소지금 부족':''}`);
+    const d=sg.diffs[i],poor=!d.wip&&S.money<pgBet(i);
+    b.classList.toggle('sel',i===PGO.diff);b.classList.toggle('poor',poor);b.classList.toggle('wip',!!d.wip);b.setAttribute('aria-disabled',poor||!!d.wip);
+    b.lastChild.textContent=d.wip?'🚧 채보 작업 중':`★${d.stars} · 판돈 ${fmt(pgBet(i))}원`;   /* 돈이 모자라면 CSS(.poor)가 "소지금 부족" 줄을 붙여요 */
+    b.setAttribute('aria-label',d.wip?`${PG_DIFFS[i]} · 채보 작업 중이라 아직 못 해요`:`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 ${fmt(pgBet(i))}원${poor?' · 소지금 부족':''}`);
   });
   $('#pgSumT').textContent=`${sg.name} · ${PG_DIFFS[PGO.diff]} ★${sg.stars}`;
   $('#pgSumB').textContent=`판돈 ${fmt(bet)}원`;
@@ -215,6 +216,7 @@ function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는
   if(!pgUnlocked()||!USER||mode!=='hub'||JG.on)return;
   micTick();pgOptFix();
   const sg=pgPick(PGO.song,PGO.diff),bet=pgBet(PGO.diff);
+  if(sg.wip){sfx('deny');toast('이 난이도는 채보 작업 중이에요.');renderHub();return;}
   if(S.money<bet){sfx('deny');toast(`판돈 ${fmt(bet)}원이 필요해요.`);return;}
   pgAudLoad(sg);pgThemeImg(sg);   /* 음원·테마 그림은 인트로가 도는 동안 불러 둬요 */
   if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
