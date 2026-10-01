@@ -17,6 +17,7 @@ css/style.css         스타일
 js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
 assets/faces/*.jpg    캐릭터 표정 12종
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
+assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성 (GitHub Actions가 실행)
 .github/workflows/   시즌 자동 마감 워크플로우
