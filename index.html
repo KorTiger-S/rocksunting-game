@@ -4,17 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>롹순팅 키우기 - 헛다리짚기 훈련 · 프리킥 승부</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="theme-color" content="#2e5a4c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.3.1">
+<link rel="stylesheet" href="css/style.css?v=2.3.2">
 </head>
 <body>
 <header class="board">
   <div class="board-in">
-    <div class="logo" aria-hidden="true"></div>
-    <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    <a class="brand" id="brandBtn" href="#hub" title="홈으로">
+      <img class="logo" src="assets/logo.svg" alt="" aria-hidden="true">
+      <div><h1>롹순팅 키우기</h1><p class="sub">머대부속 고등학교 · 쉬는 시간 내기</p></div>
+    </a>
     <img class="hubface" id="bigface" alt="롹순팅 (누르면 표정이 바뀌어요)">
-    <div class="hud"><span class="chip" id="hUser"></span><span class="chip" id="hSeason" hidden></span><span class="chip" id="hMoney"></span><button type="button" class="chip chipbtn" id="sndBtn">🔊 효과음</button><button type="button" class="chip chipbtn" id="bgmBtn">🎵 음악</button><button type="button" class="chip chipbtn" id="homeBtn">🏠 홈</button><button type="button" class="chip chipbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="chip chipbtn" id="shopBtn">🛍 꾸미기</button></div>
+    <div class="hud">
+      <div class="hinfo"><span class="hi" id="hUserW" hidden><i>닉네임</i><b id="hUser"></b></span><span class="hi" id="hSeason" hidden><i id="hSeasonL">시즌</i><b id="hSeasonV"></b></span><span class="hi"><i>소지금</i><b id="hMoney"></b></span></div>
+      <span class="hsep" aria-hidden="true"></span>
+      <button type="button" class="htg" id="sndBtn" aria-pressed="true">🔊 효과음</button><button type="button" class="htg" id="bgmBtn" aria-pressed="true">🎵 음악</button><span class="hbrk" aria-hidden="true"></span>
+      <button type="button" class="hbtn" id="homeBtn">🏠 홈</button><button type="button" class="hbtn" id="rankBtn">🏆 랭킹</button><button type="button" class="hbtn" id="shopBtn">🛍 꾸미기</button>
+    </div>
   </div>
 </header>
 
@@ -200,7 +211,7 @@
 </div>
 <div class="ov ovfix" id="login">
   <div class="card dialog" style="max-width:400px">
-    <div class="logo" style="margin:0 auto 6px;border-color:var(--ring)"></div>
+    <img class="logo" src="assets/logo.svg" alt="" aria-hidden="true">
     <h2>롹순팅 키우기</h2>
     <p>머대부속 고등학교 · 시즌2 헛다리짚기 훈련</p>
     <div id="lgChoice">
@@ -334,25 +345,25 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.3.1"></script>
-<script src="js/save.js?v=2.3.1"></script>
-<script src="js/cloud.js?v=2.3.1"></script>
-<script src="js/login.js?v=2.3.1"></script>
-<script src="js/rank.js?v=2.3.1"></script>
-<script src="js/audio.js?v=2.3.1"></script>
-<script src="js/input.js?v=2.3.1"></script>
-<script src="js/render.js?v=2.3.1"></script>
-<script src="js/kick-data.js?v=2.3.1"></script>
-<script src="js/kick.js?v=2.3.1"></script>
-<script src="js/hub.js?v=2.3.1"></script>
-<script src="js/shop.js?v=2.3.1"></script>
-<script src="js/splash.js?v=2.3.1"></script>
-<script src="js/duel.js?v=2.3.1"></script>
-<script src="js/pump-data.js?v=2.3.1"></script>
-<script src="js/pump.js?v=2.3.1"></script>
-<script src="js/jgintro.js?v=2.3.1"></script>
-<script src="js/lateintro.js?v=2.3.1"></script>
-<script src="js/main.js?v=2.3.1"></script>
+<script src="js/util.js?v=2.3.2"></script>
+<script src="js/save.js?v=2.3.2"></script>
+<script src="js/cloud.js?v=2.3.2"></script>
+<script src="js/login.js?v=2.3.2"></script>
+<script src="js/rank.js?v=2.3.2"></script>
+<script src="js/audio.js?v=2.3.2"></script>
+<script src="js/input.js?v=2.3.2"></script>
+<script src="js/render.js?v=2.3.2"></script>
+<script src="js/kick-data.js?v=2.3.2"></script>
+<script src="js/kick.js?v=2.3.2"></script>
+<script src="js/hub.js?v=2.3.2"></script>
+<script src="js/shop.js?v=2.3.2"></script>
+<script src="js/splash.js?v=2.3.2"></script>
+<script src="js/duel.js?v=2.3.2"></script>
+<script src="js/pump-data.js?v=2.3.2"></script>
+<script src="js/pump.js?v=2.3.2"></script>
+<script src="js/jgintro.js?v=2.3.2"></script>
+<script src="js/lateintro.js?v=2.3.2"></script>
+<script src="js/main.js?v=2.3.2"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

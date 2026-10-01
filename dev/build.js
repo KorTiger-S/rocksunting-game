@@ -50,6 +50,11 @@ if (url) {
   if (!js.includes(marker)) { console.error("CLOUD_DEFAULT 줄을 찾지 못했어요."); process.exit(1); }
   js = js.replace(marker, () => "const CLOUD_DEFAULT=" + JSON.stringify({ url, key }) + ";");
 }
+// 대표 로고·파비콘·홈 화면 아이콘 → data URI (index.html의 <link rel=icon>, <img class=logo>)
+html = html.replace(/assets\/(logo\.svg|favicon-32\.png|icon-180\.png)/g, (m, name) => {
+  const b = fs.readFileSync(path.join(root, 'assets', name));
+  return (name.endsWith('.svg') ? 'data:image/svg+xml;base64,' : 'data:image/png;base64,') + b.toString('base64');
+});
 html = html.replace(/<link rel="stylesheet" href="css\/style\.css(?:\?[^"]*)?">/, () => '<style>\n' + css + '</style>')
            .replace(/<!-- BUILD:JS:START[\s\S]*?-->[\s\S]*?<!-- BUILD:JS:END -->/, () => '<script>\n' + js + '</script>');
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
