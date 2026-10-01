@@ -131,7 +131,29 @@ const PGCOL=['#3aa0ff','#ff4d6d','#ffd23f','#ff4d6d','#3aa0ff'];
 const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ ● ↗ ↘ (위쪽 화살표를 돌려서 그려요) */
 const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
 const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
-const PGKEYS={KeyZ:0,KeyQ:1,KeyS:2,KeyE:3,KeyC:4,Numpad1:0,Numpad7:1,Numpad5:2,Numpad9:3,Numpad3:4};
+/* 발판 키: 발판(lane)마다 키 2칸. 설정 > 펌프 키 변경에서 바꾸고 이 기기에만 저장해요(rk:pgkeys). PGKEYS는 거기서 만든 {키 코드: 발판} 표 */
+const PGKBIND_DEF=[['KeyZ','Numpad1'],['KeyQ','Numpad7'],['KeyS','Numpad5'],['KeyE','Numpad9'],['KeyC','Numpad3']];
+let PGKBIND=PGKBIND_DEF.map(a=>a.slice()),PGKEYS={};
+try{const o=JSON.parse(lsGet('rk:pgkeys')||'null');if(Array.isArray(o)&&o.length===5)PGKBIND=o.map(a=>[0,1].map(i=>Array.isArray(a)&&typeof a[i]==='string'&&a[i]?a[i]:''));}catch(e){}
+function pgKeysApply(){
+  PGKEYS={};PGKBIND.forEach((a,l)=>a.forEach(c=>{if(c&&PGKEYS[c]===undefined)PGKEYS[c]=l;}));
+  const kn=l=>PGKBIND[l].filter(Boolean).map(pgKeyName).join(' / ')||'키 없음';
+  const col=i=>{const c=PGKBIND.map(a=>a[i]);if(!c.every(Boolean))return '';const n=c.map(pgKeyName).join(' ').replace(/[<>&"]/g,'');
+    return c.every(x=>/^Numpad\d$/.test(x))?'숫자패드 <b>'+n.replace(/Num /g,'')+'</b>':'<b>'+n+'</b>';};
+  const t=$('#pgKeyTxt');if(t)t.innerHTML=[0,1].map(col).filter(Boolean).join(' 또는 ')||'<b>설정에서 정한 키</b>';
+  document.querySelectorAll('#pgPad [data-l]').forEach(b=>{const l=+b.dataset.l;b.setAttribute('aria-label',PG_LANE_NAME[l]+' 발판 ('+kn(l)+')');});
+}
+const PG_LANE_NAME=['왼쪽 아래','왼쪽 위','가운데','오른쪽 위','오른쪽 아래'];
+const PGK_SYM={Comma:',',Period:'.',Slash:'/',Semicolon:';',Quote:"'",BracketLeft:'[',BracketRight:']',Backslash:'\\',Minus:'-',Equal:'=',Backquote:'`',Space:'Space',
+  ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',NumpadAdd:'Num +',NumpadSubtract:'Num -',NumpadMultiply:'Num *',NumpadDivide:'Num /',NumpadDecimal:'Num .',
+  ShiftLeft:'왼쪽 Shift',ShiftRight:'오른쪽 Shift',CapsLock:'Caps Lock',IntlBackslash:'\\'};
+function pgKeyName(c){
+  if(!c)return '';if(PGK_SYM[c])return PGK_SYM[c];
+  let m=/^Key([A-Z])$/.exec(c)||/^Digit(\d)$/.exec(c);if(m)return m[1];
+  if((m=/^Numpad(\d)$/.exec(c)))return 'Num '+m[1];
+  return c;
+}
+const pgKeysSave=()=>lsSet('rk:pgkeys',JSON.stringify(PGKBIND));
 const pgClock=()=>AC?AC.currentTime:performance.now()/1000;   /* 소리를 예약하는 시계(스피커에서 실제로 들리는 것보다 앞서 있어요) */
 /* 지금 스피커에서 실제로 들리는 곡의 위치(컨텍스트 시간).
    브라우저가 outputLatency를 0으로 잘못 알려 주는 경우가 많아서, 추측하지 않고 getOutputTimestamp()가 알려 주는
@@ -697,3 +719,57 @@ window.addEventListener('keydown',e=>{
   e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)pgCalTap();
 },true);
 $('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
+
+/* ---------- 설정 > 펌프 키 변경 ----------
+   배그 키 설정처럼 칸을 누르고 원하는 키를 누르면 바뀌어요. 다른 발판에 쓰던 키면 그쪽에서 빼 와요. */
+const PGK_ROWS=[1,3,2,0,4],PGK_ARW=['↙','↖','●','↗','↘'];   /* 표는 숫자패드처럼 위 → 가운데 → 아래 순서 */
+const PGK_BAN=/^(Escape|Tab|Enter|NumpadEnter|Backspace|Delete|NumLock|ContextMenu|(Control|Alt|Meta|OS)(Left|Right)?|F\d+)$/;
+const PGK_PRESET={num:[['Numpad1',''],['Numpad7',''],['Numpad5',''],['Numpad9',''],['Numpad3','']],
+  qe:[['KeyZ',''],['KeyQ',''],['KeyS',''],['KeyE',''],['KeyC','']],def:PGKBIND_DEF};
+let PGKCAP=null;   /* 키를 기다리는 칸 {l, i} */
+function pgKeyMsg(m,bad){const p=$('#pgKeyMsg');p.textContent=m;p.classList.toggle('bad',!!bad);}
+function pgKeyRender(){
+  const tb=$('#pgKeyTab tbody');tb.innerHTML='';
+  PGK_ROWS.forEach(l=>{
+    const tr=document.createElement('tr'),th=document.createElement('th');
+    th.innerHTML=`<span class="karw" style="color:${PGCOL[l]}">${PGK_ARW[l]}</span> ${PG_LANE_NAME[l]}`;tr.appendChild(th);
+    [0,1].forEach(i=>{
+      const td=document.createElement('td'),b=document.createElement('button'),c=PGKBIND[l][i],w=PGKCAP&&PGKCAP.l===l&&PGKCAP.i===i;
+      b.type='button';b.className='keyslot'+(w?' wait':'')+(c?'':' empty');b.textContent=w?'키를 누르세요…':c?pgKeyName(c):'—';
+      b.setAttribute('aria-label',`${PG_LANE_NAME[l]} 발판 키 ${i+1}: ${c?pgKeyName(c):'없음'}. 누르고 새 키 입력`);
+      b.addEventListener('click',()=>{PGKCAP=w?null:{l,i};pgKeyRender();if(PGKCAP)pgKeyMsg('새로 쓸 키를 누르세요. (Backspace: 칸 비우기 · Esc: 취소)');});
+      td.appendChild(b);tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  const none=PGKBIND.map((a,l)=>a.some(Boolean)?-1:l).filter(l=>l>=0);
+  if(!PGKCAP)pgKeyMsg(none.length?`⚠ 키가 없는 발판: ${none.map(l=>PG_LANE_NAME[l]).join(', ')}`:'',none.length>0);
+}
+function pgKeySet(l,i,c){
+  let moved=null;
+  if(c)PGKBIND.forEach((a,l2)=>a.forEach((c2,i2)=>{if(c2===c&&!(l2===l&&i2===i)){a[i2]='';moved=l2;}}));
+  PGKBIND[l][i]=c;PGKCAP=null;pgKeysSave();pgKeysApply();pgKeyRender();
+  if(!c){sfx('swish');pgKeyMsg(`${PG_LANE_NAME[l]} 발판 키 ${i+1} 칸을 비웠어요.`);}
+  else{sfx('stomp');pgKeyMsg(moved!=null&&moved!==l?`${pgKeyName(c)} 키를 ${PG_LANE_NAME[moved]} 발판에서 옮겨 왔어요.`:`${PG_LANE_NAME[l]} 발판 = ${pgKeyName(c)}`);}
+}
+function openSettings(){if(mode!=='hub')return;PGKCAP=null;pgKeyRender();$('#setDlg').hidden=false;}
+function closeSettings(){PGKCAP=null;$('#setDlg').hidden=true;}
+window.addEventListener('keydown',e=>{
+  if($('#setDlg').hidden)return;
+  if(!PGKCAP){if(e.code==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeSettings();}return;}
+  e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
+  const {l,i}=PGKCAP;
+  if(e.code==='Escape'){PGKCAP=null;pgKeyRender();return;}
+  if(e.code==='Backspace'||e.code==='Delete'){pgKeySet(l,i,'');return;}
+  if(!e.code||PGK_BAN.test(e.code)){sfx('deny');pgKeyMsg(`${e.key||e.code} 키는 쓸 수 없어요. 다른 키를 눌러 주세요.`,true);return;}
+  pgKeySet(l,i,e.code);
+},true);
+$('#setBtn').addEventListener('click',openSettings);
+$('#pgKeyBtn').addEventListener('click',openSettings);
+$('#setClose').addEventListener('click',closeSettings);
+$('#setDlg').addEventListener('click',e=>{if(e.target.id==='setDlg')closeSettings();});
+document.querySelectorAll('#setDlg [data-preset]').forEach(b=>b.addEventListener('click',()=>{
+  PGKBIND=PGK_PRESET[b.dataset.preset].map(a=>a.slice());PGKCAP=null;pgKeysSave();pgKeysApply();pgKeyRender();
+  sfx('chime');pgKeyMsg(b.dataset.preset==='def'?'처음 설정으로 돌렸어요. (Q E S Z C + 숫자패드)':`${b.textContent.trim()}(으)로 바꿨어요.`);
+}));
+pgKeysApply();
