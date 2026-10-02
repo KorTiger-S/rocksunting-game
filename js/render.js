@@ -33,11 +33,12 @@ const CH={
 };
 function kid(c,x,y,s,o){
   o=o||{};c.save();c.translate(x,y);c.scale(o.flip?-s:s,s);
+  if(o.face&&USER)o=Object.assign(myWear(),o);   /* 롹순팅(얼굴 그림을 쓰는 캐릭터)은 상점에서 산 옷 색으로 (shop.js) */
   const sw=Math.sin(o.ph||0)*5,bob=o.run?Math.abs(Math.cos(o.ph||0))*2.5:0;
   c.fillStyle='rgba(0,0,0,.18)';c.beginPath();c.ellipse(0,0,13,4,0,0,7);c.fill();
   c.lineCap='round';c.lineWidth=6;c.strokeStyle=o.pants||'#232a45';
   c.beginPath();c.moveTo(-5,-15);c.lineTo(-5+sw,-2);c.moveTo(5,-15);c.lineTo(5-sw,-2);c.stroke();
-  c.fillStyle='#fff';c.beginPath();c.arc(-5+sw,-1,3.6,0,7);c.arc(5-sw,-1,3.6,0,7);c.fill();
+  c.fillStyle=o.shoe||'#fff';c.beginPath();c.arc(-5+sw,-1,3.6,0,7);c.arc(5-sw,-1,3.6,0,7);c.fill();
   c.translate(0,-bob);
   c.lineWidth=5;c.strokeStyle=o.coat||'#232a45';
   c.beginPath();

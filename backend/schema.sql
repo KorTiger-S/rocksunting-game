@@ -119,7 +119,7 @@ begin
 end $$;
 
 -- 상점 아이템 보정: {own: [아이템 id…], eq: {슬롯: 아이템 id}}. id는 영문 소문자·숫자·_ (최대 24자), 최대 100개.
--- 장착(eq)은 가진 아이템(own)만, 슬롯은 hat/glass/acc/frame/name만 남긴다. 아이템 목록·가격은 js/shop.js의 SHOP_ITEMS.
+-- 장착(eq)은 가진 아이템(own)만, 슬롯은 hat/glass/acc/frame/name + 전신 top/bottom/shoes/bag(v2.5.0~)만 남긴다. 아이템 목록·가격은 js/shop.js의 SHOP_ITEMS.
 create or replace function public.rk_clean_items(v jsonb) returns jsonb
 language sql immutable as $$
   with own as (
@@ -128,7 +128,7 @@ language sql immutable as $$
       where jsonb_typeof(j) = 'string' and j #>> '{}' ~ '^[a-z0-9_]{1,24}$' limit 100) s)
   select jsonb_build_object('own', own.a, 'eq', coalesce((
     select jsonb_object_agg(k, e) from jsonb_each_text(case when jsonb_typeof(v->'eq') = 'object' then v->'eq' else '{}'::jsonb end) as q(k, e)
-    where k in ('hat', 'glass', 'acc', 'frame', 'name') and own.a ? e), '{}'::jsonb))
+    where k in ('hat', 'glass', 'acc', 'frame', 'name', 'top', 'bottom', 'shoes', 'bag') and own.a ? e), '{}'::jsonb))
   from own
 $$;
 

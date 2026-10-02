@@ -120,7 +120,7 @@ document.addEventListener('click',e=>{
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';setBody($('#pfBody'),$('#bigface').dataset.face||'base');$('#profile').hidden=false;renderBadges();}   /* 전신: 헤더 얼굴과 같은 표정 */
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list,box){

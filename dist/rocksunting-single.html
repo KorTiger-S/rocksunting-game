@@ -157,7 +157,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 /* 랭킹 이름(누르면 프로필) · 다른 플레이어 프로필 · 한줄 방명록 (js/uprof.js) */
 .rname{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .rname:hover{text-decoration-style:solid}
-#rkTab img.rava,#upFace{cursor:pointer}
+#rkTab img.rava{cursor:pointer}
 .gbform{display:flex;gap:6px;align-items:stretch}
 .gbin{flex:1;min-width:0;padding:8px 10px;font:inherit;font-size:15px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
 .gbin:focus-visible{outline:3px solid var(--ring);outline-offset:1px}
@@ -314,6 +314,12 @@ html.pgplay #pumpWrap{touch-action:none}
 .shopit small.own{color:var(--ok)}
 .shopth{width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--line);background:#f4f1ee}
 .shopnm{display:grid;place-items:center;height:60px;font-family:var(--display);font-size:20px}
+/* 전신 (얼굴 그림 + 몸, 150×380) — 상점 미리보기 · 썸네일 · 프로필 */
+.shopava.body{width:110px;height:279px;border-radius:14px;object-fit:contain;object-position:50% 0}
+.shopth.body{border-radius:12px;object-fit:cover}
+.shopth.t-top{object-position:50% 52%}.shopth.t-bottom{object-position:50% 84%}.shopth.t-shoes{object-position:50% 100%}.shopth.t-bag{object-position:50% 56%}
+.bodyfig,.dialog img.bodyfig{display:block;width:120px;height:304px;margin:6px auto;border-radius:16px;object-fit:contain;object-position:50% 0;border:3px solid var(--line);background:#f4f1ee}
+#upFace{cursor:pointer}
 /* 작은 얼굴(랭킹 · 1:1 대결) */
 .rava,.dialog img.rava{display:inline-block;width:26px;height:26px;margin:0;border-radius:50%;object-fit:cover;object-position:50% 22%;border:2px solid var(--line);background:#f4f1ee;vertical-align:middle}   /* .dialog img(큰 얼굴)보다 우선 */
 .dside .rava,.dialog .dside img.rava{width:34px;height:34px;display:block;margin:0 auto 2px}
@@ -600,7 +606,7 @@ html.pgplay #pumpWrap{touch-action:none}
 </div>
 <div class="ov ovfix" id="uprof" hidden role="dialog" aria-labelledby="upT">
   <div class="card dialog">
-    <img id="upFace" alt="">
+    <img class="bodyfig" id="upFace" alt="">
     <h2 id="upT"></h2>
     <p class="tip" id="upSub" style="margin-top:0"></p>
     <div id="upBadgeSec" hidden><div class="sec" style="margin-top:6px">🏅 시즌 뱃지</div><div class="badges" id="upBadges"></div></div>
@@ -630,6 +636,7 @@ html.pgplay #pumpWrap{touch-action:none}
 <div class="ov ovfix" id="profile" hidden role="dialog" aria-labelledby="pfT">
   <div class="card dialog">
     <h2 id="pfT">롹순팅</h2>
+    <img class="bodyfig" id="pfBody" alt="내 캐릭터 (전신)">
     <p id="bigmsg">오늘도 학교에서 살아남자.</p>
     <div class="acts" style="justify-content:center"><button class="go ghost" id="pinBtn">🔑 비밀번호 변경</button><button class="go ghost" id="outBtn">로그아웃</button></div>
     <p class="tip" id="syncInfo"></p>
@@ -708,7 +715,7 @@ const W=800,H=480,F=900,HOR=205;
    - 메이저: 시즌이 바뀌면서 새 게임이 추가됐을 때
    - 마이너: 기능이 바뀌거나 굵직한 수정을 했을 때
    - 패치  : 자잘한 버그 수정 */
-const APP_VERSION='2.4.0';
+const APP_VERSION='2.5.0';
 /* 캐릭터 표정 이미지 (assets/faces/*.jpg). 새 이미지를 추가하려면 여기에 경로를 등록하세요. */
 const IMGDATA={
   "base": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAC+AJYDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD65xRxRzRUDCigA0UAIaKXFJ3x19qAFA9KeCRUF1dWtlH5l7dW9ogGd00gT+ZrgPFXxu+Gvh8MkviFb64U4MFmhdvz6frQB6MTSFvevDZv2m/AglVYtL1+VCOZFhQBf1qzaftI/Dmdws/9r2gP8UsIwPyoHY9nLU081xWg/Fb4da5IkWn+LrEyucCOUFD+Z4rtYCs0YlhdJYz0eNgwP4igBAopwWnBaCMUAJjFBpc02gQYpe1FHagBKKMUUDFNFLSUAFL25oPArzP44/Fax+HulC3s0g1DxFcjFrZFsiMf35cdB7UAdh418X+HfBujHVfEeox2duTtjXrJM391F/iNfOnjn9ovxHqbyW/hCwi0ayOVFzcr5k7j12/wV5J4t8Ua/wCLtY/tbxJqBv7oAiMYxHCPRF7fXrWWzuSMDOepPai4+Ut69qur67dNc67q19qkp6m5mLAfQdhWeoVF2xqEHoBUhOVJB6U0YPegqxEGJYggjHf1pwJDAEnPapNtA5B74oAHSBx++RGH+0K6Lwp4u8U+FZkk8O+Ib6yVTnyGkLwH6p3rnh8y/MvHoaTcRn0FAWPqP4b/ALRei3yQad46QaRqDMEW9jGbWU+rH/ln9K9yinhnhSaGVJYpFDI6NlWB7g9xX5yu4ljxgOh4IYZH61618BvjBe+Dbm28O+IJGuvDMjhIpCcyaeSeDnvHn8qGyXE+wcg0oqK3eOaGOWGRJY5FDo6HKup6MD3BqbBoEJRS0h60AJRS8UUCF7Uq1leLNRv9J8PXmp6ZpD6vcWyeYLONwryKPvbffHQd6peHfGWga74S/wCEosr1P7OjjZ7nedr27KPmjkB+6wPGDQBi/G34g23gDwobmJll1m93Radb9SXxzIR/dXrXxbem5vbqW/vbia8vLpy808rFndjyefQdhW78RfGF3478aXniK5LLbuxisIj0itwfl49T3qnYmJISokMUx6uFySv90VLZrGJhiJ9x4wo7+9KVbeQcBex71q3KW0YJ82MLnA5/T610Xhn4aeNPE0Qn0rQZUtm6T3beSD7gN1FJySV2Uot7HFBc8Yp4izg9xXtejfs76w4Da34ltbPOD5dtAWYe26uxh+AngtPKMl7rEhUYcecAHPr04qHWiaKjJnzJ5JDs+eCOmaR1CjtX1LH8DfAMcm4xapIMY2vcAj61Bc/ArwK9qYUXUom3Z84TDfj0+lL20RqhI+XGUlg2TimiIhywJ5619D3f7PWmPMzWXia7hjOdqSpvI9MkVy2s/AjxrYK0mntZavGOgjcRPj6GmqsWJ0ZI8iKDHOAP0pyxY6gMCMEY4I9K1dU0y60y9ew1aynsblR88M6FTj1HqPeq4hVF2gfKRxWlzNqx7p+y18R5rK+i8Aa3ctJaTZOjzyNzE3eAn0P8PoBX0w3HFfnWss0EyPFK0M0Th4pV4KMOQRX2N8Pfipo2rfCZfGPiHULfT/sAMGqMxxtnUdFHctxgDqaoyaPSzTa5X4aeJdY8V6NNrWp+HJdCs55c6ZFO+ZpoO0ki9UJ6gHtXVCgQUUu3NFIBeBzkj3Havl39rWC10DWYrPwxLNY3viKHzNbsoMCC5gU/fI/hfIHI619QhC5CA/eOM18V/GnWm8TfFnXdRjJMFtILSDnOAgw36ihscVdnBQNE8AmQ7Y+4PBT2Nep/Cb4U6l4oEWra4JdO0POUUjE11/ujsvv1rQ+CXwtk1q7j8ZanbpLYW8n+j2Dji+df4j7Dt619G28sN3CJYMBR8pTGDGR/CR2xXPUnbRHXSp31ZhaV4J8H2EFrDB4dsitq2+HzF3kN6nPU/Wuo3blCk/KOijgD6DtVcIRThWHM+p1ci6ExQdgBUUi1mW2mXUXiifV2v3e3kiCJbnoprXbmktUXOKi1Z30/pFfFKFzTyMGlSgRHJJBBJEk0qo0hIQE9cdasDYuGXGexFZuv6Pa6zbwxXMksXlPuVozgkd1+hq7HGsUSRRjaiKFUegoHLkcU09epX1Oy07UDuv8AT7S7YKVDzRBmx6ZPNeJfFX4OxmGbV/BkW2RQXm00tkOO5jPr7V7m6k1m6vfQ2CRqVeW6mOLe3j5eQ+vsPehTknoQ4QcdT4a1aeKzikkuQ8ZRinlkYct/dx611v7NUVhf/F3TbTxXaGazu1eWys3cmCO5QZDunRm6YzXqnx5+GTXVo3jxIYm1aIAajFCv7sR/31Hdh0J714vpTS6Hr+la4hO6xvYp8g9UDfN+YrthJNHBODR98qpPJ+90NPAos5Y7q0hvIxhLiNZlB7Bhn+tPNaWsYCriimZooEVtYvf7O0e/1AYza2ksw+qrmvirwbpF34s8RW+nWpxcancyTSSH/lmjMWZj+GRX118SZWj+HniR0+8NLnA/FTXiH7K+jh7W/wDEbICBDHZ27EeqhmI/Gs6krI2oxuz3PR7W107TrbT7JPLtrWJYolHoO/1qPU7ZozJqdk6RXESFpQ5wkyDkhvQ+hqxECtVkh/t3WJdMfP8AZtkQbzH/AC2l6iP6Dg1z04uTsddVqCuM0bVLHWbAXtjIxU/fjcYeM+4Pb36GrROKk8UaA9wV1HQ5YrLVYFwh24imQf8ALOQenoe1c34P8XaJ4q+1wadeW76hYSGK+tEkDNC4649V96KtJx1WwqNZT0e50KmpFHeolU5qVeKzRvIz/wC17E6rdaa0oSe3xkH+In0FXTwSPSoTpth/aR1L7LGbsrgyY5//AF1OVpa9TSTpu3LfbX1G7qcp70xhgZNcN8QPiRpHhjWLHwvb39iPEupuEtYriTEdvn/lpKe3sO/FEU27IznJRV2b/jPxPb+H4o7aK3kvtUnGYrSJSxRe8sgHIQfr2qx4W02GO3Gry3o1K/vF3SXnbH91B/Co6etangnwxbeH4Zp57l9Q1e7w17qEo+eVuu0f3UHZRxVO7jTRfESWsKhLHUgXiUcLHMOWAHYEc/WuudJRjdHFCs5TszQmSKSNopY1eJ1KOhGQynjFfJHxN8OP4b1nV9HkH7pEaazbj5oj90/nmvq9pCa8X/ah0pTpWneIgPmiV7SbA6rj5f1rCE9TonT0ue0/DjUm1L4faBev9+SxRW+qgCt4tmuH+CRb/hVHh3d1+zsP/Hq7Za7bnnATRTgoNFAjA+IkRk+H/iRQDj+y7g/khNcP+zxpy2Pwb8OoBhpomlc46nPFXPFEkXie812LVb+S20OwD6bbxI5Tzrll+Z2I6gZGB0rW8AWEujeCNJ0qZ0eS0iaMsvQjdx+lc9aS2OqhB7m8rBZFJ6Dk1V+Hzs3h1bxxiW8neV+OuGK/0qYcuCemeaZ4EOdHksGGJbC4eFx9fm/rRh3qysUvdRxn7VPiu68KfA3Xb+xmeC8uQLOGVDhkL9x+Ga/PzwL4k1fwp4nsNc0O+lsr2GZcyBiQ6k/MHH8QPevvT9sfw9d638BNXW0jaR7GZL1kUZJRRg4H418DeGdHn1vxDpOkWK+bcX15FDGqcnk4J47DvXWcV7H6R6L4id7SGLXbaOw1B7VLhdp/cXKsucxt2P8As9a3YJFntop1+7IgcD2NR6lpNlLothompWsd1HBbxLgnG1kAGQeo6VJkBQqAKoGAB2FcNVJOyPQouUo3Yveor+5FpZvcFQwQjdnsPWn9KGRJY2ilQPG42sp6EelZXN7HIeM/E2ovHqOleDFguNTtbKS5ub+QbraxAXIH+3IfQdK/OvXby+1XU7zU9Qu5rq/nld5Ll2O9nB4Oe3PQV+o2laZYvp+oaNBbxWttPAyFUXGd4IJJ7n3Nfmj468P3vhnxdq+gahbvDdWt3IixkcurMdhX1yMdK76SSV0ebWlJysz7+/Zo8S3Xiv4K+HtUvXaS6SL7LNI3V2j43H3NdH8RIpf7HtbmAZmt7yNlOOzEA/pXP/sy+F7vwv8ABXQNNvozFdSIbuWNhyhk5wfeun8avJJLpWlQkb7u53P7Ig3Z/SnLqRD4kOaHMr46bjXnH7S9ru+DOsSY+aGSJ14/2q9QO3ezdiciub+KGgjxV4HvtCN2lnHcSRGaZuixq2W/HFcUEk7s9GpKTVkX/hNarD8NPD0aMrAWaklTkAnBxXU7cV5Lod1pPhu90vVfDUtzHpL3C6VqFvK5ZH+X5ZxnocgDj1r11zhivcHBrsi1JXR584uLsxoxRTc0UyTx+ysm1X4cPv8AvzXkzTc4PmFQFP1rpfANy134O06SQ/vEVon57qcf0qtDB/Z2s+IvDQU5lYarp4/voRhkX1Ix+tHw8mgNvqGnRyAtBMJAuf4WGT+pxXDVi1Nnp0JJ0l5HVR471XmuDo+onV0ieS1lQJfIgyy46Sgd/Q+gqvqep2um3NrDduIhckhZGOFUjsTUml6hFqNmLu33CMsUG7vjv7iiFTlZpVw0pQ5mtO501vLZarYGWB4L21mUqSpDI4PUGuH8MfCj4b+DvEsvibSPDttZ6gd2x+oiz18te2astoumGZpUtjC7ct5UhUH8AcVdt4I4UCRghR6sT/Ot3iFbRHGsI76styytPM8zDBboD2FN20Rip40LAlQSB1PYfjWD97VnSrQViDbml24qRGhZ9i3Fsz/3RMpP5UrqVOGUqfcYzSsCmmJbTm3lEmNw6EeoqtqfhvwdruswazqWh6Te6lBjyri4hBkTHTk1I+Kr3Nrb3KbLiISL6ZI/lWlOq4aGdSgqmvU2dT1vTtOiMlxcqz4+WKL5pHPoqjqawdJivbrUJte1WMQ3U0flW9uDn7PCDnBP98nk/XFPtLOztDm2tY4z6/eP5mq3iPWH0mzguAqsslwsTl+ignrmnOvzKwUMHJzSWrNORueK534gTyr4ZkgiOHuZo4hzjgnmtPS9Vs9VnvEsnMi2knlu4OVJ9jWf4kkU6pY2jRtKERpmVeeSPk/WsN9UdMouEuWS1Ob8aWcOn+CYLe1XDzX0CKAeWcEZxXrLljK2evGfyrzyO3/tzx7pmjgiS28PL9u1BhyBcsMJEffac16KF5JPU110YuMFc83ETU6jaGHNFSbaK2MDn/GmgS6xb213p1ytnrOnOZbC4PTJ+9G3+ww4NcDaaxp1h8SdMe6tJtG1TVVawvLCRMJ5n3/MQ9Chxx9a9eyKxfGuhQ+JPD9zpsgAmID20uBuilU5Ug9RyAPxqZRUty4TcdiPULKz1G3+zX9rHcRBs7HHQ+o9KfHDFDEsUMaRxoMKqjAArJ8JaxLrOjJPdoItQgY29/D/AM8514b8D2NbIOa4mrPU9KMm4rXQjK4pD7VMACODn6UbBtJ70WG5WMPxZ4i0/wAMaJLq2pMxjQ7I4k+/NJ2Ra8G8U+OfE/iOdnvNQlsLXP7uzs3KBB6Mw5Y/Wt3466m2oeO/7LVv9G0eFVVexlcbt31xxXncizSTx2trH5lxM22NT0Hqx9hUSlbRH1GUZfQ9h9arq/rskBkZJPMS5vUf++twwb866nwl8S/EfhiUCe4m1vSc/vrWdt0yDu0b9SR6Vg6h4Wvkh3RarN5+Ojp+5Y+mO31rnrWWVt6yxmKaJykif3WHp7VHvLW56EY4DML01Gz9LH2D4e1fTtf0a21jSrkXFncpujcdfcEdiPStDbXhf7M+qywa7qvhpmP2a4jF7bp2ST+PH4Cvdc5AOK1WqPj8Xh5YatKk+gxgKhubWC7t3t7mFJoX4ZHGQasEUDjmixgm1qiDTLGx0y2MFpbx2tuuXYL04GSSa8+8P+KNc8SyX0/hbQLr7ZeXLJBqd5HttLa3HAkB/iYEHC45rf8AHlzPqElp4L0xyt/rH/Hw69bazB+eQ+hzgD1zXdWdrBZWcNlaRrFbQIEjjUYAAFdFKmrXZx160nJ6mZ4O0Cz8NaOLC1d55Xcy3V1JzJcynlnY/wAh2HFbW7NNxRXQco8NRTOaKAFo7UUDrQI4jxrpl9pGrN4x0G3e4OwJq9hH1uoR0kQf89E5PvWhpOpWOr6ZFqGm3KXVnOvySL+qsOqsOhBrqBngg4I6GuK1vwjdWGoza74MkhtL2Zt15p0nFren1x0R/wDarKpTU9epvRrOm9djZgCQxLFGMKvQZzUvmADPpzXNaR4psLy9/sy+jk0fVxw1he/KzH1jY/fX3rdYMpKuCp9DXK7x0Z33jPVM+cPi0ZbX4peIUlGDK8UqZ7rsxWZ4FvLC38bafNqjKlpJugaRuiM33c+1eo/HfwddavaweJtKt2uLyxjMd3Cgy8sHXcvqQf0rxe1hjniLLtmibgnsfY1hN2lc+zy108Xl3sL6rQ+nnsrKK3Z7iOzW1VdzyMy7Qg75+lfNOsC1u/EOp3tkuLae4PknHVV4B+hp4iJtxbvd3kluOkDzkxj8KSd0gaNPKeSWQhIYIl3PK3ZVFDlfREZdlzwU3VqT0R3f7Pdm7fE2S4Ufu7XTiZD6b+BXv4HyAe1cD8HvC1x4W8PzS6mEGr6i4mugpyIV/hiB9v613AkLBiMbVGWJOAB6mtVorHzOOr/WMROqtmFxEJAhLMuxtwwetYvjDxJD4ftIwLd77VLtvL0/TouZLmTtkfwoOpJ7VRufFF3q88mmeCLVNVuwdsmoScWNr6nd0kYf3a2vBvhG20KeXVLu8l1bXrlcXOpTj5sf3Ih/yzT/AGRW9OlfVnmVcRZcsRPAXhy60iG51TW50u/EOplZL+dfuxgfdgj9EUce/euoJpBjGKK6jjFzRmkxR2oAWim0UAOo96OKD0oELnNGCR0poODWP418V6N4P8P3Wta7crDb26Z8tWBkkJ6Kq55JNCVwKvxGXwjD4YutS8bLajSrVd0k02Q6egVh82fYGvnfwp8UvFVxNrGp+DjHd+EbJWNpaa0CZ5tnL+Wy9Bjpu5rhPjx8UNW+JMkMb2radotoTJBZb8l27PJ/tD0r034ceDJ734FaNd6SgbUJLaWTDDIk3ggr9cCr9mmveCM2nodl4X+MNpe6bbX2reGtV0oToHSSIiWMjHPC81V1az+EHiy6a8/tCTSNQkOXmgjaAk+pDDb+QrjfhyNQtvA+nx3BeJ4nlidVOPLIc/KfQ1vOI5+LiCGf/rqgb+deTKtyycbHu0qMopThNp+Q8fD3wasm6T4qloB/AssZkxW1oM3ws8HSmfSp5r/USMG6MDSyn6HG0fUVgQaPoqSeamjacJP732davoBGu2FUhHpGu0UvapbI0qOvW0q1G0XfEfxNv4NMu7vQfCksxt4XlMt/MoTAGeg5rzbxL4t8S6poVt4n13U01jTrF0uNR0K2JitniYcIG4bcM564rqtdtbi9sG0y2jee91MG2t4wu5iD958eijmpfEHg630f4Wa7o5hwE0/94zLy7r/F+ldeCSknKSPMx/uNRgz074O+PvBvjnw8G8KOlqLVVE+msoSS347gfeH+1zXcEDHFfm/8PPEmseGdasfEeh3Rt7+EAgn7sq55Rx3U19T+AP2mfCmtX6aZ4m0+48O3TEL9oY7rYt6buoFdkoWOBM93oFR2txBc26XNtNHcQSDckkTBlYevFSZqCgo+tGaDQAUUCigBfrxVHX9Z0nQNNfUNa1CCwtkGd8rgFvZR3Nee/Hj4mXXgWysrTSIoZNUvgzK0nIhQD72O5r5Q8XeI9Y8QXbXWt6pcahczvwZW+RR7J0FXGDepNz2H4n/tFX96JdO8A232KDlTqVwuZGHqi/w/jXgN/e3uq6u91qd/d39yPmkmuJCxLH26fpUzMmCT91Bk/QVWhixGZAMNId7VpBaiYmoY+wTt3CE19vfAGxW1+CnhSMEEtYrJkepJr4fvTttJQe6kfpX2Z+y/qbX3wL8Pb2y1qrW5/wCA5P8AWioxxWlzT8TeEpYNRuta0W2SZLkZ1DTidomIH+sjPZ8fnXLR6RFe2wvNJmM0DEqUcbXjYdUYdiPStH4v3pv9ej0RJ50gsIvOmWKQoTKeV5Ht2qHwdDqNhNbTX6B7XWYt8UwzkSJ13D1b1rzsVh7rnjuejg8S4vklsVIdI1FpNn2VwfU9Knl08WskUUi/ab2Y4gtFbaXP95j/AAoO5Ndk7rFG7yMdiKWfHoOuK868X29xqSQeJL1zb2+obrSC3jYrIIR/ESOm7g1z0KHtJWOmvX9nG56l4M8LxaGr397Kl3rFyoE06j5Ik7RRDso/Ws741RWs3wt8SPdt5Mcdix81eCp7VW+DWsSX3hqTS7qZpbnS5PKVmPLQn7hPqawf2tdR+wfA/VLRWxLqc0dovvyG/pXq8qirI8htyeu58Z6bb7NPtuMExgmmX9tm5V+MSrtPHcVt+SqgIBwoAFVtSj/0Ysv3oyGH9a2exiaXgLxl4s8IlZvDeu3VkoPz2zsXgc+hU19A+Cv2mNPZIbXxtoklnMThr2y+aI++zqK+X43AkcDowDCpJJW8ptp5HP1rPlTLufol4e13RfEOnrf6HqlrqFuwB3QyAlf94dR+NaJ4r4x/ZSndfjDprQTSwpPbOskSMRHIeeq9K+y1DEc1nJcrsNO47NFLsNFSM+WP2mtP1/VfilMbPRtTurS2s444nhgLJnPODXj1/wCG/FJuoinhjWiqA5/0U1+hIZugP6Chi3qP++RWinpYnlPzzbw54oKJEfDOtfvDg4tT0q//AMIz4kxj/hGtZ4GB/ohr76y3qv8A3yKcrPnqP++RTVS3QTjc/PjVPCnif7IxHhnWf/AU19IfswT3Phv4O6odc03ULYaZfSz+Q8BEsibRgKvfPSve9zEdV/75FB5HIX/vkUpSuXF2TR88/D8a544fW9buNLv7S9nmMzQ3URj/AHf3UUE9Ttxmu90638QRaEdIudOmt7rTj9qt5j80cyL/AMs89ia9J3Een4ACmsxxjJx71MnfQFo7nnutPc3ml28VnbzpNqbBBlceSv8AGT6cZrG8YwX2rXdtpOmaVfGz01fLWZkwJSOB+Feqt1zx+VIM9NxxWdKCpu6NatV1LXPEdIudR8A+OtP+06ff3lvqUaw3/kQllhyfkOfY9aoftiRazqJ8NaJp2mX19bRu13M1vCXG4fKM/hX0GmQOx+qg1IWOOMf98g1q3czi+V3R+f58O+Jcf8i3rP8A4CmoJPDXiaQMv/CN6xgqR/x6mv0AcsT1H/fIpPm9R/3yKr2hHKfnbD4U8U7UP/CMa38uVP8Aoh6VcTwn4oKn/imNZ/8AAU1+hCsw7r/3yKd5j+o/75FLnCx8bfs3aD4g0v4qaDcXugapawiR0eWW3KqoKnqa+y8heKaXfGMj/vkU2lKVxpWHb6KYaKkZ/9k=",
@@ -967,6 +974,12 @@ async function logout(){
 /* ---------- 업데이트 내역: 새 버전이 나온 뒤 처음 로그인할 때 한 번만 보여줘요 ---------- */
 /* 버전을 올릴 때(APP_VERSION + package.json) 여기에 그 버전의 내역을 추가하세요. 내역이 없는 버전은 팝업이 안 떠요. */
 const RELEASE_NOTES={
+  '2.5.0':{sub:'전신 꾸미기 👕👖👟🎒',items:[
+    '🧍 이제 롹순팅을 머리부터 발끝까지 꾸밀 수 있어요! 상점에 상의 · 하의 · 신발 · 가방 칸이 생겼어요.',
+    '👕 축구부 유니폼, 회색 후드티, 하와이안 셔츠, 가죽 재킷 / 👖 반바지, 청바지, 삼선 트레이닝 바지, 카고 바지',
+    '👟 축구화, 빨간 운동화, 황금 운동화 / 🎒 책가방, 크로스백, 기타 케이스',
+    '👀 입은 옷은 내 프로필, 다른 사람 프로필(랭킹에서 이름 누르기), 게임 속 작은 롹순팅에도 보여요.'
+  ]},
   '2.4.0':{sub:'다른 플레이어 프로필 · 한줄 방명록 ✍',items:[
     '👀 랭킹에서 이름이나 얼굴을 누르면 그 플레이어의 프로필이 열려요. 꾸민 캐릭터, 시즌 뱃지, 이번 시즌 기록을 볼 수 있어요.',
     '📜 지난 시즌마다 몇 위였는지도 한눈에! (얼굴을 누르면 표정도 바뀌어요)',
@@ -1551,11 +1564,12 @@ const CH={
 };
 function kid(c,x,y,s,o){
   o=o||{};c.save();c.translate(x,y);c.scale(o.flip?-s:s,s);
+  if(o.face&&USER)o=Object.assign(myWear(),o);   /* 롹순팅(얼굴 그림을 쓰는 캐릭터)은 상점에서 산 옷 색으로 (shop.js) */
   const sw=Math.sin(o.ph||0)*5,bob=o.run?Math.abs(Math.cos(o.ph||0))*2.5:0;
   c.fillStyle='rgba(0,0,0,.18)';c.beginPath();c.ellipse(0,0,13,4,0,0,7);c.fill();
   c.lineCap='round';c.lineWidth=6;c.strokeStyle=o.pants||'#232a45';
   c.beginPath();c.moveTo(-5,-15);c.lineTo(-5+sw,-2);c.moveTo(5,-15);c.lineTo(5-sw,-2);c.stroke();
-  c.fillStyle='#fff';c.beginPath();c.arc(-5+sw,-1,3.6,0,7);c.arc(5-sw,-1,3.6,0,7);c.fill();
+  c.fillStyle=o.shoe||'#fff';c.beginPath();c.arc(-5+sw,-1,3.6,0,7);c.arc(5-sw,-1,3.6,0,7);c.fill();
   c.translate(0,-bob);
   c.lineWidth=5;c.strokeStyle=o.coat||'#232a45';
   c.beginPath();
@@ -2512,7 +2526,7 @@ document.addEventListener('click',e=>{
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
-function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
+function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';setBody($('#pfBody'),$('#bigface').dataset.face||'base');$('#profile').hidden=false;renderBadges();}   /* 전신: 헤더 얼굴과 같은 표정 */
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list,box){
@@ -2555,8 +2569,21 @@ window.addEventListener('pagehide',()=>{save();});
      머리 윗부분 y≈12 · 이마 y≈55 · 눈 (45,90)·(102,90) · 입 (75,125) · 귀 x≈15·135
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
    - 테두리(frame): 프로필 아이콘·랭킹 얼굴의 테두리 CSS 클래스(css)
-   - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css) */
-const SHOP_SLOTS=[{id:'hat',name:'모자'},{id:'glass',name:'안경'},{id:'acc',name:'얼굴 소품'},{id:'frame',name:'테두리'},{id:'name',name:'이름 색'}];
+   - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css)
+   전신(v2.5.0~): 얼굴 그림 아래에 몸을 붙인 150×380 좌표예요. 머리는 y 0~190(얼굴 그림 그대로), 몸은 어깨 y≈172 · 허리 y≈270 · 발 y≈368.
+     손 (14,261)·(136,261) · 다리 왼쪽 x 38~72 · 오른쪽 x 78~112 · 몸통 x 28~122
+   - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×380 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요.
+     color(+상의는 vest)는 게임 화면의 작은 롹순팅에 입히는 대표 색이에요. */
+const SHOP_SLOTS=[{id:'hat',name:'모자'},{id:'glass',name:'안경'},{id:'acc',name:'얼굴 소품'},{id:'top',name:'상의'},{id:'bottom',name:'하의'},{id:'shoes',name:'신발'},{id:'bag',name:'가방'},{id:'frame',name:'테두리'},{id:'name',name:'이름 색'}];
+/* 전신 그림에서 같이 쓰는 모양 (150×380 좌표): 긴소매·반소매 상의 윤곽, 긴바지, 왼쪽·오른쪽 신발, 윤곽선 */
+const BD={
+  long:'M14 192Q20 176 52 172Q75 184 98 172Q130 176 136 192L144 252L128 255L120 214L122 276H28L30 214L22 255L6 252Z',
+  short:'M14 192Q20 176 52 172Q75 184 98 172Q130 176 136 192L142 222L124 226L120 214L122 276H28L30 214L26 226L8 222Z',
+  pants:'M30 268H120L118 352H80L75 292L70 352H32Z',
+  shoeL:'M32 350H70V362Q70 368 64 368H26Q20 368 22 362Q24 354 32 350Z',
+  shoeR:'M80 350H118Q126 354 128 362Q130 368 124 368H86Q80 368 80 362Z',
+  ln:'stroke="#232a45" stroke-width="3" stroke-linejoin="round"'
+};
 const SHOP_ITEMS=[
   {id:'cap',slot:'hat',name:'빨간 야구모자',price:3000,desc:'운동장 필수템',
    svg:'<path d="M17 64C17 22 50 6 76 6s59 16 59 58z" fill="#d8362f" stroke="#232a45" stroke-width="3"/><path d="M40 12Q76 0 112 12" stroke="#a82420" stroke-width="3" fill="none"/><ellipse cx="76" cy="63" rx="64" ry="9" fill="#a82420" stroke="#232a45" stroke-width="3"/><circle cx="76" cy="7" r="4.5" fill="#a82420" stroke="#232a45" stroke-width="2"/><circle cx="76" cy="36" r="11" fill="#fff" stroke="#232a45" stroke-width="2"/><text x="76" y="41.5" font-size="15" font-weight="900" text-anchor="middle" fill="#d8362f" font-family="sans-serif">R</text>'},
@@ -2582,7 +2609,38 @@ const SHOP_ITEMS=[
   {id:'frainbow',slot:'frame',name:'무지개 테두리',price:15000,desc:'프로필 아이콘·랭킹 얼굴 테두리',css:'fr-rainbow'},
   {id:'nred',slot:'name',name:'빨간 이름',price:5000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-red'},
   {id:'ngold',slot:'name',name:'황금 이름',price:15000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-gold'},
-  {id:'nrainbow',slot:'name',name:'무지개 이름',price:25000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-rainbow'}
+  {id:'nrainbow',slot:'name',name:'무지개 이름',price:25000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-rainbow'},
+  /* ---------- 전신 (150×380 좌표) ---------- */
+  {id:'jersey',slot:'top',name:'축구부 유니폼',price:4000,color:'#e2334d',vest:'#fff',desc:'등번호 10번, 에이스의 상징',
+   svg:`<path d="${BD.short}" fill="#e2334d" ${BD.ln}/><path d="M56 173Q75 188 94 173" fill="none" stroke="#fff" stroke-width="4"/><path d="M11 214l16 4M139 214l-16 4" stroke="#fff" stroke-width="4"/><text x="75" y="254" font-size="34" font-weight="900" text-anchor="middle" fill="#fff" stroke="#232a45" stroke-width="1.5" font-family="sans-serif">10</text>`},
+  {id:'hoodie',slot:'top',name:'회색 후드티',price:6000,color:'#9aa3ad',vest:'#7d8792',desc:'쉬는 시간 국룰',
+   svg:`<path d="${BD.long}" fill="#9aa3ad" ${BD.ln}/><path d="M42 176Q75 200 108 176Q100 166 75 168Q50 166 42 176z" fill="#7d8792" ${BD.ln}/><path d="M68 186v24M82 186v24" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M48 238h54l-6 30H54z" fill="#8a939e" stroke="#232a45" stroke-width="2.5"/><path d="M6 246l16 3M144 246l-16 3" stroke="#232a45" stroke-width="2"/>`},
+  {id:'hawaii',slot:'top',name:'하와이안 셔츠',price:9000,color:'#1aa39a',vest:'#ffd23f',desc:'방학 기분 미리 내기',
+   svg:`<path d="${BD.short}" fill="#1aa39a" ${BD.ln}/><path d="M56 173L75 200L94 173Q75 168 56 173z" fill="#f8dcc8" stroke="#232a45" stroke-width="2"/><path d="M52 172l10 34 13-6M98 172l-10 34-13-6" fill="none" stroke="#232a45" stroke-width="2.5"/><path d="M75 200v76" stroke="#232a45" stroke-width="2"/><g fill="#ffd23f" stroke="#c98a00" stroke-width="1"><circle cx="44" cy="226" r="6"/><circle cx="104" cy="214" r="6"/><circle cx="96" cy="258" r="6"/><circle cx="20" cy="204" r="4.5"/></g><g fill="#ff7aa2"><circle cx="56" cy="252" r="5"/><circle cx="110" cy="240" r="4.5"/><circle cx="130" cy="200" r="4.5"/><circle cx="40" cy="198" r="4"/></g><g fill="#2f8f5b"><circle cx="50" cy="232" r="3"/><circle cx="100" cy="222" r="3"/></g>`},
+  {id:'leather',slot:'top',name:'가죽 재킷',price:20000,color:'#26262c',vest:'#f4f4f4',desc:'롹스타 순팅',
+   svg:`<path d="${BD.long}" fill="#26262c" ${BD.ln}/><path d="M56 173Q75 186 94 173L90 276H60z" fill="#f4f4f4" stroke="#232a45" stroke-width="2"/><path d="M52 172l14 40-8 4-16-36zM98 172l-14 40 8 4 16-36z" fill="#3a3a44" stroke="#232a45" stroke-width="2"/><path d="M60 214l-2 62M90 214l2 62" stroke="#b9b9c4" stroke-width="2.5" stroke-dasharray="3 3"/><path d="M6 246l16 3M144 246l-16 3" stroke="#55555f" stroke-width="3"/><circle cx="44" cy="200" r="2.5" fill="#d0d0d8"/><circle cx="106" cy="200" r="2.5" fill="#d0d0d8"/>`},
+  {id:'shorts',slot:'bottom',name:'축구부 반바지',price:2000,color:'#f4f4f4',desc:'다리가 시원해요',
+   svg:`<path d="M30 268H120L121 308H80L75 292L70 308H29z" fill="#fff" ${BD.ln}/><path d="M33 270v36M117 270v36" stroke="#e2334d" stroke-width="5"/><path d="M38 340h34v12H38zM78 340h34v12H78z" fill="#e2334d" stroke="#232a45" stroke-width="2"/>`},
+  {id:'jeans',slot:'bottom',name:'청바지',price:5000,color:'#3d6db5',desc:'어디에나 어울리는 기본템',
+   svg:`<path d="${BD.pants}" fill="#3d6db5" ${BD.ln}/><path d="M30 268h90v8H30z" fill="#5a3a22" stroke="#232a45" stroke-width="2"/><rect x="70" y="269" width="10" height="6" fill="#e8c35a"/><path d="M38 280q10 10 22 0M90 280q10 10 22 0M54 296l-2 54M96 296l2 54" fill="none" stroke="#2a4f8a" stroke-width="2"/>`},
+  {id:'track',slot:'bottom',name:'삼선 트레이닝 바지',price:4000,color:'#1f2433',desc:'체육 시간 필수',
+   svg:`<path d="${BD.pants}" fill="#1f2433" ${BD.ln}/><path d="M35 270l1 82M40 270l1 82M45 270l1 82M115 270l-1 82M110 270l-1 82M105 270l-1 82" stroke="#fff" stroke-width="2.2"/>`},
+  {id:'cargo',slot:'bottom',name:'카고 바지',price:8000,color:'#8a7f55',desc:'주머니가 많아서 빵도 들어가요',
+   svg:`<path d="${BD.pants}" fill="#8a7f55" ${BD.ln}/><rect x="34" y="298" width="18" height="20" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><rect x="98" y="298" width="18" height="20" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><path d="M34 304h18M98 304h18" stroke="#232a45" stroke-width="1.5"/>`},
+  {id:'cleats',slot:'shoes',name:'축구화',price:3000,color:'#1b1b1f',desc:'프리킥 정확도 +0 (기분은 +100)',
+   svg:`<path d="${BD.shoeL}" fill="#1b1b1f" ${BD.ln}/><path d="${BD.shoeR}" fill="#1b1b1f" ${BD.ln}/><path d="M34 357q14-6 30 0M86 357q14-6 30 0" fill="none" stroke="#e2334d" stroke-width="3"/><path d="M28 369v4M40 369v4M54 369v4M66 369v4M84 369v4M96 369v4M110 369v4M122 369v4" stroke="#232a45" stroke-width="3"/>`},
+  {id:'redkicks',slot:'shoes',name:'빨간 운동화',price:5000,color:'#e2334d',desc:'뜀박질 속도 +0 (마음만은 +100)',
+   svg:`<path d="${BD.shoeL}" fill="#e2334d" ${BD.ln}/><path d="${BD.shoeR}" fill="#e2334d" ${BD.ln}/><path d="M22 363h48M80 363h48" stroke="#fff" stroke-width="4"/><path d="M42 352l6 4M48 351l6 4M90 352l6 4M96 351l6 4" stroke="#fff" stroke-width="2"/>`},
+  {id:'goldkicks',slot:'shoes',name:'황금 운동화',price:25000,color:'#f5c518',desc:'걸을 때마다 반짝',
+   svg:`<path d="${BD.shoeL}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="${BD.shoeR}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="M22 363h48M80 363h48" stroke="#e8a91c" stroke-width="4"/><path d="M14 346l3 5 5 2-5 2-3 5-3-5-5-2 5-2zM136 344l3 5 5 2-5 2-3 5-3-5-5-2 5-2z" fill="#fff4b0"/>`},
+  {id:'backpack',slot:'bag',name:'책가방',price:3000,desc:'교과서는 사물함에 두고 다녀요',
+   back:'<path d="M26 186Q24 160 50 158H100Q126 160 124 186V262H26z" fill="#3b6fd8" stroke="#232a45" stroke-width="3"/><path d="M50 158q25-10 50 0" fill="none" stroke="#2c56b0" stroke-width="4"/>',
+   svg:'<path d="M44 176l4 92M106 176l-4 92" stroke="#232a45" stroke-width="9" stroke-linecap="round"/><path d="M44 176l4 92M106 176l-4 92" stroke="#3b6fd8" stroke-width="5" stroke-linecap="round"/><rect x="40" y="232" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/><rect x="98" y="232" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/>'},
+  {id:'cross',slot:'bag',name:'크로스백',price:5000,desc:'용돈 지갑 넣는 곳',
+   svg:'<path d="M42 176L114 254" stroke="#232a45" stroke-width="8" stroke-linecap="round"/><path d="M42 176L114 254" stroke="#8b5a2b" stroke-width="4.5" stroke-linecap="round"/><rect x="100" y="244" width="36" height="30" rx="6" fill="#a0522d" stroke="#232a45" stroke-width="3"/><path d="M100 254q18 10 36 0" fill="#8b4513" stroke="#232a45" stroke-width="2.5"/><circle cx="118" cy="259" r="2.5" fill="#e8c35a"/>'},
+  {id:'guitar',slot:'bag',name:'기타 케이스',price:12000,desc:'소리새 무대 가는 길',
+   back:'<g transform="translate(6 40) rotate(-28 75 230)"><path d="M62 96h26v74q22 6 22 38 0 22-14 34 20 10 20 40 0 40-41 40s-41-40-41-40q0-30 20-40-14-12-14-34 0-32 22-38z" fill="#2b2b33" stroke="#232a45" stroke-width="3"/><path d="M75 100v240" stroke="#55555f" stroke-width="2"/></g>',
+   svg:'<path d="M110 176L38 258" stroke="#232a45" stroke-width="7" stroke-linecap="round"/><path d="M110 176L38 258" stroke="#e2334d" stroke-width="3.5" stroke-linecap="round"/>'}
 ];
 const SHOP_BY={};SHOP_ITEMS.forEach(it=>{SHOP_BY[it.id]=it;});
 const DRESS_ORDER=['acc','glass','hat'];   /* 얼굴에 겹치는 순서(아래 → 위) */
@@ -2596,18 +2654,79 @@ const nameCls=eq=>{const it=eqItem(eq,'name');return it?it.css:'';};
 
 /* ---------- 얼굴 위에 겹칠 아이템 그림 (아이템마다 150×190 Image 하나) ---------- */
 const DRESS_IM={};
-function dressIm(it){
-  if(!DRESS_IM[it.id]){
-    const im=new Image();im.onload=()=>shopRefreshFaces();
-    im.src=it.img||('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190" width="150" height="190">${it.svg}</svg>`));
-    DRESS_IM[it.id]=im;
-  }
-  return DRESS_IM[it.id];
+const BODY_SLOTS=['top','bottom','shoes','bag'],BODY_H=380;   /* 전신 아이템 슬롯 · 전신 그림 높이(150 기준) */
+const isBodySlot=sl=>BODY_SLOTS.includes(sl);
+function svgIm(svg,h){
+  const im=new Image();im.onload=()=>shopRefreshFaces();
+  im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 ${h}" width="150" height="${h}">${svg}</svg>`);
+  return im;
 }
-SHOP_ITEMS.forEach(it=>{if(it.svg||it.img)dressIm(it);});   /* 미리 불러 둬요 */
+function dressIm(it,part){   /* part: 'back'이면 몸 뒤로 가는 부분 */
+  const k=it.id+(part?':'+part:'');
+  if(!DRESS_IM[k]){
+    if(it.img&&!part){const im=new Image();im.onload=()=>shopRefreshFaces();im.src=it.img;DRESS_IM[k]=im;}
+    else DRESS_IM[k]=svgIm(part?it[part]:it.svg,isBodySlot(it.slot)?BODY_H:190);
+  }
+  return DRESS_IM[k];
+}
+SHOP_ITEMS.forEach(it=>{if(it.svg||it.img)dressIm(it);if(it.back)dressIm(it,'back');});   /* 미리 불러 둬요 */
 /* 캔버스에 얼굴을 그린 바로 뒤에 불러요. 얼굴을 그린 것과 같은 (원본 영역,) 대상 영역을 넘기면 딱 맞게 겹쳐요. */
 function drawDress(c,eq,...rect){
   DRESS_ORDER.forEach(sl=>{const it=eqItem(eq,sl);if(!it)return;const im=dressIm(it);if(im.complete&&im.naturalWidth)c.drawImage(im,...rect);});
+}
+
+/* ---------- 전신: 얼굴 그림 아래에 몸을 붙여요 (150×380 좌표) ----------
+   기본 차림은 머대부고 교복(남색 재킷 · 회색 바지 · 흰 운동화). 상의·하의·신발 아이템을 사면 그 자리를 바꿔 입어요. */
+const SKIN='#f8dcc8';
+const BODY_BASE={
+  neck:`<path d="M61 140H89V184H61z" fill="${SKIN}"/><path d="M61 146V180M89 146V180" stroke="#232a45" stroke-width="2.5"/>`,
+  skin:`<g fill="${SKIN}" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"><path d="M16 194L6 252L22 255L30 214z"/><path d="M134 194L144 252L128 255L120 214z"/><circle cx="14" cy="261" r="7.5"/><circle cx="136" cy="261" r="7.5"/><path d="M38 276H72L70 352H40z"/><path d="M78 276H112L110 352H80z"/></g>`,
+  top:`<path d="${BD.long}" fill="#2d3550" ${BD.ln}/><path d="M56 173L75 200L94 173Q75 168 56 173z" fill="#fff" stroke="#232a45" stroke-width="2"/><path d="M72 182h6l3 26-6 7-6-7z" fill="#c0392b" stroke="#232a45" stroke-width="1.5"/><path d="M75 215v61" stroke="#1b2033" stroke-width="2"/><circle cx="80" cy="234" r="2.2" fill="#e8c35a"/><circle cx="80" cy="254" r="2.2" fill="#e8c35a"/><path d="M6 246l16 3M144 246l-16 3" stroke="#e8c35a" stroke-width="2"/>`,
+  bottom:`<path d="${BD.pants}" fill="#5b6170" ${BD.ln}/><path d="M75 270v22" stroke="#232a45" stroke-width="2"/>`,
+  shoes:`<path d="${BD.shoeL}" fill="#fff" ${BD.ln}/><path d="${BD.shoeR}" fill="#fff" ${BD.ln}/><path d="M22 363h48M80 363h48" stroke="#232a45" stroke-width="2"/>`
+};
+const BODY_IM={};Object.keys(BODY_BASE).forEach(k=>{BODY_IM[k]=svgIm(BODY_BASE[k],BODY_H);});
+const ready=im=>im&&im.complete&&im.naturalWidth;
+/* 몸에 그릴 순서(아래 → 위): 가방 뒤쪽 → 목 → [머리] → 피부(팔·손·다리) → 신발 → 하의 → 상의 → 가방 앞쪽(끈) */
+function bodyLayers(eq){
+  const at=sl=>eqItem(eq,sl),back=[],front=[BODY_IM.skin],bag=at('bag');
+  if(bag&&bag.back)back.push(dressIm(bag,'back'));
+  back.push(BODY_IM.neck);
+  ['shoes','bottom','top'].forEach(sl=>{const it=at(sl);front.push(it?dressIm(it):BODY_IM[sl]);});
+  if(bag&&(bag.svg||bag.img))front.push(dressIm(bag));
+  return {back,front};
+}
+/* 얼굴 그림에서 머리만 오려 내는 선: 턱(y≈150) 아래의 원래 교복 어깨는 버리고, 목·몸은 새로 그려요 */
+const HEAD_CLIP=[[0,0],[150,0],[150,124],[128,136],[106,148],[90,152],[60,152],[44,148],[22,136],[0,124]];
+const BODY_CACHE={};
+function bodyURL(face,eq){
+  const base=IMGDATA[face]||IMGDATA.base;if(avaTainted)return base;
+  const ck=face+'|'+eqKey(eq)+'|'+BODY_SLOTS.map(sl=>(eqItem(eq,sl)||{}).id||'').join('.');
+  if(BODY_CACHE[ck])return BODY_CACHE[ck];
+  const im=IM[face]||IM.base;if(!ready(im)){im.addEventListener('load',shopRefreshFaces,{once:true});return '';}
+  const head=DRESS_ORDER.map(sl=>eqItem(eq,sl)).filter(Boolean).map(it=>dressIm(it)),L=bodyLayers(eq);
+  if(head.concat(L.back,L.front).some(x=>!ready(x)))return '';   /* 아직 불러오는 중: 다 불러오면 shopRefreshFaces가 다시 그려요 */
+  const S2=2,cv=document.createElement('canvas');cv.width=150*S2;cv.height=BODY_H*S2;
+  const c=cv.getContext('2d'),full=x=>c.drawImage(x,0,0,150*S2,BODY_H*S2);
+  L.back.forEach(full);
+  c.save();c.beginPath();HEAD_CLIP.forEach(([x,y],i)=>c[i?'lineTo':'moveTo'](x*S2,y*S2));c.closePath();c.clip();
+  c.drawImage(im,0,0,150*S2,190*S2);                       /* 머리: 얼굴 그림에서 턱까지만 */
+  c.restore();
+  head.forEach(x=>c.drawImage(x,0,0,150*S2,190*S2));      /* 모자·안경·얼굴 소품 */
+  L.front.forEach(full);
+  try{BODY_CACHE[ck]=cv.toDataURL('image/png');}catch(e){avaTainted=true;return base;}
+  return BODY_CACHE[ck];
+}
+/* 게임 화면의 작은 롹순팅(render.js kid)에 입힐 색: 상의(coat·vest)·하의(pants)·신발(shoe). 안 입은 곳은 교복 그대로 */
+function myWear(){
+  const eq=myEq(),t=eqItem(eq,'top'),b=eqItem(eq,'bottom'),f=eqItem(eq,'shoes'),o={};
+  if(t&&t.color){o.coat=t.color;o.vest=t.vest||t.color;}if(b&&b.color)o.pants=b.color;if(f&&f.color)o.shoe=f.color;
+  return o;
+}
+/* 전신 <img>를 표정 face로. eq를 안 넘기면 내 장착 아이템. 그림을 불러오는 중이면 잠깐 비워 둬요 */
+function setBody(el,face,eq){
+  if(!el)return;el.dataset.body=face;el._eq=eq||null;
+  const u=bodyURL(face,eq||myEq());if(u)el.src=u;else if(!el.src)el.src=IMGDATA[face]||IMGDATA.base;
 }
 
 /* ---------- <img>에 쓸 합성 얼굴 (얼굴 + 아이템을 한 장으로) ---------- */
@@ -2633,7 +2752,10 @@ function setFace(el,face,eq){
 let faceRefreshT=0;
 function shopRefreshFaces(){   /* 그림을 다 불러온 뒤 한 번에 다시 그려요 */
   clearTimeout(faceRefreshT);
-  faceRefreshT=setTimeout(()=>{document.querySelectorAll('img[data-face]').forEach(el=>{el.src=avatarURL(el.dataset.face,el._eq||myEq());});},30);
+  faceRefreshT=setTimeout(()=>{
+    document.querySelectorAll('img[data-face]').forEach(el=>{el.src=avatarURL(el.dataset.face,el._eq||myEq());});
+    document.querySelectorAll('img[data-body]').forEach(el=>{const u=bodyURL(el.dataset.body,el._eq||myEq());if(u)el.src=u;});
+  },30);
 }
 /* 프로필 아이콘(헤더 얼굴) 테두리 */
 function renderMyFace(){
@@ -2679,7 +2801,8 @@ function renderShop(){
     const own=d.own.includes(it.id),on=eq[it.slot]===it.id;
     if(it.slot==='name'){const s=document.createElement('span');s.className='shopnm '+it.css;s.textContent='롹순팅';b.appendChild(s);}
     else{const im=document.createElement('img');im.alt='';im.className='shopth '+(it.slot==='frame'?it.css:'');
-      if(it.slot==='frame')setFace(im,'base',{});else setFace(im,'base',{[it.slot]:it.id});b.appendChild(im);}
+      if(isBodySlot(it.slot)){im.classList.add('body','t-'+it.slot);setBody(im,'base',{[it.slot]:it.id});}   /* 옷·가방은 그 부분이 보이게 전신을 잘라서 */
+      else if(it.slot==='frame')setFace(im,'base',{});else setFace(im,'base',{[it.slot]:it.id});b.appendChild(im);}
     const t=document.createElement('b');t.textContent=it.name;b.appendChild(t);
     const p=document.createElement('small');p.textContent=on?'장착 중':own?'보유':fmt(it.price)+'원';if(on||own)p.className='own';b.appendChild(p);
     b.setAttribute('aria-label',`${it.name} · ${on?'장착 중':own?'보유':fmt(it.price)+'원'}`);
@@ -2688,8 +2811,10 @@ function renderShop(){
   });
   /* 미리보기: 고른 아이템을 입혀 본 모습 */
   const tryEq=shopTry(),ava=$('#shopAva');
-  ava.classList.remove('fr-gold','fr-rainbow');const fc=frameCls(tryEq);if(fc)ava.classList.add(fc);
-  setFace(ava,'happy',tryEq);
+  ava.classList.remove('fr-gold','fr-rainbow');
+  if(shopSlot==='frame'){   /* 테두리는 동그란 얼굴에서만 보여서 얼굴로 */
+    ava.classList.remove('body');delete ava.dataset.body;const fc=frameCls(tryEq);if(fc)ava.classList.add(fc);setFace(ava,'happy',tryEq);
+  }else{ava.classList.add('body');delete ava.dataset.face;setBody(ava,'happy',tryEq);}   /* 나머지는 전신으로 입혀 봐요 */
   const nm=$('#shopName');nm.className='shopname '+nameCls(tryEq);nm.textContent=USER?USER.id:'롹순팅';
   const it=SHOP_BY[shopSel],act=$('#shopAct'),off=$('#shopOff');
   $('#shopMoney').textContent=isPractice()?'🔒 연습 기간에는 살 수 없어요. 입혀 보기와 가진 아이템 장착은 돼요.':`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
@@ -2748,7 +2873,7 @@ function openUserProfile(name,x){
   const id=name.toLowerCase(),me=id===upMe();
   UP={id,name};
   $('#upT').textContent=name;$('#upT').className=nameCls(x.eq);
-  const f=$('#upFace');f.className=frameCls(x.eq);f.alt=name+' 캐릭터';setFace(f,'base',x.eq||{});
+  const f=$('#upFace');f.alt=name+' 캐릭터';setBody(f,'base',x.eq||{});   /* 전신 (shop.js) */
   $('#upSub').textContent=me?'내 프로필이에요. 친구들이 남긴 방명록을 볼 수 있어요.':'';
   upBadges(x.badges);upNow(x);
   const cloud=!!cloudUrl();
@@ -2761,7 +2886,7 @@ function openUserProfile(name,x){
   $('#uprof').hidden=false;
   api('profile',{id:name}).then(r=>{
     if(!UP||UP.id!==id)return;
-    $('#upT').className=nameCls(r.eq);f.className=frameCls(r.eq);setFace(f,f.dataset.face||'base',r.eq||{});
+    $('#upT').className=nameCls(r.eq);setBody(f,f.dataset.body||'base',r.eq||{});
     const extra=[r.joinedAt?upDate(r.joinedAt)+' 가입':'',r.itemCount?`꾸미기 아이템 ${r.itemCount}개`:''].filter(Boolean).join(' · ');
     if(extra)$('#upSub').textContent=(me?'내 프로필 · ':'')+extra;
     upBadges(r.badges);upNow(r.now||{});upHist(r.history||[]);
@@ -2817,7 +2942,7 @@ async function upGbDelete(no){
 }
 $('#upGbGo').addEventListener('click',upGbWrite);
 $('#upGbIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();upGbWrite();}});   /* 한글 조합 중 Enter는 무시 */
-$('#upFace').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)],this._eq||{});sfx('tick');});   /* 얼굴을 누르면 표정이 바뀌어요 */
+$('#upFace').addEventListener('click',function(){setBody(this,FACES[Math.floor(Math.random()*FACES.length)],this._eq||{});sfx('tick');});   /* 얼굴을 누르면 표정이 바뀌어요 */
 $('#upClose').addEventListener('click',closeUserProfile);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#uprof').hidden)closeUserProfile();});
 

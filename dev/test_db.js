@@ -183,6 +183,11 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   ok(r.ok && it.own.length === 2 && it.own.includes('cap') && it.own.includes('shades'), '상점 아이템: 잘못된 id·중복은 버리고 저장');
   ok(it.eq.hat === 'cap' && !('glass' in it.eq) && !('evil' in it.eq) && it.eq.acc === 'shades', '상점 아이템: 가진 아이템만, 정해진 슬롯에만 장착');
   ok(JSON.stringify((await rpc('top', { metric: 'money' })).list.find(x => x.id === '철수').eq) === JSON.stringify(it.eq), '랭킹에 장착 아이템(eq)이 같이 나옴');
+  r = await save('철수', Date.now() + 3100, { money: 9000, items: { own: ['cap', 'shades', 'jersey', 'jeans', 'cleats', 'backpack'], eq: { hat: 'cap', top: 'jersey', bottom: 'jeans', shoes: 'cleats', bag: 'backpack', sock: 'cleats' } } }, P, cl.next.key);
+  it = (await load('철수')).data.items;
+  ok(r.ok && it.eq.top === 'jersey' && it.eq.bottom === 'jeans' && it.eq.shoes === 'cleats' && it.eq.bag === 'backpack' && !('sock' in it.eq), '전신 아이템: 상의·하의·신발·가방 슬롯에 장착 (없는 슬롯은 버림)');
+  ok(JSON.stringify((await rpc('top', { metric: 'money' })).list.find(x => x.id === '철수').eq) === JSON.stringify(it.eq), '랭킹에도 전신 장착 아이템이 같이 나옴');
+  r = await save('철수', Date.now() + 3200, { money: 9000, items: { own: ['cap', 'shades'], eq: { hat: 'cap', acc: 'shades' } } }, P, cl.next.key);
   r = await save('짱구', Date.now() + 3000, { money: 10000, items: 'nope' }, P, cl.next.key);
   it = (await load('짱구')).data.items;
   ok(r.ok && Array.isArray(it.own) && it.own.length === 0 && JSON.stringify(it.eq) === '{}', '상점 아이템이 이상한 값이면 빈 목록');
