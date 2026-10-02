@@ -129,6 +129,22 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .rbadge small{font-size:11px;font-weight:700}
 .rbadge.b1{background:#ffd966;color:#3b2a00}.rbadge.b2{background:#dfe3ea;color:#232a45}
 .dialog .badges .none{margin:0;font-size:13px;text-align:left}
+/* 랭킹 이름(누르면 프로필) · 다른 플레이어 프로필 · 한줄 방명록 (js/uprof.js) */
+.rname{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.rname:hover{text-decoration-style:solid}
+#rkTab img.rava,#upFace{cursor:pointer}
+.gbform{display:flex;gap:6px;align-items:stretch}
+.gbin{flex:1;min-width:0;padding:8px 10px;font:inherit;font-size:15px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.gbin:focus-visible{outline:3px solid var(--ring);outline-offset:1px}
+.gbform .go{min-width:0;padding:8px 12px;font-size:14px}
+.gblist{list-style:none;margin:8px 0 0;padding:0;text-align:left;max-height:280px;overflow:auto}
+.gblist li{padding:7px 2px;border-bottom:1px solid var(--bar)}
+.gblist li.none{color:var(--muted);font-size:13px;border:0}
+.gbhd{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700}
+.gbhd small{font-weight:400;font-size:12px;color:var(--muted)}
+.gbdel{margin-left:auto;background:none;border:0;padding:2px 6px;color:var(--muted);font-size:13px;border-radius:6px}
+.gbdel:hover{color:var(--ring)}
+.dialog .gblist p{margin:3px 0 0 32px;color:var(--ink);font-size:15px;overflow-wrap:anywhere}
 .tip{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
 #toast{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none;z-index:80;padding:0 12px}
 #toast div{background:var(--line);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500}

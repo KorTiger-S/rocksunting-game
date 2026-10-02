@@ -94,7 +94,9 @@ const SFX={
   vacuum(){noise(1.3,.035,0,800,1500,.8,.15);tone(210,1.3,'sawtooth',.012,0,260);},                               /* 청소기 위잉 */
   washer(){for(let i=0;i<4;i++)tone(95,.24,'sine',.07,i*.3,70);noise(1.2,.025,0,600,380,.6,.2);},                 /* 세탁기 덜컹덜컹 */
   boot(){tone(392,.25,'triangle',.04);tone(587,.3,'triangle',.04,.12);tone(784,.7,'triangle',.05,.24);},          /* 컴퓨터·게임 켜지는 소리 */
-  friendon(){tone(1175,.08,'square',.035);tone(1568,.2,'square',.035,.08);}                                       /* 친구 로그인 알림 띠링 */
+  friendon(){tone(1175,.08,'square',.035);tone(1568,.2,'square',.035,.08);},                                      /* 친구 로그인 알림 띠링 */
+  /* 프로필 방명록 */
+  scribble(){for(let i=0;i<4;i++)noise(.06,.03,i*.07,2600+i*300,1800,1.4);tone(NT.E6,.16,'triangle',.03,.32);}      /* 펜으로 슥슥 쓰고 '톡' */
 };
 const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
