@@ -113,18 +113,18 @@ function setBgm(on){BGM.on=on;lsSet('rk:bgm',on?'1':'0');renderSound();bgmSync()
 ['#bgmBtn','#bgmMute','#lgBgm'].forEach(sel=>$(sel).addEventListener('click',()=>setBgm(!BGM.on)));
 renderSound();
 /* 버튼을 누르는 소리: 기본은 '똑', 버튼마다 다른 소리는 여기에 (none: 그 버튼은 자기 소리를 따로 내요) */
-const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',homeBtn:'page',setBtn:'page',pgKeyBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
+const BTN_SFX={chStart:'start',pgStart:'start',duBm:'tick',duBp:'tick',duBb:'tick',pgSpdM:'tick',pgSpdP:'tick',pgOffM:'tick',pgOffP:'tick',rankBtn:'page',shopBtn:'page',homeBtn:'page',setBtn:'page',pgKeyBtn:'page',stBtn:'none',sndBtn:'none',mute:'none',lgSnd:'none',bgmBtn:'none',bgmMute:'none',lgBgm:'none',upGbGo:'none'};   /* stBtn: 소리는 showStory()에서 직접 재생해요(중복 방지) */
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
-  const n=BTN_SFX[b.id]||(b.classList.contains('gopen')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
+  const n=BTN_SFX[b.id]||(b.classList.contains('gopen')||b.classList.contains('rname')?'page':'click');if(n!=='none')sfx(n);   /* 게임 목록의 '게임하기'는 페이지 넘기는 소리 */
 },true);
 const MSGS=['오늘도 학교에서 살아남자.','주스의 빵 값은 내가 지킨다.','롹!','쉬는 시간이 10분뿐이라니.','히통 이자가 10%였지…'];
 /* 프로필 아이콘을 누르면 표정이 바뀌면서, 소지금/뱃지/로그아웃 같은 정보를 한눈에 보는 팝업이 열려요 */
 function openProfile(){$('#pfMoney').textContent=isPractice()?'∞ 무한 (연습)':fmt(S.money)+'원';$('#profile').hidden=false;renderBadges();}
 /* 시즌 뱃지: 마감된 시즌의 소지금 1등 = 우승, 2등 = 준우승 (서버 rk_badges가 시즌 스냅샷에서 계산해요). 프로필을 열 때마다 새로 받아요 */
 let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
-function drawBadges(list){
-  const box=$('#pfBadges');box.innerHTML='';
+function drawBadges(list,box){
+  box=box||$('#pfBadges');box.innerHTML='';
   if(!list){const p=document.createElement('p');p.className='none';p.textContent='불러오는 중…';box.appendChild(p);return;}
   if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
   list.forEach(b=>{

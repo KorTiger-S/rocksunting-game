@@ -1,6 +1,6 @@
 'use strict';
 /* ---------- 랭킹 ---------- */
-let rankMetric='money';
+let rankMetric='money',RANK_LIST=[];
 /* 이번 시즌의 우승 기준(서버 rk_config season.metric). 랭킹을 열 때마다 이 탭부터 보여줘요 */
 const seasonMetric=()=>SEASON&&SEASON.metric==='pumpBest'&&PUMP_PUBLIC?'pumpBest':'money';
 const RVAL={money:x=>fmt(x.v)+'원',wins:x=>`${x.wins||0}승 ${x.losses||0}패`,bestPts:x=>x.v+'점',pumpBest:x=>fmt(x.v||0)+'점'};
@@ -16,7 +16,8 @@ async function renderRank(){
   if(cloudUrl()){try{const r=await api('top',{metric:rankMetric,limit:10});list=r.list.map(x=>Object.assign(x,{v:x[rankMetric]}));note='클라우드에 저장된 모든 플레이어 기준 상위 10명이에요.';}catch(e){note='클라우드에 연결할 수 없어 이 기기 기준으로 보여줘요.';}}
   if(!list){list=localTop(rankMetric);if(!note)note='이 기기에 저장된 ID 기준이에요. (클라우드에 연결하면 모든 플레이어가 함께 보여요)';}
   const me=USER?USER.id.toLowerCase():'';
-  $('#rkTab').innerHTML=list.length?list.map((x,i)=>`<tr class="${String(x.id).toLowerCase()===me?'me':''}"><td>${i+1}위 <img class="rava ${frameCls(x.eq)}" data-i="${i}" alt=""> <span class="${nameCls(x.eq)}">${String(x.id).replace(/[<>&]/g,'')}</span>${x.cleared?' 👑':''}${rankBadges(x.badges)}</td><td>${RVAL[rankMetric](x)}</td></tr>`).join(''):'<tr><td>아직 기록이 없어요.</td></tr>';
+  $('#rkTab').innerHTML=list.length?list.map((x,i)=>`<tr class="${String(x.id).toLowerCase()===me?'me':''}"><td>${i+1}위 <img class="rava ${frameCls(x.eq)}" data-i="${i}" alt=""> <button type="button" class="rname ${nameCls(x.eq)}" data-i="${i}" title="프로필 보기">${String(x.id).replace(/[<>&"]/g,'')}</button>${x.cleared?' 👑':''}${rankBadges(x.badges)}</td><td>${RVAL[rankMetric](x)}</td></tr>`).join(''):'<tr><td>아직 기록이 없어요.</td></tr>';
+  RANK_LIST=list;
   document.querySelectorAll('#rkTab img.rava').forEach(im=>setFace(im,'base',(list[+im.dataset.i]||{}).eq||{}));   /* 각자 장착한 아이템을 입힌 얼굴 (shop.js) */
   $('#rkNote').textContent=note;
 }
@@ -25,7 +26,8 @@ const badgeText=b=>`시즌${b.number} ${b.rank===1?'우승':'준우승'}${b.game
 function rankBadges(list){
   return (list||[]).map(b=>{const t=badgeText(b).replace(/[<>&"]/g,'');return ` <span class="rbadge b${b.rank===1?1:2}" data-t="${t}" title="${t}" role="button" tabindex="0">${b.rank===1?'🏆':'🥈'}<small>${Number(b.number)||''}</small></span>`;}).join('');
 }
-$('#rkTab').addEventListener('click',e=>{const b=e.target.closest('.rbadge');if(b)toast(b.dataset.t);});
+$('#rkTab').addEventListener('click',e=>{const b=e.target.closest('.rbadge');if(b){toast(b.dataset.t);return;}
+  const n=e.target.closest('.rname,img.rava');if(n){const x=RANK_LIST[+n.dataset.i];if(x)openUserProfile(x.id,x);}});   /* 이름·얼굴을 누르면 그 사람 프로필 (uprof.js) */
 $('#rkTab').addEventListener('keydown',e=>{const b=e.target.closest('.rbadge');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toast(b.dataset.t);}});
 $('#rankBtn').addEventListener('click',()=>{rankMetric=seasonMetric();$('#rank').hidden=false;renderSeason();renderRank();});
 
