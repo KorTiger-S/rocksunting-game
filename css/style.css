@@ -289,11 +289,11 @@ html.pgplay #pumpWrap{touch-action:none}
 .shopit small.own{color:var(--ok)}
 .shopth{width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--line);background:#f4f1ee}
 .shopnm{display:grid;place-items:center;height:60px;font-family:var(--display);font-size:20px}
-/* 전신 (얼굴 그림 + 몸, 150×380) — 상점 미리보기 · 썸네일 · 프로필 */
-.shopava.body{width:110px;height:279px;border-radius:14px;object-fit:contain;object-position:50% 0}
+/* 전신 (2등신: 몸 + 얼굴 그림의 머리, 150×320) — 상점 미리보기 · 썸네일 · 프로필 */
+.shopava.body{width:120px;height:256px;border-radius:14px;object-fit:contain;object-position:50% 0}
 .shopth.body{border-radius:12px;object-fit:cover}
-.shopth.t-top{object-position:50% 52%}.shopth.t-bottom{object-position:50% 84%}.shopth.t-shoes{object-position:50% 100%}.shopth.t-bag{object-position:50% 56%}
-.bodyfig,.dialog img.bodyfig{display:block;width:120px;height:304px;margin:6px auto;border-radius:16px;object-fit:contain;object-position:50% 0;border:3px solid var(--line);background:#f4f1ee}
+.shopth.t-top{object-position:50% 74%}.shopth.t-bottom{object-position:50% 100%}.shopth.t-shoes{object-position:50% 100%}.shopth.t-bag{object-position:50% 70%}
+.bodyfig,.dialog img.bodyfig{display:block;width:130px;height:277px;margin:6px auto;border-radius:16px;object-fit:contain;object-position:50% 0;border:3px solid var(--line);background:#f4f1ee}
 #upFace{cursor:pointer}
 /* 작은 얼굴(랭킹 · 1:1 대결) */
 .rava,.dialog img.rava{display:inline-block;width:26px;height:26px;margin:0;border-radius:50%;object-fit:cover;object-position:50% 22%;border:2px solid var(--line);background:#f4f1ee;vertical-align:middle}   /* .dialog img(큰 얼굴)보다 우선 */

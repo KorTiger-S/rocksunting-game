@@ -7,20 +7,21 @@
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
    - 테두리(frame): 프로필 아이콘·랭킹 얼굴의 테두리 CSS 클래스(css)
    - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css)
-   전신(v2.5.0~): 얼굴 그림 아래에 몸을 붙인 150×380 좌표예요. 머리는 y 0~190(얼굴 그림 그대로), 몸은 어깨 y≈172 · 허리 y≈270 · 발 y≈368.
-     손 (14,261)·(136,261) · 다리 왼쪽 x 38~72 · 오른쪽 x 78~112 · 몸통 x 28~122
-   - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×380 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요.
+   전신(v2.5.0~): 2등신 롹순팅. 150×320 좌표예요. 머리는 얼굴 그림(배경을 지우고 턱 y≈150까지)을 몸 위에 겹쳐요.
+     어깨 y≈152~166 · 몸통 x 40~110 · 허리 y≈232 · 손 (25,227)·(125,227) · 다리 왼쪽 x 46~72 · 오른쪽 x 78~104 · 발목 y≈292 · 신발 바닥 y≈314
+   - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×320 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요.
      color(+상의는 vest)는 게임 화면의 작은 롹순팅에 입히는 대표 색이에요. */
 const SHOP_SLOTS=[{id:'hat',name:'모자'},{id:'glass',name:'안경'},{id:'acc',name:'얼굴 소품'},{id:'top',name:'상의'},{id:'bottom',name:'하의'},{id:'shoes',name:'신발'},{id:'bag',name:'가방'},{id:'frame',name:'테두리'},{id:'name',name:'이름 색'}];
-/* 전신 그림에서 같이 쓰는 모양 (150×380 좌표): 긴소매·반소매 상의 윤곽, 긴바지, 왼쪽·오른쪽 신발, 윤곽선 */
+/* 전신 그림에서 같이 쓰는 모양 (150×320 좌표): 긴소매·반소매 상의 윤곽, 긴바지, 왼쪽·오른쪽 신발, 윤곽선, 피부색 */
 const BD={
-  long:'M14 192Q20 176 52 172Q75 184 98 172Q130 176 136 192L144 252L128 255L120 214L122 276H28L30 214L22 255L6 252Z',
-  short:'M14 192Q20 176 52 172Q75 184 98 172Q130 176 136 192L142 222L124 226L120 214L122 276H28L30 214L26 226L8 222Z',
-  pants:'M30 268H120L118 352H80L75 292L70 352H32Z',
-  shoeL:'M32 350H70V362Q70 368 64 368H26Q20 368 22 362Q24 354 32 350Z',
-  shoeR:'M80 350H118Q126 354 128 362Q130 368 124 368H86Q80 368 80 362Z',
+  long:'M58 150Q75 160 92 150L110 153Q122 156 124 168L134 216L116 222L106 184L110 240H40L44 184L34 222L16 216L26 168Q28 156 40 153Z',
+  short:'M58 150Q75 160 92 150L110 153Q122 156 124 168L130 188L112 194L106 184L110 240H40L44 184L38 194L20 188L26 168Q28 156 40 153Z',
+  pants:'M40 232H110L108 294H80L75 252L70 294H42Z',
+  shoeL:'M40 290H72V306Q72 314 64 314H36Q28 314 28 306Q28 293 40 290Z',
+  shoeR:'M78 290H110Q122 293 122 306Q122 314 114 314H86Q78 314 78 306Z',
   ln:'stroke="#232a45" stroke-width="3" stroke-linejoin="round"'
 };
+const SKIN='#f6dccb';
 const SHOP_ITEMS=[
   {id:'cap',slot:'hat',name:'빨간 야구모자',price:3000,desc:'운동장 필수템',
    svg:'<path d="M17 64C17 22 50 6 76 6s59 16 59 58z" fill="#d8362f" stroke="#232a45" stroke-width="3"/><path d="M40 12Q76 0 112 12" stroke="#a82420" stroke-width="3" fill="none"/><ellipse cx="76" cy="63" rx="64" ry="9" fill="#a82420" stroke="#232a45" stroke-width="3"/><circle cx="76" cy="7" r="4.5" fill="#a82420" stroke="#232a45" stroke-width="2"/><circle cx="76" cy="36" r="11" fill="#fff" stroke="#232a45" stroke-width="2"/><text x="76" y="41.5" font-size="15" font-weight="900" text-anchor="middle" fill="#d8362f" font-family="sans-serif">R</text>'},
@@ -47,37 +48,37 @@ const SHOP_ITEMS=[
   {id:'nred',slot:'name',name:'빨간 이름',price:5000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-red'},
   {id:'ngold',slot:'name',name:'황금 이름',price:15000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-gold'},
   {id:'nrainbow',slot:'name',name:'무지개 이름',price:25000,desc:'랭킹·1:1 대결에서 이름 색',css:'nm-rainbow'},
-  /* ---------- 전신 (150×380 좌표) ---------- */
+  /* ---------- 전신 (150×320 좌표) ---------- */
   {id:'jersey',slot:'top',name:'축구부 유니폼',price:4000,color:'#e2334d',vest:'#fff',desc:'등번호 10번, 에이스의 상징',
-   svg:`<path d="${BD.short}" fill="#e2334d" ${BD.ln}/><path d="M56 173Q75 188 94 173" fill="none" stroke="#fff" stroke-width="4"/><path d="M11 214l16 4M139 214l-16 4" stroke="#fff" stroke-width="4"/><text x="75" y="254" font-size="34" font-weight="900" text-anchor="middle" fill="#fff" stroke="#232a45" stroke-width="1.5" font-family="sans-serif">10</text>`},
+   svg:`<path d="${BD.short}" fill="#e2334d" ${BD.ln}/><path d="M44 182v56M106 182v56" stroke="#b8233a" stroke-width="2" opacity=".6"/><path d="M58 151Q75 163 92 151" fill="none" stroke="#fff" stroke-width="4"/><path d="M22 184l17 5M128 184l-17 5" stroke="#fff" stroke-width="4"/><text x="75" y="224" font-size="30" font-weight="900" text-anchor="middle" fill="#fff" stroke="#232a45" stroke-width="1.5" font-family="sans-serif">10</text>`},
   {id:'hoodie',slot:'top',name:'회색 후드티',price:6000,color:'#9aa3ad',vest:'#7d8792',desc:'쉬는 시간 국룰',
-   svg:`<path d="${BD.long}" fill="#9aa3ad" ${BD.ln}/><path d="M42 176Q75 200 108 176Q100 166 75 168Q50 166 42 176z" fill="#7d8792" ${BD.ln}/><path d="M68 186v24M82 186v24" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M48 238h54l-6 30H54z" fill="#8a939e" stroke="#232a45" stroke-width="2.5"/><path d="M6 246l16 3M144 246l-16 3" stroke="#232a45" stroke-width="2"/>`},
+   svg:`<path d="M36 158Q34 136 75 134Q116 136 114 158Q75 176 36 158z" fill="#7d8792" ${BD.ln}/><path d="${BD.long}" fill="#9aa3ad" ${BD.ln}/><path d="M56 151Q75 168 94 151" fill="#6f7884" stroke="#232a45" stroke-width="2.5"/><path d="M68 160v22M82 160v22" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="68" cy="183" r="2" fill="#fff"/><circle cx="82" cy="183" r="2" fill="#fff"/><path d="M52 206h46l-5 24H57z" fill="#8a939e" stroke="#232a45" stroke-width="2.5"/><path d="M17 211l17 5M133 211l-17 5" stroke="#232a45" stroke-width="2"/>`},
   {id:'hawaii',slot:'top',name:'하와이안 셔츠',price:9000,color:'#1aa39a',vest:'#ffd23f',desc:'방학 기분 미리 내기',
-   svg:`<path d="${BD.short}" fill="#1aa39a" ${BD.ln}/><path d="M56 173L75 200L94 173Q75 168 56 173z" fill="#f8dcc8" stroke="#232a45" stroke-width="2"/><path d="M52 172l10 34 13-6M98 172l-10 34-13-6" fill="none" stroke="#232a45" stroke-width="2.5"/><path d="M75 200v76" stroke="#232a45" stroke-width="2"/><g fill="#ffd23f" stroke="#c98a00" stroke-width="1"><circle cx="44" cy="226" r="6"/><circle cx="104" cy="214" r="6"/><circle cx="96" cy="258" r="6"/><circle cx="20" cy="204" r="4.5"/></g><g fill="#ff7aa2"><circle cx="56" cy="252" r="5"/><circle cx="110" cy="240" r="4.5"/><circle cx="130" cy="200" r="4.5"/><circle cx="40" cy="198" r="4"/></g><g fill="#2f8f5b"><circle cx="50" cy="232" r="3"/><circle cx="100" cy="222" r="3"/></g>`},
+   svg:`<path d="${BD.short}" fill="#1aa39a" ${BD.ln}/><path d="M60 151L75 176L90 151Q75 158 60 151z" fill="${SKIN}" stroke="#232a45" stroke-width="2"/><path d="M57 150l7 28 11-3M93 150l-7 28-11-3" fill="#17928a" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"/><path d="M75 176v64" stroke="#232a45" stroke-width="2"/><g fill="#ffd23f" stroke="#c98a00" stroke-width="1"><circle cx="52" cy="198" r="6"/><circle cx="100" cy="190" r="6"/><circle cx="94" cy="226" r="6"/><circle cx="28" cy="178" r="4.5"/></g><g fill="#ff7aa2"><circle cx="58" cy="226" r="5"/><circle cx="104" cy="212" r="4.5"/><circle cx="123" cy="176" r="4.5"/><circle cx="46" cy="172" r="4"/></g><g fill="#2f8f5b"><circle cx="58" cy="205" r="3"/><circle cx="94" cy="198" r="3"/></g>`},
   {id:'leather',slot:'top',name:'가죽 재킷',price:20000,color:'#26262c',vest:'#f4f4f4',desc:'롹스타 순팅',
-   svg:`<path d="${BD.long}" fill="#26262c" ${BD.ln}/><path d="M56 173Q75 186 94 173L90 276H60z" fill="#f4f4f4" stroke="#232a45" stroke-width="2"/><path d="M52 172l14 40-8 4-16-36zM98 172l-14 40 8 4 16-36z" fill="#3a3a44" stroke="#232a45" stroke-width="2"/><path d="M60 214l-2 62M90 214l2 62" stroke="#b9b9c4" stroke-width="2.5" stroke-dasharray="3 3"/><path d="M6 246l16 3M144 246l-16 3" stroke="#55555f" stroke-width="3"/><circle cx="44" cy="200" r="2.5" fill="#d0d0d8"/><circle cx="106" cy="200" r="2.5" fill="#d0d0d8"/>`},
+   svg:`<path d="${BD.long}" fill="#26262c" ${BD.ln}/><path d="M60 151Q75 160 90 151L88 240H62z" fill="#f4f4f4" stroke="#232a45" stroke-width="2"/><path d="M57 150l11 34-7 4-13-32zM93 150l-11 34 7 4 13-32z" fill="#3a3a44" stroke="#232a45" stroke-width="2" stroke-linejoin="round"/><path d="M62 190l-1 50M88 190l1 50" stroke="#b9b9c4" stroke-width="2.5" stroke-dasharray="3 3"/><path d="M17 211l17 5M133 211l-17 5" stroke="#55555f" stroke-width="3"/><circle cx="44" cy="168" r="2.5" fill="#d0d0d8"/><circle cx="106" cy="168" r="2.5" fill="#d0d0d8"/>`},
   {id:'shorts',slot:'bottom',name:'축구부 반바지',price:2000,color:'#f4f4f4',desc:'다리가 시원해요',
-   svg:`<path d="M30 268H120L121 308H80L75 292L70 308H29z" fill="#fff" ${BD.ln}/><path d="M33 270v36M117 270v36" stroke="#e2334d" stroke-width="5"/><path d="M38 340h34v12H38zM78 340h34v12H78z" fill="#e2334d" stroke="#232a45" stroke-width="2"/>`},
+   svg:`<path d="M40 232H110L113 266H80L75 250L70 266H37z" fill="#fff" ${BD.ln}/><path d="M43 234v30M107 234v30" stroke="#e2334d" stroke-width="5"/><path d="M47 278h24v14H47zM79 278h24v14H79z" fill="#e2334d" stroke="#232a45" stroke-width="2"/>`},
   {id:'jeans',slot:'bottom',name:'청바지',price:5000,color:'#3d6db5',desc:'어디에나 어울리는 기본템',
-   svg:`<path d="${BD.pants}" fill="#3d6db5" ${BD.ln}/><path d="M30 268h90v8H30z" fill="#5a3a22" stroke="#232a45" stroke-width="2"/><rect x="70" y="269" width="10" height="6" fill="#e8c35a"/><path d="M38 280q10 10 22 0M90 280q10 10 22 0M54 296l-2 54M96 296l2 54" fill="none" stroke="#2a4f8a" stroke-width="2"/>`},
+   svg:`<path d="${BD.pants}" fill="#3d6db5" ${BD.ln}/><path d="M40 232h70v7H40z" fill="#5a3a22" stroke="#232a45" stroke-width="2"/><rect x="70" y="233" width="10" height="5" fill="#e8c35a"/><path d="M46 244q9 8 18 0M86 244q9 8 18 0M58 256l-1 36M92 256l1 36" fill="none" stroke="#2a4f8a" stroke-width="2"/>`},
   {id:'track',slot:'bottom',name:'삼선 트레이닝 바지',price:4000,color:'#1f2433',desc:'체육 시간 필수',
-   svg:`<path d="${BD.pants}" fill="#1f2433" ${BD.ln}/><path d="M35 270l1 82M40 270l1 82M45 270l1 82M115 270l-1 82M110 270l-1 82M105 270l-1 82" stroke="#fff" stroke-width="2.2"/>`},
+   svg:`<path d="${BD.pants}" fill="#1f2433" ${BD.ln}/><path d="M46 235l1 57M50 235l1 57M54 235l1 57M104 235l-1 57M100 235l-1 57M96 235l-1 57" stroke="#fff" stroke-width="2"/>`},
   {id:'cargo',slot:'bottom',name:'카고 바지',price:8000,color:'#8a7f55',desc:'주머니가 많아서 빵도 들어가요',
-   svg:`<path d="${BD.pants}" fill="#8a7f55" ${BD.ln}/><rect x="34" y="298" width="18" height="20" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><rect x="98" y="298" width="18" height="20" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><path d="M34 304h18M98 304h18" stroke="#232a45" stroke-width="1.5"/>`},
+   svg:`<path d="${BD.pants}" fill="#8a7f55" ${BD.ln}/><rect x="44" y="256" width="16" height="16" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><rect x="90" y="256" width="16" height="16" rx="2" fill="#7a704a" stroke="#232a45" stroke-width="2"/><path d="M44 261h16M90 261h16" stroke="#232a45" stroke-width="1.5"/>`},
   {id:'cleats',slot:'shoes',name:'축구화',price:3000,color:'#1b1b1f',desc:'프리킥 정확도 +0 (기분은 +100)',
-   svg:`<path d="${BD.shoeL}" fill="#1b1b1f" ${BD.ln}/><path d="${BD.shoeR}" fill="#1b1b1f" ${BD.ln}/><path d="M34 357q14-6 30 0M86 357q14-6 30 0" fill="none" stroke="#e2334d" stroke-width="3"/><path d="M28 369v4M40 369v4M54 369v4M66 369v4M84 369v4M96 369v4M110 369v4M122 369v4" stroke="#232a45" stroke-width="3"/>`},
+   svg:`<path d="${BD.shoeL}" fill="#1b1b1f" ${BD.ln}/><path d="${BD.shoeR}" fill="#1b1b1f" ${BD.ln}/><path d="M36 301q14-6 30 0M84 301q14-6 30 0" fill="none" stroke="#e2334d" stroke-width="3"/><path d="M34 314v4M46 314v4M58 314v4M68 314v4M82 314v4M92 314v4M104 314v4M116 314v4" stroke="#232a45" stroke-width="3" stroke-linecap="round"/>`},
   {id:'redkicks',slot:'shoes',name:'빨간 운동화',price:5000,color:'#e2334d',desc:'뜀박질 속도 +0 (마음만은 +100)',
-   svg:`<path d="${BD.shoeL}" fill="#e2334d" ${BD.ln}/><path d="${BD.shoeR}" fill="#e2334d" ${BD.ln}/><path d="M22 363h48M80 363h48" stroke="#fff" stroke-width="4"/><path d="M42 352l6 4M48 351l6 4M90 352l6 4M96 351l6 4" stroke="#fff" stroke-width="2"/>`},
+   svg:`<path d="${BD.shoeL}" fill="#e2334d" ${BD.ln}/><path d="${BD.shoeR}" fill="#e2334d" ${BD.ln}/><path d="M29 308h43M78 308h43" stroke="#fff" stroke-width="4"/><path d="M50 296l5 4M56 295l5 4M89 296l5 4M95 295l5 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`},
   {id:'goldkicks',slot:'shoes',name:'황금 운동화',price:25000,color:'#f5c518',desc:'걸을 때마다 반짝',
-   svg:`<path d="${BD.shoeL}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="${BD.shoeR}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="M22 363h48M80 363h48" stroke="#e8a91c" stroke-width="4"/><path d="M14 346l3 5 5 2-5 2-3 5-3-5-5-2 5-2zM136 344l3 5 5 2-5 2-3 5-3-5-5-2 5-2z" fill="#fff4b0"/>`},
+   svg:`<path d="${BD.shoeL}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="${BD.shoeR}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="M29 308h43M78 308h43" stroke="#e8a91c" stroke-width="4"/><path d="M40 298q6-3 12 0M98 298q6-3 12 0" stroke="#fff4b0" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M18 286l3 5 5 2-5 2-3 5-3-5-5-2 5-2zM132 284l3 5 5 2-5 2-3 5-3-5-5-2 5-2z" fill="#ffe680" stroke="#c98a00" stroke-width="1"/>`},
   {id:'backpack',slot:'bag',name:'책가방',price:3000,desc:'교과서는 사물함에 두고 다녀요',
-   back:'<path d="M26 186Q24 160 50 158H100Q126 160 124 186V262H26z" fill="#3b6fd8" stroke="#232a45" stroke-width="3"/><path d="M50 158q25-10 50 0" fill="none" stroke="#2c56b0" stroke-width="4"/>',
-   svg:'<path d="M44 176l4 92M106 176l-4 92" stroke="#232a45" stroke-width="9" stroke-linecap="round"/><path d="M44 176l4 92M106 176l-4 92" stroke="#3b6fd8" stroke-width="5" stroke-linecap="round"/><rect x="40" y="232" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/><rect x="98" y="232" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/>'},
+   back:'<path d="M28 172Q26 138 56 136H94Q124 138 122 172V236H28z" fill="#3b6fd8" stroke="#232a45" stroke-width="3"/><path d="M50 137q25-10 50 0" fill="none" stroke="#2c56b0" stroke-width="4"/>',
+   svg:'<path d="M46 154l3 78M104 154l-3 78" stroke="#232a45" stroke-width="9" stroke-linecap="round"/><path d="M46 154l3 78M104 154l-3 78" stroke="#3b6fd8" stroke-width="5" stroke-linecap="round"/><rect x="42" y="200" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/><rect x="96" y="200" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/>'},
   {id:'cross',slot:'bag',name:'크로스백',price:5000,desc:'용돈 지갑 넣는 곳',
-   svg:'<path d="M42 176L114 254" stroke="#232a45" stroke-width="8" stroke-linecap="round"/><path d="M42 176L114 254" stroke="#8b5a2b" stroke-width="4.5" stroke-linecap="round"/><rect x="100" y="244" width="36" height="30" rx="6" fill="#a0522d" stroke="#232a45" stroke-width="3"/><path d="M100 254q18 10 36 0" fill="#8b4513" stroke="#232a45" stroke-width="2.5"/><circle cx="118" cy="259" r="2.5" fill="#e8c35a"/>'},
+   svg:'<path d="M46 156L112 222" stroke="#232a45" stroke-width="8" stroke-linecap="round"/><path d="M46 156L112 222" stroke="#8b5a2b" stroke-width="4.5" stroke-linecap="round"/><rect x="98" y="212" width="34" height="28" rx="6" fill="#a0522d" stroke="#232a45" stroke-width="3"/><path d="M98 221q17 10 34 0" fill="#8b4513" stroke="#232a45" stroke-width="2.5"/><circle cx="115" cy="226" r="2.5" fill="#e8c35a"/>'},
   {id:'guitar',slot:'bag',name:'기타 케이스',price:12000,desc:'소리새 무대 가는 길',
-   back:'<g transform="translate(6 40) rotate(-28 75 230)"><path d="M62 96h26v74q22 6 22 38 0 22-14 34 20 10 20 40 0 40-41 40s-41-40-41-40q0-30 20-40-14-12-14-34 0-32 22-38z" fill="#2b2b33" stroke="#232a45" stroke-width="3"/><path d="M75 100v240" stroke="#55555f" stroke-width="2"/></g>',
-   svg:'<path d="M110 176L38 258" stroke="#232a45" stroke-width="7" stroke-linecap="round"/><path d="M110 176L38 258" stroke="#e2334d" stroke-width="3.5" stroke-linecap="round"/>'}
+   back:'<g transform="rotate(28 75 200)"><path d="M65 60h20v66q18 5 18 31 0 18-11 28 16 8 16 32 0 33-33 33s-33-33-33-33q0-24 16-32-11-10-11-28 0-26 18-31z" fill="#2b2b33" stroke="#232a45" stroke-width="3"/><path d="M75 64v184" stroke="#55555f" stroke-width="2"/></g>',
+   svg:'<path d="M44 154L108 228" stroke="#232a45" stroke-width="7" stroke-linecap="round"/><path d="M44 154L108 228" stroke="#e2334d" stroke-width="3.5" stroke-linecap="round"/>'}
 ];
 const SHOP_BY={};SHOP_ITEMS.forEach(it=>{SHOP_BY[it.id]=it;});
 const DRESS_ORDER=['acc','glass','hat'];   /* 얼굴에 겹치는 순서(아래 → 위) */
@@ -91,7 +92,7 @@ const nameCls=eq=>{const it=eqItem(eq,'name');return it?it.css:'';};
 
 /* ---------- 얼굴 위에 겹칠 아이템 그림 (아이템마다 150×190 Image 하나) ---------- */
 const DRESS_IM={};
-const BODY_SLOTS=['top','bottom','shoes','bag'],BODY_H=380;   /* 전신 아이템 슬롯 · 전신 그림 높이(150 기준) */
+const BODY_SLOTS=['top','bottom','shoes','bag'],BODY_H=320;   /* 전신 아이템 슬롯 · 전신 그림 높이(150 기준) */
 const isBodySlot=sl=>BODY_SLOTS.includes(sl);
 function svgIm(svg,h){
   const im=new Image();im.onload=()=>shopRefreshFaces();
@@ -112,45 +113,88 @@ function drawDress(c,eq,...rect){
   DRESS_ORDER.forEach(sl=>{const it=eqItem(eq,sl);if(!it)return;const im=dressIm(it);if(im.complete&&im.naturalWidth)c.drawImage(im,...rect);});
 }
 
-/* ---------- 전신: 얼굴 그림 아래에 몸을 붙여요 (150×380 좌표) ----------
+/* ---------- 전신: 2등신 몸 위에 얼굴 그림의 머리를 얹어요 (150×320 좌표) ----------
    기본 차림은 머대부고 교복(남색 재킷 · 회색 바지 · 흰 운동화). 상의·하의·신발 아이템을 사면 그 자리를 바꿔 입어요. */
-const SKIN='#f8dcc8';
 const BODY_BASE={
-  neck:`<path d="M61 140H89V184H61z" fill="${SKIN}"/><path d="M61 146V180M89 146V180" stroke="#232a45" stroke-width="2.5"/>`,
-  skin:`<g fill="${SKIN}" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"><path d="M16 194L6 252L22 255L30 214z"/><path d="M134 194L144 252L128 255L120 214z"/><circle cx="14" cy="261" r="7.5"/><circle cx="136" cy="261" r="7.5"/><path d="M38 276H72L70 352H40z"/><path d="M78 276H112L110 352H80z"/></g>`,
-  top:`<path d="${BD.long}" fill="#2d3550" ${BD.ln}/><path d="M56 173L75 200L94 173Q75 168 56 173z" fill="#fff" stroke="#232a45" stroke-width="2"/><path d="M72 182h6l3 26-6 7-6-7z" fill="#c0392b" stroke="#232a45" stroke-width="1.5"/><path d="M75 215v61" stroke="#1b2033" stroke-width="2"/><circle cx="80" cy="234" r="2.2" fill="#e8c35a"/><circle cx="80" cy="254" r="2.2" fill="#e8c35a"/><path d="M6 246l16 3M144 246l-16 3" stroke="#e8c35a" stroke-width="2"/>`,
-  bottom:`<path d="${BD.pants}" fill="#5b6170" ${BD.ln}/><path d="M75 270v22" stroke="#232a45" stroke-width="2"/>`,
-  shoes:`<path d="${BD.shoeL}" fill="#fff" ${BD.ln}/><path d="${BD.shoeR}" fill="#fff" ${BD.ln}/><path d="M22 363h48M80 363h48" stroke="#232a45" stroke-width="2"/>`
+  skin:`<g fill="${SKIN}" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"><path d="M63 138H87V160H63z" stroke="none"/><path d="M26 168L16 216L34 222L44 184z"/><path d="M124 168L134 216L116 222L106 184z"/><circle cx="25" cy="227" r="8.5"/><circle cx="125" cy="227" r="8.5"/><path d="M46 240H72V294H46z"/><path d="M78 240H104V294H78z"/></g>`,
+  top:`<path d="${BD.long}" fill="#2d3550" ${BD.ln}/><path d="M60 151L75 178L90 151Q75 158 60 151z" fill="#fff" stroke="#232a45" stroke-width="2"/><path d="M72 157h6l3 22-6 7-6-7z" fill="#c0392b" stroke="#232a45" stroke-width="1.5"/><path d="M58 151l10 34M92 151l-10 34" stroke="#1b2033" stroke-width="2"/><path d="M75 186v54" stroke="#1b2033" stroke-width="2"/><circle cx="80" cy="200" r="2.2" fill="#e8c35a"/><circle cx="80" cy="220" r="2.2" fill="#e8c35a"/><path d="M17 211l17 5M133 211l-17 5" stroke="#e8c35a" stroke-width="2"/>`,
+  bottom:`<path d="${BD.pants}" fill="#5b6170" ${BD.ln}/><path d="M75 234v18M57 256v36M93 256v36" stroke="#4a5060" stroke-width="2"/>`,
+  shoes:`<path d="${BD.shoeL}" fill="#fff" ${BD.ln}/><path d="${BD.shoeR}" fill="#fff" ${BD.ln}/><path d="M29 307h43M78 307h43" stroke="#232a45" stroke-width="2"/><path d="M50 296l5 4M89 296l5 4" stroke="#9aa3ad" stroke-width="2" stroke-linecap="round"/>`
 };
 const BODY_IM={};Object.keys(BODY_BASE).forEach(k=>{BODY_IM[k]=svgIm(BODY_BASE[k],BODY_H);});
 const ready=im=>im&&im.complete&&im.naturalWidth;
-/* 몸에 그릴 순서(아래 → 위): 가방 뒤쪽 → 목 → [머리] → 피부(팔·손·다리) → 신발 → 하의 → 상의 → 가방 앞쪽(끈) */
+/* 그리는 순서(아래 → 위): 가방 뒤쪽 → 피부(목·팔·손·다리) → 신발 → 하의 → 상의 → 가방 앞쪽(끈) → 머리 → 모자·안경 */
 function bodyLayers(eq){
-  const at=sl=>eqItem(eq,sl),back=[],front=[BODY_IM.skin],bag=at('bag');
-  if(bag&&bag.back)back.push(dressIm(bag,'back'));
-  back.push(BODY_IM.neck);
-  ['shoes','bottom','top'].forEach(sl=>{const it=at(sl);front.push(it?dressIm(it):BODY_IM[sl]);});
-  if(bag&&(bag.svg||bag.img))front.push(dressIm(bag));
-  return {back,front};
+  const at=sl=>eqItem(eq,sl),out=[],bag=at('bag');
+  if(bag&&bag.back)out.push(dressIm(bag,'back'));
+  out.push(BODY_IM.skin);
+  ['shoes','bottom','top'].forEach(sl=>{const it=at(sl);out.push(it?dressIm(it):BODY_IM[sl]);});
+  if(bag&&(bag.svg||bag.img))out.push(dressIm(bag));
+  return out;
 }
-/* 얼굴 그림에서 머리만 오려 내는 선: 턱(y≈150) 아래의 원래 교복 어깨는 버리고, 목·몸은 새로 그려요 */
-const HEAD_CLIP=[[0,0],[150,0],[150,124],[128,136],[106,148],[90,152],[60,152],[44,148],[22,136],[0,124]];
+/* 얼굴 그림(150×190)에서 머리만 오려 내요. 표정마다 얼굴 크기·턱 위치가 조금씩 달라서 그림마다 자동으로 찾아요.
+   1) 테두리와 이어진 밝은 배경을 지워요.
+   2) 세로줄마다 아래(y 150)에서 위로 훑어, 바로 위가 밝은 피부인 첫 어두운 선(턱·귀 윤곽선)을 찾고 그 아래(셔츠 깃·교복 어깨)를 지워요.
+   3) 줄마다 찾은 턱선은 이웃 줄과 중앙값으로 고르게, 지운 곳과 맞닿은 밝은 가장자리는 부드럽게 */
+const HEAD_CUT=150,HEAD_TOP=110,HEAD_CACHE={};
+/* 대략의 턱선 [x, y]: 이 선 근처(위로 12px까지)에서만 턱을 찾아요. 입이 턱에 붙은 표정에서 입을 턱으로 착각하지 않게 */
+const JAW=[[0,122],[16,125],[26,132],[38,140],[52,146],[62,149],[88,149],[98,146],[112,140],[124,132],[134,125],[150,122]];
+function jawY(x){for(let i=1;i<JAW.length;i++){const[a,ay]=JAW[i-1],[b,by]=JAW[i];if(x<=b)return ay+(by-ay)*(x-a)/(b-a);}return JAW[JAW.length-1][1];}
+function headCanvas(face){
+  if(HEAD_CACHE[face])return HEAD_CACHE[face];
+  const im=IM[face]||IM.base;if(!ready(im))return null;
+  const w=im.naturalWidth,h=im.naturalHeight,cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  const c=cv.getContext('2d');c.drawImage(im,0,0);
+  let d;try{d=c.getImageData(0,0,w,h);}catch(e){return null;}   /* file://로 열면 못 읽어요 */
+  const px=d.data,k=h/190,cut=Math.round(HEAD_CUT*k),top=Math.round(HEAD_TOP*k),bg=[px[0],px[1],px[2]],T=20;
+  const at=(x,y)=>(y*w+x)*4;
+  const bgDiff=p=>Math.max(Math.abs(px[p*4]-bg[0]),Math.abs(px[p*4+1]-bg[1]),Math.abs(px[p*4+2]-bg[2]));
+  const light=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return r>=215&&g>=180&&b>=160&&r-b>=12;};   /* 밝은 얼굴 피부 */
+  const red=(x,y)=>{const i=at(x,y);return px[i]-px[i+1]>=60&&px[i+1]<120&&px[i]>100;};   /* 빨간 입과 그 테두리 (목 음영은 빼고) */
+  const mid=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return r+g+b<640&&!(Math.max(r,g,b)-Math.min(r,g,b)<14&&r+g+b>540);};   /* 윤곽선·그 가장자리 (밝은 회색 셔츠 깃은 빼고) */
+  /* 1) 배경 */
+  const gone=new Uint8Array(w*h),st=[];
+  const bgOk=(x,y)=>{if(x<0||y<0||x>=w||y>=cut)return;const p=y*w+x;if(gone[p]||bgDiff(p)>T)return;gone[p]=1;st.push(p);};
+  for(let x=0;x<w;x++)bgOk(x,0);for(let y=0;y<cut;y++){bgOk(0,y);bgOk(w-1,y);}   /* 아래쪽(밝은 목 피부)에서는 시작하지 않아요 */
+  while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;bgOk(x+1,y);bgOk(x-1,y);bgOk(x,y+1);bgOk(x,y-1);}
+  /* 2) 줄마다 턱선: 예상 턱선 12px 위 ~ y 150 사이에서 가장 아래에 있는 밝은 피부(얼굴·목) + 바로 밑 윤곽선(3px까지)만 남겨요.
+        셔츠 깃(흰색·회색)과 교복(남색)은 피부색이 아니라서 잘려요 */
+  const jaw=new Int16Array(w);
+  for(let x=0;x<w;x++){
+    const ex=Math.round(jawY(x/k)*k),lo=Math.max(top,ex-Math.round(12*k));
+    let L=-1;for(let y=cut-1;y>=lo;y--)if(light(x,y)){L=y;break;}
+    if(L<0){jaw[x]=lo-1;continue;}
+    let e=L,n=0;   /* 아래로: 빨간 입은 계속, 윤곽선(어둡거나 중간 밝기)은 3px까지 */
+    while(e+1<cut){const q=e+1;if(red(x,q)){e=q;n=0;continue;}if(n<3*k&&mid(x,q)){e=q;n++;continue;}break;}
+    jaw[x]=e;
+  }
+  const sm=Int16Array.from(jaw,(v,x)=>{const a=[];for(let i=-4;i<=4;i++)a.push(jaw[Math.min(w-1,Math.max(0,x+i))]);return a.sort((p,q)=>p-q)[4];});   /* 이웃 9줄의 중앙값: 튀는 값은 버려요 */
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const p=y*w+x;
+    if(y>=cut||gone[p]||y>sm[x]){px[p*4+3]=0;gone[p]=1;}
+  }
+  /* 3) 가장자리 */
+  for(let y=0;y<cut;y++)for(let x=0;x<w;x++){
+    const p=y*w+x;if(gone[p]||mid(x,y))continue;
+    if((x&&gone[p-1])||(x<w-1&&gone[p+1])||(y&&gone[p-w])||(gone[p+w]))px[p*4+3]=Math.round(255*Math.min(1,Math.max(.3,(bgDiff(p)-T)/(2*T))));
+  }
+  c.putImageData(d,0,0);
+  return HEAD_CACHE[face]=cv;
+}
 const BODY_CACHE={};
 function bodyURL(face,eq){
   const base=IMGDATA[face]||IMGDATA.base;if(avaTainted)return base;
   const ck=face+'|'+eqKey(eq)+'|'+BODY_SLOTS.map(sl=>(eqItem(eq,sl)||{}).id||'').join('.');
   if(BODY_CACHE[ck])return BODY_CACHE[ck];
   const im=IM[face]||IM.base;if(!ready(im)){im.addEventListener('load',shopRefreshFaces,{once:true});return '';}
-  const head=DRESS_ORDER.map(sl=>eqItem(eq,sl)).filter(Boolean).map(it=>dressIm(it)),L=bodyLayers(eq);
-  if(head.concat(L.back,L.front).some(x=>!ready(x)))return '';   /* 아직 불러오는 중: 다 불러오면 shopRefreshFaces가 다시 그려요 */
+  const head=DRESS_ORDER.map(sl=>eqItem(eq,sl)).filter(Boolean).map(it=>dressIm(it)),layers=bodyLayers(eq);
+  if(head.concat(layers).some(x=>!ready(x)))return '';   /* 아직 불러오는 중: 다 불러오면 shopRefreshFaces가 다시 그려요 */
+  const hd=headCanvas(face);if(!hd){avaTainted=true;return base;}
   const S2=2,cv=document.createElement('canvas');cv.width=150*S2;cv.height=BODY_H*S2;
-  const c=cv.getContext('2d'),full=x=>c.drawImage(x,0,0,150*S2,BODY_H*S2);
-  L.back.forEach(full);
-  c.save();c.beginPath();HEAD_CLIP.forEach(([x,y],i)=>c[i?'lineTo':'moveTo'](x*S2,y*S2));c.closePath();c.clip();
-  c.drawImage(im,0,0,150*S2,190*S2);                       /* 머리: 얼굴 그림에서 턱까지만 */
-  c.restore();
-  head.forEach(x=>c.drawImage(x,0,0,150*S2,190*S2));      /* 모자·안경·얼굴 소품 */
-  L.front.forEach(full);
+  const c=cv.getContext('2d');
+  layers.forEach(x=>c.drawImage(x,0,0,150*S2,BODY_H*S2));   /* 몸 */
+  c.drawImage(hd,0,0,150*S2,190*S2);                         /* 머리는 몸 위에 (턱이 옷깃 위로 살짝 겹쳐요) */
+  head.forEach(x=>c.drawImage(x,0,0,150*S2,190*S2));        /* 모자·안경·얼굴 소품 */
   try{BODY_CACHE[ck]=cv.toDataURL('image/png');}catch(e){avaTainted=true;return base;}
   return BODY_CACHE[ck];
 }
