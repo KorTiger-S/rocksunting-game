@@ -251,6 +251,45 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   bd = await rpc('badges', { id: cl2.players[0].id });
   ok(bd.list.some(b => b.number === 2 && b.rank === 1) && bd.list.every((b, i, a) => !i || a[i - 1].number <= b.number), '시즌마다 뱃지가 쌓이고 시즌 순으로 나옴');
 
+  // ----- 유저 프로필 · 한줄 방명록 -----
+  await db.exec('set role anon'); let pf = await rpc('profile', { id: p1.toUpperCase() }); await db.exec('reset role');
+  ok(pf.ok && pf.id === p1 && Array.isArray(pf.history) && pf.badges.length >= 1, 'anon도 프로필 조회 가능 (ID 대소문자 무시, 표시 이름 그대로)');
+  const h1 = pf.history.find(x => x.number === 1);
+  ok(h1 && h1.rank === 1 && h1.gameName === '프리킥 축구' && h1.players === cl.players.length && h1.money === cl.players[0].money, '프로필에 시즌1 순위·기록이 들어감');
+  ok(pf.history.every((x, i, a) => !i || a[i - 1].number > x.number), '시즌별 기록은 최근 시즌부터');
+  await save('철수', Date.now() + 40000, { money: 10000, items: { own: ['cap', 'shades'], eq: { hat: 'cap' } } }, P, (await rpc('season_get')).season.key);
+  pf = await rpc('profile', { id: '철수' });
+  ok(pf.ok && pf.eq.hat === 'cap' && pf.itemCount === 2 && pf.now.rank >= 1 && pf.now.season === (await rpc('season_get')).season.key, '프로필에 장착 아이템·이번 시즌 순위가 들어감');
+  ok(!('pin_hash' in pf) && !('data' in pf) && !JSON.stringify(pf).includes('$2'), '프로필에 비밀번호 해시·저장 데이터 전체는 안 나감');
+  ok((await rpc('profile', { id: '없는사람' })).error === 'no_user' && (await rpc('profile', { id: 'a' })).error === 'bad_id', '없는 ID·잘못된 ID 프로필은 오류');
+  const gw = (to, msg, id = '짱구', pin = P) => rpc('gb_write', { id, pin, to, msg });
+  ok((await gw('철수', '안녕')).ok, '로그인한 플레이어는 남의 프로필에 방명록을 쓸 수 있음');
+  r = await rpc('gb_list', { id: '철수' });
+  ok(r.ok && r.list.length === 1 && r.list[0].author === '짱구' && r.list[0].msg === '안녕', '방명록 쓰기·목록');
+  ok((await gw('철수', '바로 또')).error === 'too_fast', '20초 안에 또 쓰면 거부(도배 방지)');
+  await db.exec(`update public.rk_guestbook set created_at = now() - interval '1 minute'`);
+  ok((await gw('철수', '  ')).error === 'empty' && (await gw('철수', 'ㅋ'.repeat(51))).error === 'too_long', '빈 글·50자 넘는 글 거부');
+  ok((await gw('없는사람', 'hi')).error === 'no_user' && (await gw('철수', 'hi', '짱구', '0000')).error === 'bad_pin', '없는 사람에게·틀린 비밀번호로는 못 씀');
+  await db.exec(`delete from public.rk_attempts`);
+  r = await gw('철수', '줄\n바꿈\t<b>태그</b>');
+  ok(r.ok && r.list[0].msg === '줄 바꿈 <b>태그</b>' && r.list.length === 2, '줄바꿈은 공백으로 한 줄, 글자는 그대로 저장(화면에서 textContent로 표시)');
+  const no = r.list[0].no;
+  ok((await rpc('gb_delete', { id: 'abcd', pin: P, no })).error === 'not_allowed', '다른 사람은 남의 방명록 글을 못 지움');
+  r = await rpc('gb_delete', { id: '철수', pin: P, no });
+  ok(r.ok && r.list.length === 1, '프로필 주인은 자기 방명록 글을 지울 수 있음');
+  await db.exec(`update public.rk_guestbook set created_at = now() - interval '1 minute'`);
+  r = await gw('철수', '또 왔어');
+  ok(r.ok && (await rpc('gb_delete', { id: '짱구', pin: P, no: r.list[0].no })).ok, '쓴 사람도 자기 글을 지울 수 있음');
+  await db.exec(`insert into public.rk_guestbook (owner, author, author_name, msg, created_at) select '철수', 'abcd', 'ABCd', 'm' || g, now() - interval '1 hour' from generate_series(1, 105) g`);
+  await gw('철수', '마지막');
+  ok((await db.query(`select count(*)::int as n from public.rk_guestbook where owner = '철수'`)).rows[0].n === 100, '프로필마다 최근 100개만 남김');
+  r = await rpc('gb_list', { id: '철수' });
+  ok(r.list.length === 30 && r.list[0].msg === '마지막' && r.list[0].eq && typeof r.list[0].eq === 'object', '목록은 최신 30개, 쓴 사람 장착 아이템도 같이');
+  let denied5 = false; await db.exec('set role anon'); try { await db.query(`select * from public.rk_guestbook`); } catch (e) { denied5 = true; } await db.exec('reset role');
+  ok(denied5, 'anon은 방명록 테이블을 직접 읽을 수 없음');
+  let denied6 = false; await db.exec('set role anon'); try { await db.query(`select public.rk_gb_json('철수', 5)`); } catch (e) { denied6 = true; } await db.exec('reset role');
+  ok(denied6, 'anon은 내부 도우미 rk_gb_json을 직접 부를 수 없음');
+
   // ----- 보고서 생성 (scripts/) -----
   const { renderReport } = require('../scripts/season_report');
   const rp = renderReport(cl);

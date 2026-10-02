@@ -797,18 +797,126 @@ begin
   return jsonb_build_object('ok', true, 'money', m);
 end $$;
 
+-- ---------- 유저 프로필 · 한줄 방명록 ----------
+-- 랭킹에서 이름을 누르면 보는 공개 프로필: 캐릭터(장착 아이템)·뱃지·이번 시즌 기록·지난 시즌별 순위. 랭킹처럼 공개 정보라 비밀번호는 받지 않는다.
+create or replace function public.rk_profile(p jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  k text := lower(public.rk_norm_id(p->>'id')); u public.rk_users%rowtype;
+  m text := public.rk_season_json()->>'metric'; v int; rk int; hist jsonb;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  select * into u from public.rk_users where id = k;
+  if not found then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  -- 이번 시즌 순위: 지금 우승 기준(소지금 | 펌프 최고점)으로, 같은 시즌 키를 가진 사람 중에서
+  v := case when m = 'pumpBest' then coalesce((u.data->>'pumpBest')::int, 0) else u.money end;
+  select count(*) + 1 into rk from public.rk_users
+  where season_key is not distinct from u.season_key
+    and (case when m = 'pumpBest' then coalesce((data->>'pumpBest')::int, 0) else money end) > v;
+  -- 지난 시즌 기록: 마감된 시즌 스냅샷(우승 기준 순)에서 이 사람의 자리 = 순위
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'key', s.season_key, 'number', s.number, 'gameName', s.game_name, 'metric', coalesce(s.snapshot->>'metric', 'money'),
+           'rank', x.pos, 'players', s.player_count,
+           'money', coalesce((x.pl->>'money')::int, 0), 'pumpBest', coalesce((x.pl->>'pumpBest')::int, 0), 'bestPts', coalesce((x.pl->>'bestPts')::int, 0),
+           'wins', coalesce((x.pl->>'wins')::int, 0), 'losses', coalesce((x.pl->>'losses')::int, 0)) order by s.number desc), '[]'::jsonb)
+    into hist
+  from public.rk_seasons s
+  cross join lateral jsonb_array_elements(s.snapshot->'players') with ordinality as x(pl, pos)
+  where lower(x.pl->>'id') = k;
+  return jsonb_build_object('ok', true, 'id', u.name, 'joinedAt', u.created_at,
+    'eq', coalesce(u.data#>'{items,eq}', '{}'::jsonb),
+    'itemCount', coalesce(jsonb_array_length(case when jsonb_typeof(u.data#>'{items,own}') = 'array' then u.data#>'{items,own}' end), 0),
+    'now', jsonb_build_object('season', u.season_key, 'metric', m, 'rank', rk, 'money', u.money, 'wins', u.wins, 'losses', u.losses,
+                              'bestPts', u.best_pts, 'pumpBest', coalesce((u.data->>'pumpBest')::int, 0), 'cleared', u.cleared),
+    'badges', public.rk_badge_list(k), 'history', hist);
+end $$;
+
+-- 한줄 방명록: 프로필 아래에 로그인한 플레이어가 한 줄(50자)씩 남긴다. 시즌이 끝나도 남는다.
+-- 쓴 사람과 프로필 주인은 지울 수 있다. 도배 방지: 한 사람이 20초에 한 번, 프로필마다 최근 100개만 남긴다.
+create table if not exists public.rk_guestbook (
+  id          bigint generated always as identity primary key,
+  owner       text not null,                 -- 프로필 주인(소문자 ID)
+  author      text not null,                 -- 쓴 사람(소문자 ID)
+  author_name text not null,                 -- 쓴 사람 표시용 ID
+  msg         text not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists rk_guestbook_owner_idx  on public.rk_guestbook (owner, id desc);
+create index if not exists rk_guestbook_author_idx on public.rk_guestbook (author, created_at desc);
+alter table public.rk_guestbook enable row level security;
+revoke all on public.rk_guestbook from anon, authenticated;
+
+-- 내부 도우미: 방명록 목록(최신순). 쓴 사람이 장착한 아이템(eq)도 같이 줘서 얼굴·이름 색을 보여 준다.
+create or replace function public.rk_gb_json(k text, n int) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('no', g.id, 'author', g.author_name, 'msg', g.msg, 'at', g.created_at,
+                                               'eq', coalesce(u.data#>'{items,eq}', '{}'::jsonb)) order by g.id desc), '[]'::jsonb)
+  from (select * from public.rk_guestbook where owner = k order by id desc limit n) g
+  left join public.rk_users u on u.id = g.author
+$$;
+
+create or replace function public.rk_gb_list(p jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare k text := lower(public.rk_norm_id(p->>'id'));
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  return jsonb_build_object('ok', true, 'list', public.rk_gb_json(k, public.rk_int(p->'limit', 1, 100, 30)));
+end $$;
+
+create or replace function public.rk_gb_write(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  nm text := public.rk_norm_id(p->>'id'); k text := lower(nm); a text; t text := lower(public.rk_norm_id(p->>'to'));
+  m text := btrim(regexp_replace(normalize(coalesce(p->>'msg', ''), NFC), '[[:cntrl:]]+', ' ', 'g'));   -- 줄바꿈 등은 공백으로(한 줄)
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  if t is null or not exists (select 1 from public.rk_users where id = t) then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if m = '' then return jsonb_build_object('ok', false, 'error', 'empty'); end if;
+  if char_length(m) > 50 then return jsonb_build_object('ok', false, 'error', 'too_long'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
+  if exists (select 1 from public.rk_guestbook where author = k and created_at > now() - interval '20 seconds') then
+    return jsonb_build_object('ok', false, 'error', 'too_fast');
+  end if;
+  insert into public.rk_guestbook (owner, author, author_name, msg)
+  values (t, k, (select name from public.rk_users where id = k), m);
+  delete from public.rk_guestbook where owner = t and id not in (select id from public.rk_guestbook where owner = t order by id desc limit 100);
+  return jsonb_build_object('ok', true, 'list', public.rk_gb_json(t, 30));
+end $$;
+
+create or replace function public.rk_gb_delete(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text := lower(public.rk_norm_id(p->>'id')); a text; o text; n int;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
+  delete from public.rk_guestbook
+  where id = public.rk_int(p->'no', 0, 2147483647, 0) and (author = k or owner = k)
+  returning owner into o;
+  get diagnostics n = row_count;
+  if n = 0 then return jsonb_build_object('ok', false, 'error', 'not_allowed'); end if;
+  return jsonb_build_object('ok', true, 'list', public.rk_gb_json(o, 30));
+end $$;
+
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
-revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text), public.rk_reset_players(text) from public, anon, authenticated;
+revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text), public.rk_reset_players(text), public.rk_gb_json(text, int) from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                        public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb), public.rk_badges(jsonb),
+                       public.rk_profile(jsonb), public.rk_gb_list(jsonb), public.rk_gb_write(jsonb), public.rk_gb_delete(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
                        public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                        public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb) from public;
 revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                           public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb), public.rk_badges(jsonb),
+                          public.rk_profile(jsonb), public.rk_gb_list(jsonb), public.rk_gb_write(jsonb), public.rk_gb_delete(jsonb),
                           public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
                           public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb)
   to anon, authenticated;
