@@ -45,7 +45,7 @@ function openUserProfile(name,x){
   const id=name.toLowerCase(),me=id===upMe();
   UP={id,name};
   $('#upT').textContent=name;$('#upT').className=nameCls(x.eq);
-  const f=$('#upFace');f.className=frameCls(x.eq);f.alt=name+' 캐릭터';setFace(f,'base',x.eq||{});
+  const f=$('#upFace');f.alt=name+' 캐릭터';setBody(f,'base',x.eq||{});   /* 전신 (shop.js) */
   $('#upSub').textContent=me?'내 프로필이에요. 친구들이 남긴 방명록을 볼 수 있어요.':'';
   upBadges(x.badges);upNow(x);
   const cloud=!!cloudUrl();
@@ -58,7 +58,7 @@ function openUserProfile(name,x){
   $('#uprof').hidden=false;
   api('profile',{id:name}).then(r=>{
     if(!UP||UP.id!==id)return;
-    $('#upT').className=nameCls(r.eq);f.className=frameCls(r.eq);setFace(f,f.dataset.face||'base',r.eq||{});
+    $('#upT').className=nameCls(r.eq);setBody(f,f.dataset.body||'base',r.eq||{});
     const extra=[r.joinedAt?upDate(r.joinedAt)+' 가입':'',r.itemCount?`꾸미기 아이템 ${r.itemCount}개`:''].filter(Boolean).join(' · ');
     if(extra)$('#upSub').textContent=(me?'내 프로필 · ':'')+extra;
     upBadges(r.badges);upNow(r.now||{});upHist(r.history||[]);
@@ -114,6 +114,6 @@ async function upGbDelete(no){
 }
 $('#upGbGo').addEventListener('click',upGbWrite);
 $('#upGbIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();upGbWrite();}});   /* 한글 조합 중 Enter는 무시 */
-$('#upFace').addEventListener('click',function(){setFace(this,FACES[Math.floor(Math.random()*FACES.length)],this._eq||{});sfx('tick');});   /* 얼굴을 누르면 표정이 바뀌어요 */
+$('#upFace').addEventListener('click',function(){setBody(this,FACES[Math.floor(Math.random()*FACES.length)],this._eq||{});sfx('tick');});   /* 얼굴을 누르면 표정이 바뀌어요 */
 $('#upClose').addEventListener('click',closeUserProfile);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#uprof').hidden)closeUserProfile();});
