@@ -444,8 +444,23 @@ $('#zM').addEventListener('click',()=>{M.pps=clamp(M.pps/1.2,80,1400);});
 $('#zP').addEventListener('click',()=>{M.pps=clamp(M.pps*1.2,80,1400);});
 $('#bUndo').addEventListener('click',undo);$('#bRedo').addEventListener('click',redo);
 $('#bClear').addEventListener('click',()=>{if(!chart().length)return;if(!confirm(`${LV_NAMES[M.lv]} 채보를 모두 지울까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();M.charts[M.lv]=[];changed(`${LV_NAMES[M.lv]} 채보를 비웠어요.`);});
-$('#bBase').addEventListener('click',()=>{if(!confirm(`${LV_NAMES[M.lv]}를 지금 게임에 들어 있는 채보로 바꿀까요? (되돌리기로 살릴 수 있어요)`))return;pushUndo();
-  M.charts[M.lv]=(M.data.levels[M.lv]||[]).map(a=>({t:a[0]/1000,lane:a[1],hold:(a[2]||0)/1000}));fixHolds(chart());changed('게임 채보를 불러왔어요.');});
+/* 게임 채보: 운영 중인 게임(GitHub Pages)의 js/pump-data.js → 안 되면 이 폴더의 js/pump-data.js → 곡 데이터(json) 순서로 */
+const LIVE_PUMP='https://kortiger-s.github.io/rocksunting-game/js/pump-data.js';
+function parseChart(js,id){  // PG_CHART의 pg13:{dur:..,lv:[ '시각/발판[:롱노트] ...' × 4 ]}
+  const m=js.match(new RegExp(id+':\\{dur:[\\d.]+,lv:\\[([\\s\\S]*?)\\]\\}'));if(!m)return null;
+  const lv=(m[1].match(/'[^']*'/g)||[]).map(s=>s.slice(1,-1).trim().split(/\s+/).filter(Boolean).map(x=>{const r=x.match(/^(\d+)\/(\d)(?::(\d+))?$/);return r?[+r[1],+r[2],+(r[3]||0)]:null;}).filter(Boolean));
+  return lv.length===4?lv:null;
+}
+async function gameLevels(id){
+  for(const [url,where] of [[LIVE_PUMP+'?t='+Date.now(),'운영 중인 게임'],['../js/pump-data.js','이 폴더(js/pump-data.js)']]){
+    try{const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const lv=parseChart(await r.text(),id);if(lv)return {lv,where};}catch(e){console.warn(where,e);}
+  }
+  return {lv:M.data.levels||[],where:'곡 데이터(json)'};
+}
+$('#bBase').addEventListener('click',async()=>{if(!M.data)return;if(!confirm(`${LV_NAMES[M.lv]}를 지금 운영 중인 게임의 채보로 바꿀까요? (되돌리기로 살릴 수 있어요)`))return;
+  const lvIdx=M.lv,song=M.song;say('게임 채보를 받아오는 중…');const {lv,where}=await gameLevels(song.id);if(M.song!==song)return;
+  pushUndo();M.charts[lvIdx]=(lv[lvIdx]||[]).map(a=>({t:a[0]/1000,lane:a[1],hold:(a[2]||0)/1000}));fixHolds(M.charts[lvIdx]);
+  changed(`${where}에서 ${LV_NAMES[lvIdx]} 채보를 불러왔어요 (노트 ${M.charts[lvIdx].length}개).`);});
 const exportText=()=>JSON.stringify({song:M.song.id,name:M.song.name,file:M.song.file,from:M.lv,made:new Date().toISOString(),levels:exportLevels(),lyrics:exportLyrics()});
 $('#bSave').addEventListener('click',()=>{
   const blob=new Blob([exportText()],{type:'application/json'}),a=document.createElement('a'),u=URL.createObjectURL(blob);
