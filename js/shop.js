@@ -7,7 +7,7 @@
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
    - 테두리(frame): 프로필 아이콘·랭킹 얼굴의 테두리 CSS 클래스(css)
    - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css)
-   전신(v2.5.0~): 2등신 롹순팅. 150×320 좌표예요. 머리는 얼굴 그림(배경을 지우고 턱 y≈150까지)을 몸 위에 겹쳐요.
+   전신(v2.5.0~): 2등신 롹순팅. 150×320 좌표예요. 머리는 얼굴 그림(배경을 지우고 턱 y≈150까지)을 오른쪽으로 8(HEAD_DX) 옮겨 몸 위에 겹쳐요.
      어깨 y≈152~166 · 몸통 x 40~110 · 허리 y≈232 · 손 (25,227)·(125,227) · 다리 왼쪽 x 46~72 · 오른쪽 x 78~104 · 발목 y≈292 · 신발 바닥 y≈314
    - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×320 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요.
      color(+상의는 vest)는 게임 화면의 작은 롹순팅에 입히는 대표 색이에요. */
@@ -138,6 +138,8 @@ function bodyLayers(eq){
    2) 세로줄마다 아래(y 150)에서 위로 훑어, 바로 위가 밝은 피부인 첫 어두운 선(턱·귀 윤곽선)을 찾고 그 아래(셔츠 깃·교복 어깨)를 지워요.
    3) 줄마다 찾은 턱선은 이웃 줄과 중앙값으로 고르게, 지운 곳과 맞닿은 밝은 가장자리는 부드럽게 */
 const HEAD_CUT=150,HEAD_TOP=110,HEAD_CACHE={};
+/* 얼굴 그림의 머리 중심은 x≈67(눈 41·92)이고 몸과 모자·안경 아이템의 중심은 x≈75라서, 전신에서는 머리를 오른쪽으로 8 옮겨 가운데에 맞춰요 */
+const HEAD_DX=8;
 /* 대략의 턱선 [x, y]: 이 선 근처(위로 12px까지)에서만 턱을 찾아요. 입이 턱에 붙은 표정에서 입을 턱으로 착각하지 않게 */
 const JAW=[[0,122],[16,125],[26,132],[38,140],[52,146],[62,149],[88,149],[98,146],[112,140],[124,132],[134,125],[150,122]];
 function jawY(x){for(let i=1;i<JAW.length;i++){const[a,ay]=JAW[i-1],[b,by]=JAW[i];if(x<=b)return ay+(by-ay)*(x-a)/(b-a);}return JAW[JAW.length-1][1];}
@@ -212,8 +214,8 @@ function bodyURL(face,eq){
   const S2=2,cv=document.createElement('canvas');cv.width=150*S2;cv.height=BODY_H*S2;
   const c=cv.getContext('2d');
   layers.forEach(x=>c.drawImage(x,0,0,150*S2,BODY_H*S2));   /* 몸 */
-  c.drawImage(hd,0,0,150*S2,190*S2);                         /* 머리는 몸 위에 (턱이 옷깃 위로 살짝 겹쳐요) */
-  head.forEach(x=>c.drawImage(x,0,0,150*S2,190*S2));        /* 모자·안경·얼굴 소품 */
+  c.drawImage(hd,HEAD_DX*S2,0,150*S2,190*S2);                /* 머리는 몸 위에 (턱이 옷깃 위로 살짝 겹쳐요) */
+  head.forEach(x=>c.drawImage(x,0,0,150*S2,190*S2));        /* 모자·안경·얼굴 소품 (x=75 중심으로 그려서 옮기지 않아요) */
   try{BODY_CACHE[ck]=cv.toDataURL('image/png');}catch(e){avaTainted=true;return base;}
   return BODY_CACHE[ck];
 }
