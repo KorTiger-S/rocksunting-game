@@ -132,9 +132,9 @@ function bodyLayers(eq){
   if(bag&&(bag.svg||bag.img))out.push(dressIm(bag));
   return out;
 }
-/* 얼굴 그림(150×190)에서 머리만 오려 내요. 표정마다 얼굴 크기·턱 위치가 조금씩 달라서 그림마다 자동으로 찾아요.
-   1) 배경: 투명 PNG면 이미 투명한 곳을, 아니면 테두리와 이어진 밝은 배경을 지워요.
-      (투명한 곳은 캔버스에서 색이 0,0,0으로 읽혀요. 윤곽선으로 착각하지 않게 불투명한 곳만 봐요)
+/* 얼굴 그림(150×190)에서 머리만 오려 내요. 지금 쓰는 투명 PNG는 턱선까지 이미 오려 두어서 그대로 써요(다시 오리면 턱 윤곽선이 깎여요).
+   아래는 배경이 있는 그림(JPG 등)일 때: 표정마다 얼굴 크기·턱 위치가 조금씩 달라서 그림마다 자동으로 찾아요.
+   1) 테두리와 이어진 밝은 배경을 지워요.
    2) 세로줄마다 아래(y 150)에서 위로 훑어, 바로 위가 밝은 피부인 첫 어두운 선(턱·귀 윤곽선)을 찾고 그 아래(셔츠 깃·교복 어깨)를 지워요.
    3) 줄마다 찾은 턱선은 이웃 줄과 중앙값으로 고르게, 지운 곳과 맞닿은 밝은 가장자리는 부드럽게 */
 const HEAD_CUT=150,HEAD_TOP=110,HEAD_CACHE={};
@@ -147,7 +147,8 @@ function headCanvas(face){
   const w=im.naturalWidth,h=im.naturalHeight,cv=document.createElement('canvas');cv.width=w;cv.height=h;
   const c=cv.getContext('2d');c.drawImage(im,0,0);
   let d;try{d=c.getImageData(0,0,w,h);}catch(e){return null;}   /* file://로 열면 못 읽어요 */
-  const px=d.data,k=h/190,cut=Math.round(HEAD_CUT*k),top=Math.round(HEAD_TOP*k),bg=[px[0],px[1],px[2]],T=20,clear=px[3]<128;
+  if(d.data[3]<128)return HEAD_CACHE[face]=cv;   /* 투명 PNG */
+  const px=d.data,k=h/190,cut=Math.round(HEAD_CUT*k),top=Math.round(HEAD_TOP*k),bg=[px[0],px[1],px[2]],T=20;
   const at=(x,y)=>(y*w+x)*4;
   const bgDiff=p=>Math.max(Math.abs(px[p*4]-bg[0]),Math.abs(px[p*4+1]-bg[1]),Math.abs(px[p*4+2]-bg[2]));
   const light=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return px[i+3]>=128&&r>=215&&g>=180&&b>=160&&r-b>=12;};   /* 밝은 얼굴 피부 */
@@ -156,8 +157,7 @@ function headCanvas(face){
   /* 1) 배경 */
   const gone=new Uint8Array(w*h),st=[];
   const bgOk=(x,y)=>{if(x<0||y<0||x>=w||y>=cut)return;const p=y*w+x;if(gone[p]||bgDiff(p)>T)return;gone[p]=1;st.push(p);};
-  if(clear){for(let p=0;p<w*h;p++)if(px[p*4+3]<128)gone[p]=1;}
-  else{for(let x=0;x<w;x++)bgOk(x,0);for(let y=0;y<cut;y++){bgOk(0,y);bgOk(w-1,y);}}   /* 아래쪽(밝은 목 피부)에서는 시작하지 않아요 */
+  for(let x=0;x<w;x++)bgOk(x,0);for(let y=0;y<cut;y++){bgOk(0,y);bgOk(w-1,y);}   /* 아래쪽(밝은 목 피부)에서는 시작하지 않아요 */
   while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;bgOk(x+1,y);bgOk(x-1,y);bgOk(x,y+1);bgOk(x,y-1);}
   /* 2) 줄마다 턱선: 예상 턱선 12px 위 ~ y 150 사이에서 가장 아래에 있는 밝은 피부(얼굴·목) + 바로 밑 윤곽선(3px까지)만 남겨요.
         셔츠 깃(흰색·회색)과 교복(남색)은 피부색이 아니라서 잘려요 */
@@ -178,8 +178,8 @@ function headCanvas(face){
     const p=y*w+x;
     if(y>=cut||gone[p]||y>sm[x]){px[p*4+3]=0;gone[p]=1;}
   }
-  /* 3) 가장자리 (투명 PNG는 가장자리가 이미 다듬어져 있어요) */
-  if(!clear)for(let y=0;y<cut;y++)for(let x=0;x<w;x++){
+  /* 3) 가장자리 */
+  for(let y=0;y<cut;y++)for(let x=0;x<w;x++){
     const p=y*w+x;if(gone[p]||mid(x,y))continue;
     if((x&&gone[p-1])||(x<w-1&&gone[p+1])||(y&&gone[p-w])||(gone[p+w]))px[p*4+3]=Math.round(255*Math.min(1,Math.max(.3,(bgDiff(p)-T)/(2*T))));
   }
