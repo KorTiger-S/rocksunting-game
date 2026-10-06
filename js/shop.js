@@ -9,9 +9,11 @@
    - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css)
    전신(v2.5.0~): 2등신 롹순팅. 150×320 좌표예요. 머리는 얼굴 그림(배경을 지우고 턱 y≈150까지)을 몸 위에 겹쳐요.
      어깨 y≈152~166 · 몸통 x 40~110 · 허리 y≈232 · 손 (25,227)·(125,227) · 다리 왼쪽 x 46~72 · 오른쪽 x 78~104 · 발목 y≈292 · 신발 바닥 y≈314
-   - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×320 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요.
+   - 상의·하의·신발·가방(top/bottom/shoes/bag): svg(150×320 좌표). 가방처럼 몸 뒤로 가는 부분은 back에 따로 그려요. 가방 칸에는 부채 같은 손에 드는 소품도 넣어요.
+   - tag(선택): 상점 칸에 붙는 작은 표시(예: '한글날'). sfx(선택): 사거나 입을 때 나는 효과음 이름(audio.js SFX)
+   - until(선택): 이 시각(ISO, KST)이 지나면 못 사요. 이미 산 사람은 계속 장착할 수 있고, 안 산 사람에게는 상점에서 안 보여요
      color(+상의는 vest)는 게임 화면의 작은 롹순팅에 입히는 대표 색이에요. */
-const SHOP_SLOTS=[{id:'hat',name:'모자'},{id:'glass',name:'안경'},{id:'acc',name:'얼굴 소품'},{id:'top',name:'상의'},{id:'bottom',name:'하의'},{id:'shoes',name:'신발'},{id:'bag',name:'가방'},{id:'frame',name:'테두리'},{id:'name',name:'이름 색'}];
+const SHOP_SLOTS=[{id:'hat',name:'모자'},{id:'glass',name:'안경'},{id:'acc',name:'얼굴 소품'},{id:'top',name:'상의'},{id:'bottom',name:'하의'},{id:'shoes',name:'신발'},{id:'bag',name:'가방·소품'},{id:'frame',name:'테두리'},{id:'name',name:'이름 색'}];
 /* 전신 그림에서 같이 쓰는 모양 (150×320 좌표): 긴소매·반소매 상의 윤곽, 긴바지, 왼쪽·오른쪽 신발, 윤곽선, 피부색 */
 const BD={
   long:'M58 150Q75 160 92 150L110 153Q122 156 124 168L134 216L116 222L106 184L110 240H40L44 184L34 222L16 216L26 168Q28 156 40 153Z',
@@ -22,6 +24,7 @@ const BD={
   ln:'stroke="#232a45" stroke-width="3" stroke-linejoin="round"'
 };
 const SKIN='#f6dccb';
+const HANGUL_UNTIL='2026-10-17T00:00:00+09:00';   /* 한글날 아이템은 10월 16일(KST)까지만 팔아요 */
 const SHOP_ITEMS=[
   {id:'cap',slot:'hat',name:'빨간 야구모자',price:3000,desc:'운동장 필수템',
    svg:'<path d="M17 64C17 22 50 6 76 6s59 16 59 58z" fill="#d8362f" stroke="#232a45" stroke-width="3"/><path d="M40 12Q76 0 112 12" stroke="#a82420" stroke-width="3" fill="none"/><ellipse cx="76" cy="63" rx="64" ry="9" fill="#a82420" stroke="#232a45" stroke-width="3"/><circle cx="76" cy="7" r="4.5" fill="#a82420" stroke="#232a45" stroke-width="2"/><circle cx="76" cy="36" r="11" fill="#fff" stroke="#232a45" stroke-width="2"/><text x="76" y="41.5" font-size="15" font-weight="900" text-anchor="middle" fill="#d8362f" font-family="sans-serif">R</text>'},
@@ -31,6 +34,8 @@ const SHOP_ITEMS=[
    svg:'<path d="M15 96C12 30 44 12 76 12s64 18 61 84" fill="none" stroke="#232a45" stroke-width="11" stroke-linecap="round"/><path d="M15 96C12 30 44 12 76 12s64 18 61 84" fill="none" stroke="#e2334d" stroke-width="5" stroke-linecap="round"/><rect x="1" y="76" width="22" height="38" rx="9" fill="#e2334d" stroke="#232a45" stroke-width="3"/><rect x="129" y="76" width="22" height="38" rx="9" fill="#e2334d" stroke="#232a45" stroke-width="3"/><rect x="7" y="84" width="10" height="22" rx="4" fill="#232a45"/><rect x="135" y="84" width="10" height="22" rx="4" fill="#232a45"/>'},
   {id:'crown',slot:'hat',name:'황금 왕관',price:30000,desc:'머대부고의 왕',
    svg:'<path d="M32 46L40 6l20 24L76 0l16 30 20-24 8 40z" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><rect x="31" y="38" width="90" height="16" rx="4" fill="#e8a91c" stroke="#8a6d00" stroke-width="3"/><circle cx="56" cy="46" r="4.5" fill="#e2334d"/><circle cx="76" cy="46" r="5" fill="#3aa0ff"/><circle cx="96" cy="46" r="4.5" fill="#2f8f5b"/><circle cx="40" cy="7" r="4" fill="#fff4b0" stroke="#8a6d00" stroke-width="2"/><circle cx="76" cy="2" r="4" fill="#fff4b0" stroke="#8a6d00" stroke-width="2"/><circle cx="112" cy="7" r="4" fill="#fff4b0" stroke="#8a6d00" stroke-width="2"/>'},
+  {id:'ikseon',slot:'hat',name:'익선관',price:25000,tag:'한글날',until:HANGUL_UNTIL,sfx:'royal',desc:'세종대왕이 쓰던 임금님 모자',
+   svg:'<path d="M40 34Q36 4 54 2Q66 2 64 30z" fill="#33333d" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M110 34Q114 4 96 2Q84 2 86 30z" fill="#33333d" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M47 26Q46 10 54 8M103 26Q104 10 96 8" fill="none" stroke="#55556a" stroke-width="1.6" stroke-linecap="round"/><path d="M20 66C20 28 46 14 75 14s55 14 55 52z" fill="#1d1d24" stroke="#111" stroke-width="3"/><path d="M17 52Q75 42 133 52V68Q75 58 17 68z" fill="#2c2c36" stroke="#111" stroke-width="3" stroke-linejoin="round"/><path d="M36 32Q75 18 114 32" fill="none" stroke="#4a4a58" stroke-width="2" stroke-linecap="round"/><path d="M24 58Q75 50 126 58" fill="none" stroke="#55556a" stroke-width="1.5"/>'},
   {id:'round',slot:'glass',name:'동그란 뿔테',price:2000,desc:'현숭 따라 하기',
    svg:'<circle cx="45" cy="91" r="18" fill="rgba(255,255,255,.18)" stroke="#3b2a20" stroke-width="4.5"/><circle cx="103" cy="91" r="18" fill="rgba(255,255,255,.18)" stroke="#3b2a20" stroke-width="4.5"/><path d="M63 89q11-7 22 0" fill="none" stroke="#3b2a20" stroke-width="4"/><path d="M27 88L14 84M121 88l13-4" stroke="#3b2a20" stroke-width="4" stroke-linecap="round"/>'},
   {id:'shades',slot:'glass',name:'선글라스',price:6000,desc:'판돈 올릴 때 표정 관리',
@@ -57,6 +62,8 @@ const SHOP_ITEMS=[
    svg:`<path d="${BD.short}" fill="#1aa39a" ${BD.ln}/><path d="M60 151L75 176L90 151Q75 158 60 151z" fill="${SKIN}" stroke="#232a45" stroke-width="2"/><path d="M57 150l7 28 11-3M93 150l-7 28-11-3" fill="#17928a" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"/><path d="M75 176v64" stroke="#232a45" stroke-width="2"/><g fill="#ffd23f" stroke="#c98a00" stroke-width="1"><circle cx="52" cy="198" r="6"/><circle cx="100" cy="190" r="6"/><circle cx="94" cy="226" r="6"/><circle cx="28" cy="178" r="4.5"/></g><g fill="#ff7aa2"><circle cx="58" cy="226" r="5"/><circle cx="104" cy="212" r="4.5"/><circle cx="123" cy="176" r="4.5"/><circle cx="46" cy="172" r="4"/></g><g fill="#2f8f5b"><circle cx="58" cy="205" r="3"/><circle cx="94" cy="198" r="3"/></g>`},
   {id:'leather',slot:'top',name:'가죽 재킷',price:20000,color:'#26262c',vest:'#f4f4f4',desc:'롹스타 순팅',
    svg:`<path d="${BD.long}" fill="#26262c" ${BD.ln}/><path d="M60 151Q75 160 90 151L88 240H62z" fill="#f4f4f4" stroke="#232a45" stroke-width="2"/><path d="M57 150l11 34-7 4-13-32zM93 150l-11 34 7 4 13-32z" fill="#3a3a44" stroke="#232a45" stroke-width="2" stroke-linejoin="round"/><path d="M62 190l-1 50M88 190l1 50" stroke="#b9b9c4" stroke-width="2.5" stroke-dasharray="3 3"/><path d="M17 211l17 5M133 211l-17 5" stroke="#55555f" stroke-width="3"/><circle cx="44" cy="168" r="2.5" fill="#d0d0d8"/><circle cx="106" cy="168" r="2.5" fill="#d0d0d8"/>`},
+  {id:'gonryong',slot:'top',name:'곤룡포',price:35000,color:'#c62a2f',vest:'#e7b83a',tag:'한글날',until:HANGUL_UNTIL,sfx:'royal',desc:'금빛 용무늬가 새겨진 임금님 옷',
+   svg:`<path d="M58 150Q75 160 92 150L110 153Q122 156 124 168L137 218L113 226L108 198L116 290H34L42 198L37 226L13 218L26 168Q28 156 40 153Z" fill="#c62a2f" ${BD.ln}/><path d="M42 198L37 226M108 198L113 226" stroke="#9c1c22" stroke-width="2"/><path d="M75 172V290" stroke="#9c1c22" stroke-width="2"/><path d="M62 152L75 168L88 152Q75 158 62 152z" fill="#f2efe6" stroke="#232a45" stroke-width="1.5"/><path d="M55 150Q75 182 95 150" fill="none" stroke="#232a45" stroke-width="7"/><path d="M55 150Q75 182 95 150" fill="none" stroke="#8f1a20" stroke-width="4"/><g fill="#e7b83a" stroke="#8a6d00" stroke-width="2"><circle cx="75" cy="198" r="15"/><circle cx="36" cy="170" r="8"/><circle cx="114" cy="170" r="8"/></g><circle cx="75" cy="198" r="11" fill="none" stroke="#c9952a" stroke-width="1.2"/><path d="M82 190q-4-4-9-1-7 4-3 10 4 5 9 1 3-4-1-6-4-1-4 3" fill="none" stroke="#b3232a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M82 190l3-3M82 190l4 1M70 199l-3 4M79 201l2 4" stroke="#b3232a" stroke-width="1.6" stroke-linecap="round"/><circle cx="80.5" cy="189.5" r="1.1" fill="#fff4b0"/><path d="M32 170q4-4 8 0M110 170q4-4 8 0" fill="none" stroke="#c62a2f" stroke-width="1.8"/><path d="M38 226Q75 238 112 226V237Q75 249 38 237z" fill="#2a2a33" stroke="#232a45" stroke-width="2.5"/><g fill="#e8d9a8" stroke="#8a6d00" stroke-width="1"><rect x="46" y="230" width="7" height="6" rx="1"/><rect x="60" y="233" width="7" height="6" rx="1"/><rect x="71.5" y="234" width="7" height="6" rx="1"/><rect x="83" y="233" width="7" height="6" rx="1"/><rect x="97" y="230" width="7" height="6" rx="1"/></g>`},
   {id:'shorts',slot:'bottom',name:'축구부 반바지',price:2000,color:'#f4f4f4',desc:'다리가 시원해요',
    svg:`<path d="M40 232H110L113 266H80L75 250L70 266H37z" fill="#fff" ${BD.ln}/><path d="M43 234v30M107 234v30" stroke="#e2334d" stroke-width="5"/><path d="M47 278h24v14H47zM79 278h24v14H79z" fill="#e2334d" stroke="#232a45" stroke-width="2"/>`},
   {id:'jeans',slot:'bottom',name:'청바지',price:5000,color:'#3d6db5',desc:'어디에나 어울리는 기본템',
@@ -71,6 +78,8 @@ const SHOP_ITEMS=[
    svg:`<path d="${BD.shoeL}" fill="#e2334d" ${BD.ln}/><path d="${BD.shoeR}" fill="#e2334d" ${BD.ln}/><path d="M29 308h43M78 308h43" stroke="#fff" stroke-width="4"/><path d="M50 296l5 4M56 295l5 4M89 296l5 4M95 295l5 4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`},
   {id:'goldkicks',slot:'shoes',name:'황금 운동화',price:25000,color:'#f5c518',desc:'걸을 때마다 반짝',
    svg:`<path d="${BD.shoeL}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="${BD.shoeR}" fill="#f5c518" stroke="#8a6d00" stroke-width="3" stroke-linejoin="round"/><path d="M29 308h43M78 308h43" stroke="#e8a91c" stroke-width="4"/><path d="M40 298q6-3 12 0M98 298q6-3 12 0" stroke="#fff4b0" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M18 286l3 5 5 2-5 2-3 5-3-5-5-2 5-2zM132 284l3 5 5 2-5 2-3 5-3-5-5-2 5-2z" fill="#ffe680" stroke="#c98a00" stroke-width="1"/>`},
+  {id:'mokhwa',slot:'shoes',name:'목화',price:20000,color:'#1d1d24',tag:'한글날',until:HANGUL_UNTIL,sfx:'royal',desc:'임금님이 신던 검은 장화',
+   svg:`<path d="M44 268H72V306Q72 314 64 314H36Q28 314 28 306Q28 296 44 292Z" fill="#1d1d24" ${BD.ln}/><path d="M78 268H106V292Q122 296 122 306Q122 314 114 314H86Q78 314 78 306Z" fill="#1d1d24" ${BD.ln}/><path d="M29 309h43M78 309h43" stroke="#e8e2d4" stroke-width="3"/><path d="M36 298q10-5 22-2M92 296q12-3 22 2" fill="none" stroke="#4a4a58" stroke-width="2" stroke-linecap="round"/>`},
   {id:'backpack',slot:'bag',name:'책가방',price:3000,desc:'교과서는 사물함에 두고 다녀요',
    back:'<path d="M28 172Q26 138 56 136H94Q124 138 122 172V236H28z" fill="#3b6fd8" stroke="#232a45" stroke-width="3"/><path d="M50 137q25-10 50 0" fill="none" stroke="#2c56b0" stroke-width="4"/>',
    svg:'<path d="M46 154l3 78M104 154l-3 78" stroke="#232a45" stroke-width="9" stroke-linecap="round"/><path d="M46 154l3 78M104 154l-3 78" stroke="#3b6fd8" stroke-width="5" stroke-linecap="round"/><rect x="42" y="200" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/><rect x="96" y="200" width="12" height="8" rx="2" fill="#c9d3e6" stroke="#232a45" stroke-width="1.5"/>'},
@@ -78,9 +87,13 @@ const SHOP_ITEMS=[
    svg:'<path d="M46 156L112 222" stroke="#232a45" stroke-width="8" stroke-linecap="round"/><path d="M46 156L112 222" stroke="#8b5a2b" stroke-width="4.5" stroke-linecap="round"/><rect x="98" y="212" width="34" height="28" rx="6" fill="#a0522d" stroke="#232a45" stroke-width="3"/><path d="M98 221q17 10 34 0" fill="#8b4513" stroke="#232a45" stroke-width="2.5"/><circle cx="115" cy="226" r="2.5" fill="#e8c35a"/>'},
   {id:'guitar',slot:'bag',name:'기타 케이스',price:12000,desc:'소리새 무대 가는 길',
    back:'<g transform="rotate(28 75 200)"><path d="M65 60h20v66q18 5 18 31 0 18-11 28 16 8 16 32 0 33-33 33s-33-33-33-33q0-24 16-32-11-10-11-28 0-26 18-31z" fill="#2b2b33" stroke="#232a45" stroke-width="3"/><path d="M75 64v184" stroke="#55555f" stroke-width="2"/></g>',
-   svg:'<path d="M44 154L108 228" stroke="#232a45" stroke-width="7" stroke-linecap="round"/><path d="M44 154L108 228" stroke="#e2334d" stroke-width="3.5" stroke-linecap="round"/>'}
+   svg:'<path d="M44 154L108 228" stroke="#232a45" stroke-width="7" stroke-linecap="round"/><path d="M44 154L108 228" stroke="#e2334d" stroke-width="3.5" stroke-linecap="round"/>'},
+  {id:'rokfan',slot:'bag',name:'「롹」 부채',price:17000,tag:'한글날',until:HANGUL_UNTIL,sfx:'royal',desc:'한글 「롹」 자를 새긴 합죽선',
+   svg:'<path d="M113.1 219.6L89.4 204.7A42 42 0 0 1 146.0 190.6L132.0 214.9A14 14 0 0 0 113.1 219.6z" fill="#f7ecd2" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"/><path d="M125 227L95.7 199.7M125 227L101.5 194.6M125 227L108.1 190.7M125 227L115.3 188.2M125 227L122.9 187.1M125 227L130.6 187.4M125 227L138.0 189.2" stroke="#b08850" stroke-width="1.2"/><path d="M125 227L89.4 204.7M125 227L146.0 190.6" stroke="#6b4a2a" stroke-width="3.2" stroke-linecap="round"/><text x="117.7" y="203.9" font-size="18" font-weight="900" text-anchor="middle" fill="#1d1d24" transform="rotate(-14.0 117.7 197.9)" font-family="Malgun Gothic,Apple SD Gothic Neo,Noto Sans KR,sans-serif">롹</text><rect x="126.69999999999999" y="190.3" width="6" height="6" rx="1" fill="#d8362f" transform="rotate(-14.0 129.7 193.3)"/><circle cx="125" cy="227" r="8.5" fill="#f6dccb" stroke="#232a45" stroke-width="2.5"/><circle cx="125" cy="227" r="2" fill="#6b4a2a"/>'}
 ];
 const SHOP_BY={};SHOP_ITEMS.forEach(it=>{SHOP_BY[it.id]=it;});
+const onSale=it=>!it.until||Date.now()<Date.parse(it.until);   /* 기간 한정 아이템이 아직 팔리는지 (기기 시계 기준) */
+const saleEnd=it=>{const d=new Date(Date.parse(it.until)-1000+KST_MS);return `${d.getUTCMonth()+1}/${d.getUTCDate()}`;};   /* 마지막 날 "10/16" */
 const DRESS_ORDER=['acc','glass','hat'];   /* 얼굴에 겹치는 순서(아래 → 위) */
 const SHOP_KEEP=1000;                      /* 사고 나서도 이만큼은 남아야 해요(게임 한 판 판돈) */
 const itemsOf=d=>{const it=d&&d.items;return{own:Array.isArray(it&&it.own)?it.own.filter(x=>SHOP_BY[x]):[],eq:(it&&it.eq&&typeof it.eq==='object')?it.eq:{}};};
@@ -269,12 +282,13 @@ function shopAction(){
   const it=SHOP_BY[shopSel];if(!it)return;
   const d=itemsOf(S);
   if(!shopHas(it.id)){
+    if(!onSale(it)){sfx('deny');toast(`${it.name}은(는) 판매가 끝났어요.`);return;}
     if(isPractice()){sfx('deny');toast('연습 기간에는 살 수 없어요. 정규 시즌이 시작되면 열려요! (입혀 보기·가진 아이템 장착은 돼요)');return;}
     if(S.money-it.price<SHOP_KEEP){sfx('deny');toast(`사고 나서도 ${fmt(SHOP_KEEP)}원은 남아야 해요. (판돈용)`);return;}
     const before=S.money;S.money-=it.price;d.own.push(it.id);d.eq[it.slot]=it.id;S.items=d;
-    save();sfx('coin');setTimeout(()=>sfx('sparkle'),120);
+    save();sfx('coin');setTimeout(()=>sfx(it.sfx||'sparkle'),120);
     toast(`🛍 ${it.name} 구매! 소지금 ${fmt(before)} → ${fmt(S.money)}원 (바로 장착했어요)`,3500);
-  }else if(d.eq[it.slot]!==it.id){d.eq[it.slot]=it.id;S.items=d;save();sfx('chime');toast(`${it.name} 장착!`);}
+  }else if(d.eq[it.slot]!==it.id){d.eq[it.slot]=it.id;S.items=d;save();sfx(it.sfx||'chime');toast(`${it.name} 장착!`);}
   renderHub();
 }
 function renderShop(){
@@ -282,13 +296,14 @@ function renderShop(){
   const d=itemsOf(S),eq=d.eq;
   document.querySelectorAll('#shopTabs [data-slot]').forEach(b=>b.classList.toggle('on',b.dataset.slot===shopSlot));
   const grid=$('#shopGrid');grid.textContent='';
-  SHOP_ITEMS.filter(it=>it.slot===shopSlot).forEach(it=>{
+  SHOP_ITEMS.filter(it=>it.slot===shopSlot&&(onSale(it)||d.own.includes(it.id))).forEach(it=>{   /* 판매가 끝난 아이템은 가진 사람에게만 보여요 */
     const b=document.createElement('button');b.type='button';b.className='shopit'+(it.id===shopSel?' sel':'');
     const own=d.own.includes(it.id),on=eq[it.slot]===it.id;
     if(it.slot==='name'){const s=document.createElement('span');s.className='shopnm '+it.css;s.textContent='롹순팅';b.appendChild(s);}
     else{const im=document.createElement('img');im.alt='';im.className='shopth '+(it.slot==='frame'?it.css:'');
       if(isBodySlot(it.slot)){im.classList.add('body','t-'+it.slot);setBody(im,'base',{[it.slot]:it.id});}   /* 옷·가방은 그 부분이 보이게 전신을 잘라서 */
       else if(it.slot==='frame')setFace(im,'base',{});else setFace(im,'base',{[it.slot]:it.id});b.appendChild(im);}
+    if(it.tag){const g=document.createElement('i');g.className='shoptag';g.textContent=it.until&&onSale(it)?`${it.tag} ~${saleEnd(it)}`:it.tag;b.appendChild(g);}   /* 기념일 아이템 표시 */
     const t=document.createElement('b');t.textContent=it.name;b.appendChild(t);
     const p=document.createElement('small');p.textContent=on?'장착 중':own?'보유':fmt(it.price)+'원';if(on||own)p.className='own';b.appendChild(p);
     b.setAttribute('aria-label',`${it.name} · ${on?'장착 중':own?'보유':fmt(it.price)+'원'}`);
@@ -305,9 +320,9 @@ function renderShop(){
   const it=SHOP_BY[shopSel],act=$('#shopAct'),off=$('#shopOff');
   $('#shopMoney').textContent=isPractice()?'🔒 연습 기간에는 살 수 없어요. 입혀 보기와 가진 아이템 장착은 돼요.':`소지금 ${fmt(S.money)}원 · 산 아이템은 시즌이 끝나도 남아요`;
   if(!it){$('#shopSelN').textContent='아이템을 골라 입혀 보세요';$('#shopSelD').textContent=SEASON&&SEASON.metric==='pumpBest'?'이번 시즌 우승은 헛다리짚기 훈련 최고점으로 겨뤄요. 마음껏 꾸며 보세요!':'사면 소지금이 줄어서 시즌 순위도 내려가요. 꾸밀래, 우승할래?';act.hidden=true;off.hidden=true;return;}
-  $('#shopSelN').textContent=`${it.name} · ${fmt(it.price)}원`;$('#shopSelD').textContent=it.desc;
+  $('#shopSelN').textContent=`${it.name} · ${fmt(it.price)}원`;$('#shopSelD').textContent=it.until?`${it.desc} · ${onSale(it)?saleEnd(it)+'까지만 팔아요':'판매 끝'}`:it.desc;
   const own=shopHas(it.id),on=eq[it.slot]===it.id;
   act.hidden=false;off.hidden=!on;
   act.textContent=on?'장착 중':own?'장착하기':`사기 (${fmt(it.price)}원)`;
-  act.disabled=on||(!own&&(isPractice()||S.money-it.price<SHOP_KEEP));
+  act.disabled=on||(!own&&(!onSale(it)||isPractice()||S.money-it.price<SHOP_KEEP));
 }

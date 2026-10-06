@@ -287,6 +287,8 @@ html.pgplay #pumpWrap{touch-action:none}
 .shopit b{font-size:13px;line-height:1.25;text-align:center}
 .shopit small{font-size:12px;font-weight:700;color:var(--gold)}
 .shopit small.own{color:var(--ok)}
+.shopit{position:relative}
+.shoptag{position:absolute;top:4px;left:4px;padding:1px 5px;border-radius:6px;background:#c62a2f;color:#fff;font-size:10px;font-style:normal;font-weight:800;line-height:1.5}
 .shopth{width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:3px solid var(--line);background:#f4f1ee}
 .shopnm{display:grid;place-items:center;height:60px;font-family:var(--display);font-size:20px}
 /* 전신 (2등신: 몸 + 얼굴 그림의 머리, 150×320) — 상점 미리보기 · 썸네일 · 프로필 */
