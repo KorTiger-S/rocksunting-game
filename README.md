@@ -15,7 +15,7 @@ HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우�
 index.html            화면 뼈대 (허브, 로그인, 랭킹, 게임 캔버스)
 css/style.css         스타일
 js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
-assets/faces/*.jpg    캐릭터 표정 12종
+assets/faces/*.png    배경·어깨를 제거한 캐릭터 얼굴 표정 12종 (투명 배경, 150×190)
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
 assets/theme/*.jpg    소리새 펌프 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
 assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 시각·현재 채보)

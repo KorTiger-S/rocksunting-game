@@ -2,8 +2,8 @@
 /* ---------- 상점 · 롹순팅 꾸미기 (v2.1.0~) ----------
    아이템은 모두 소지금으로 사요. 산 아이템(S.items.own)과 장착한 아이템(S.items.eq)은 시즌이 끝나도 남아요
    (서버 rk_reset_players가 items만 남기고 초기화해요). 우승 기준이 소지금인 시즌이면 사는 만큼 순위도 내려가요.
-   얼굴 그림(assets/faces/*.jpg, 150×190)은 표정 12장 모두 얼굴 위치가 같아서, 같은 150×190 좌표로 그린 아이템을 위에 겹쳐요.
-     머리 윗부분 y≈12 · 이마 y≈55 · 눈 (45,90)·(102,90) · 입 (75,125) · 귀 x≈15·135
+   얼굴 그림(assets/faces/*.png, 150×190)은 배경·어깨·목·교복 깃을 지우고 턱선까지 얼굴만 남겼어요(끊긴 턱 윤곽선은 이어 그렸어요). 표정 12장 모두 얼굴 위치가 같아서, 같은 150×190 좌표로 그린 아이템을 위에 겹쳐요.
+     머리 가운데 x≈75 · 머리 윗부분 y≈12 · 이마 y≈55 · 눈 (49,88)·(100,87) · 입 (75,125) · 귀 x≈8·143
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
    - 테두리(frame): 프로필 아이콘·랭킹 얼굴의 테두리 CSS 클래스(css)
    - 이름 색(name): 랭킹·1:1 대결 이름의 CSS 클래스(css)
@@ -116,7 +116,7 @@ function drawDress(c,eq,...rect){
 /* ---------- 전신: 2등신 몸 위에 얼굴 그림의 머리를 얹어요 (150×320 좌표) ----------
    기본 차림은 머대부고 교복(남색 재킷 · 회색 바지 · 흰 운동화). 상의·하의·신발 아이템을 사면 그 자리를 바꿔 입어요. */
 const BODY_BASE={
-  skin:`<g fill="${SKIN}" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"><path d="M63 138H87V160H63z" stroke="none"/><path d="M26 168L16 216L34 222L44 184z"/><path d="M124 168L134 216L116 222L106 184z"/><circle cx="25" cy="227" r="8.5"/><circle cx="125" cy="227" r="8.5"/><path d="M46 240H72V294H46z"/><path d="M78 240H104V294H78z"/></g>`,
+  skin:`<g fill="${SKIN}" stroke="#232a45" stroke-width="2.5" stroke-linejoin="round"><path d="M63 126H87V160H63z" stroke="none"/><path d="M63 126H87V147Q75 151 63 147z" fill="#e9c2ac" stroke="none"/><path d="M63 128V156M87 128V156" fill="none" stroke="#6b5148" stroke-width="1.6"/><path d="M26 168L16 216L34 222L44 184z"/><path d="M124 168L134 216L116 222L106 184z"/><circle cx="25" cy="227" r="8.5"/><circle cx="125" cy="227" r="8.5"/><path d="M46 240H72V294H46z"/><path d="M78 240H104V294H78z"/></g>`,
   top:`<path d="${BD.long}" fill="#2d3550" ${BD.ln}/><path d="M60 151L75 178L90 151Q75 158 60 151z" fill="#fff" stroke="#232a45" stroke-width="2"/><path d="M72 157h6l3 22-6 7-6-7z" fill="#c0392b" stroke="#232a45" stroke-width="1.5"/><path d="M58 151l10 34M92 151l-10 34" stroke="#1b2033" stroke-width="2"/><path d="M75 186v54" stroke="#1b2033" stroke-width="2"/><circle cx="80" cy="200" r="2.2" fill="#e8c35a"/><circle cx="80" cy="220" r="2.2" fill="#e8c35a"/><path d="M17 211l17 5M133 211l-17 5" stroke="#e8c35a" stroke-width="2"/>`,
   bottom:`<path d="${BD.pants}" fill="#5b6170" ${BD.ln}/><path d="M75 234v18M57 256v36M93 256v36" stroke="#4a5060" stroke-width="2"/>`,
   shoes:`<path d="${BD.shoeL}" fill="#fff" ${BD.ln}/><path d="${BD.shoeR}" fill="#fff" ${BD.ln}/><path d="M29 307h43M78 307h43" stroke="#232a45" stroke-width="2"/><path d="M50 296l5 4M89 296l5 4" stroke="#9aa3ad" stroke-width="2" stroke-linecap="round"/>`
@@ -133,7 +133,8 @@ function bodyLayers(eq){
   return out;
 }
 /* 얼굴 그림(150×190)에서 머리만 오려 내요. 표정마다 얼굴 크기·턱 위치가 조금씩 달라서 그림마다 자동으로 찾아요.
-   1) 테두리와 이어진 밝은 배경을 지워요.
+   1) 배경: 투명 PNG면 이미 투명한 곳을, 아니면 테두리와 이어진 밝은 배경을 지워요.
+      (투명한 곳은 캔버스에서 색이 0,0,0으로 읽혀요. 윤곽선으로 착각하지 않게 불투명한 곳만 봐요)
    2) 세로줄마다 아래(y 150)에서 위로 훑어, 바로 위가 밝은 피부인 첫 어두운 선(턱·귀 윤곽선)을 찾고 그 아래(셔츠 깃·교복 어깨)를 지워요.
    3) 줄마다 찾은 턱선은 이웃 줄과 중앙값으로 고르게, 지운 곳과 맞닿은 밝은 가장자리는 부드럽게 */
 const HEAD_CUT=150,HEAD_TOP=110,HEAD_CACHE={};
@@ -146,16 +147,17 @@ function headCanvas(face){
   const w=im.naturalWidth,h=im.naturalHeight,cv=document.createElement('canvas');cv.width=w;cv.height=h;
   const c=cv.getContext('2d');c.drawImage(im,0,0);
   let d;try{d=c.getImageData(0,0,w,h);}catch(e){return null;}   /* file://로 열면 못 읽어요 */
-  const px=d.data,k=h/190,cut=Math.round(HEAD_CUT*k),top=Math.round(HEAD_TOP*k),bg=[px[0],px[1],px[2]],T=20;
+  const px=d.data,k=h/190,cut=Math.round(HEAD_CUT*k),top=Math.round(HEAD_TOP*k),bg=[px[0],px[1],px[2]],T=20,clear=px[3]<128;
   const at=(x,y)=>(y*w+x)*4;
   const bgDiff=p=>Math.max(Math.abs(px[p*4]-bg[0]),Math.abs(px[p*4+1]-bg[1]),Math.abs(px[p*4+2]-bg[2]));
-  const light=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return r>=215&&g>=180&&b>=160&&r-b>=12;};   /* 밝은 얼굴 피부 */
-  const red=(x,y)=>{const i=at(x,y);return px[i]-px[i+1]>=60&&px[i+1]<120&&px[i]>100;};   /* 빨간 입과 그 테두리 (목 음영은 빼고) */
-  const mid=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return r+g+b<640&&!(Math.max(r,g,b)-Math.min(r,g,b)<14&&r+g+b>540);};   /* 윤곽선·그 가장자리 (밝은 회색 셔츠 깃은 빼고) */
+  const light=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return px[i+3]>=128&&r>=215&&g>=180&&b>=160&&r-b>=12;};   /* 밝은 얼굴 피부 */
+  const red=(x,y)=>{const i=at(x,y);return px[i+3]>=128&&px[i]-px[i+1]>=60&&px[i+1]<120&&px[i]>100;};   /* 빨간 입과 그 테두리 (목 음영은 빼고) */
+  const mid=(x,y)=>{const i=at(x,y),r=px[i],g=px[i+1],b=px[i+2];return px[i+3]>=128&&r+g+b<640&&!(Math.max(r,g,b)-Math.min(r,g,b)<14&&r+g+b>540);};   /* 윤곽선·그 가장자리 (밝은 회색 셔츠 깃은 빼고) */
   /* 1) 배경 */
   const gone=new Uint8Array(w*h),st=[];
   const bgOk=(x,y)=>{if(x<0||y<0||x>=w||y>=cut)return;const p=y*w+x;if(gone[p]||bgDiff(p)>T)return;gone[p]=1;st.push(p);};
-  for(let x=0;x<w;x++)bgOk(x,0);for(let y=0;y<cut;y++){bgOk(0,y);bgOk(w-1,y);}   /* 아래쪽(밝은 목 피부)에서는 시작하지 않아요 */
+  if(clear){for(let p=0;p<w*h;p++)if(px[p*4+3]<128)gone[p]=1;}
+  else{for(let x=0;x<w;x++)bgOk(x,0);for(let y=0;y<cut;y++){bgOk(0,y);bgOk(w-1,y);}}   /* 아래쪽(밝은 목 피부)에서는 시작하지 않아요 */
   while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;bgOk(x+1,y);bgOk(x-1,y);bgOk(x,y+1);bgOk(x,y-1);}
   /* 2) 줄마다 턱선: 예상 턱선 12px 위 ~ y 150 사이에서 가장 아래에 있는 밝은 피부(얼굴·목) + 바로 밑 윤곽선(3px까지)만 남겨요.
         셔츠 깃(흰색·회색)과 교복(남색)은 피부색이 아니라서 잘려요 */
@@ -168,13 +170,16 @@ function headCanvas(face){
     while(e+1<cut){const q=e+1;if(red(x,q)){e=q;n=0;continue;}if(n<3*k&&mid(x,q)){e=q;n++;continue;}break;}
     jaw[x]=e;
   }
-  const sm=Int16Array.from(jaw,(v,x)=>{const a=[];for(let i=-4;i<=4;i++)a.push(jaw[Math.min(w-1,Math.max(0,x+i))]);return a.sort((p,q)=>p-q)[4];});   /* 이웃 9줄의 중앙값: 튀는 값은 버려요 */
+  const md=Int16Array.from(jaw,(v,x)=>{const a=[];for(let i=-4;i<=4;i++)a.push(jaw[Math.min(w-1,Math.max(0,x+i))]);return a.sort((p,q)=>p-q)[4];});   /* 이웃 9줄의 중앙값: 튀는 값은 버려요 */
+  /* 턱 아래로 좁게 삐져나온 곳(목 그림자 조각)은 깎아요: 이웃 줄 중 가장 높은 턱 → 그중 가장 낮은 턱 (턱 곡선은 그대로 남아요) */
+  const R=Math.round(8*k),win=(a,x,f)=>{let v=a[x];for(let i=-R;i<=R;i++)v=f(v,a[Math.min(w-1,Math.max(0,x+i))]);return v;};
+  const er=Int16Array.from(md,(v,x)=>win(md,x,Math.min)),sm=Int16Array.from(er,(v,x)=>win(er,x,Math.max));
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const p=y*w+x;
     if(y>=cut||gone[p]||y>sm[x]){px[p*4+3]=0;gone[p]=1;}
   }
-  /* 3) 가장자리 */
-  for(let y=0;y<cut;y++)for(let x=0;x<w;x++){
+  /* 3) 가장자리 (투명 PNG는 가장자리가 이미 다듬어져 있어요) */
+  if(!clear)for(let y=0;y<cut;y++)for(let x=0;x<w;x++){
     const p=y*w+x;if(gone[p]||mid(x,y))continue;
     if((x&&gone[p-1])||(x<w-1&&gone[p+1])||(y&&gone[p-w])||(gone[p+w]))px[p*4+3]=Math.round(255*Math.min(1,Math.max(.3,(bgDiff(p)-T)/(2*T))));
   }
