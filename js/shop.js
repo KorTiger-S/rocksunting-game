@@ -2,7 +2,7 @@
 /* ---------- 상점 · 롹순팅 꾸미기 (v2.1.0~) ----------
    아이템은 모두 소지금으로 사요. 산 아이템(S.items.own)과 장착한 아이템(S.items.eq)은 시즌이 끝나도 남아요
    (서버 rk_reset_players가 items만 남기고 초기화해요). 우승 기준이 소지금인 시즌이면 사는 만큼 순위도 내려가요.
-   얼굴 그림(assets/faces/*.png, 150×190)은 배경과 어깨를 지우고 얼굴만 남겼어요. 표정 12장 모두 얼굴 위치가 같아서, 같은 150×190 좌표로 그린 아이템을 위에 겹쳐요.
+   얼굴 그림(assets/faces/*.png, 150×190)은 배경·어깨·목·교복 깃을 지우고 턱선까지 얼굴만 남겼어요(끊긴 턱 윤곽선은 이어 그렸어요). 표정 12장 모두 얼굴 위치가 같아서, 같은 150×190 좌표로 그린 아이템을 위에 겹쳐요.
      머리 가운데 x≈75 · 머리 윗부분 y≈12 · 이마 y≈55 · 눈 (49,88)·(100,87) · 입 (75,125) · 귀 x≈8·143
    - 모자·안경·얼굴 소품(hat/glass/acc): svg(150×190 좌표의 SVG 조각). 그림 아이템은 svg 대신 img에 150×190 투명 PNG 경로를 넣으면 돼요.
    - 테두리(frame): 프로필 아이콘·랭킹 얼굴의 테두리 CSS 클래스(css)
@@ -184,20 +184,6 @@ function headCanvas(face){
     if((x&&gone[p-1])||(x<w-1&&gone[p+1])||(y&&gone[p-w])||(gone[p+w]))px[p*4+3]=Math.round(255*Math.min(1,Math.max(.3,(bgDiff(p)-T)/(2*T))));
   }
   c.putImageData(d,0,0);
-  /* 4) 턱선 다시 그리기: 원본 그림은 턱 윤곽선이 입·목에 가려 끊긴 곳이 있어요. 오린 머리 아래 가장자리를 따라 선을 이어 그려 목과 자연스럽게 이어지게 해요 */
-  const yb=new Float32Array(w).fill(-1);
-  for(let x=0;x<w;x++){for(let y=cut-1;y>=top;y--)if(!gone[y*w+x]){yb[x]=y+1;break;}}
-  const pts=[];
-  for(let x=0;x<w;x++){
-    if(yb[x]<0||yb[x]<jawY(x/k)*k-14*k)continue;   /* 귀·옆머리처럼 턱에서 먼 곳은 건너뛰어요 */
-    let s=0,n=0;for(let i=-3;i<=3;i++){const v=yb[Math.min(w-1,Math.max(0,x+i))];if(v>=0){s+=v;n++;}}
-    pts.push([x+.5,s/n-.6*k]);
-  }
-  if(pts.length>4){
-    c.strokeStyle='rgba(74,58,52,.9)';c.lineWidth=1.6*k;c.lineCap=c.lineJoin='round';c.beginPath();
-    pts.forEach(([x,y],i)=>{if(i&&x-pts[i-1][0]>2)c.moveTo(x,y);else if(i)c.lineTo(x,y);else c.moveTo(x,y);});
-    c.stroke();
-  }
   return HEAD_CACHE[face]=cv;
 }
 const BODY_CACHE={};
