@@ -37,9 +37,9 @@ let js = jsFiles.map(f => read(f)).join('\n');
   else if (!js.includes(`'${m[1]}':{sub:`)) console.warn(`⚠ RELEASE_NOTES에 ${m[1]} 내역이 없어요. 팝업이 안 떠요.`);
 }
 // 이미지 → data URI
-js = js.replace(/assets\/faces\/([A-Za-z0-9_]+)\.jpg/g, (m, name) => {
-  const b = fs.readFileSync(path.join(root, 'assets/faces', name + '.jpg'));
-  return 'data:image/jpeg;base64,' + b.toString('base64');
+js = js.replace(/assets\/faces\/([A-Za-z0-9_]+)\.png/g, (m, name) => {
+  const b = fs.readFileSync(path.join(root, 'assets/faces', name + '.png'));
+  return 'data:image/png;base64,' + b.toString('base64');
 });
 js = js.replace(/assets\/intro\/([A-Za-z0-9_-]+)\.png/g, (m, name) => {   // 곡 인트로에 쓰는 사진 (예: 두발 규정 종이)
   const b = fs.readFileSync(path.join(root, 'assets/intro', name + '.png'));
