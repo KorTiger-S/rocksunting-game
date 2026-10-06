@@ -15,7 +15,7 @@ HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우�
 index.html            화면 뼈대 (허브, 로그인, 랭킹, 게임 캔버스)
 css/style.css         스타일
 js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
-assets/faces/*.jpg    캐릭터 표정 12종
+assets/faces/*.png    배경·어깨를 제거한 캐릭터 얼굴 표정 12종 (투명 배경, 150×190)
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
 assets/theme/*.jpg    소리새 펌프 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
 assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 시각·현재 채보)
@@ -82,7 +82,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 소리새 펌프 도전 횟수(마이크 5개·30분마다 1개 충전) | `MIC_MAX`, `MIC_MIN`, `micTick()`, `micUse()` (`js/pump.js`), 저장은 `S.mics`/`S.micAt`, 서버 보정은 `rk_clean` (backend/schema.sql) |
 | 소리새 펌프 키 배치 | `PGKEYS` (`js/pump.js`), 모바일 발판은 `#pgPad` (index.html) |
 | 시즌 뱃지(시즌 소지금 1등 우승 · 2등 준우승, 프로필과 랭킹 이름 옆에 표시) | `rk_badge_list`/`rk_badges`, `rk_top`의 `badges` (backend/schema.sql, 마감된 시즌 스냅샷 `rk_seasons`에서 계산), 프로필은 `renderBadges()`/`drawBadges()` (`js/hub.js`) · `#pfBadges` (index.html), 랭킹은 `rankBadges()` (`js/rank.js`, 🏆1 = 시즌1 우승 · 누르면 설명) |
-| 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
+| 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 기념일 표시는 `tag`(`.shoptag`), 사거나 입을 때 소리는 `sfx`(예: 한글날 아이템의 가야금 `royal`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
 | 상점 아이템 저장·보정(시즌이 끝나도 남음) | `S.items` = `{own, eq}` (`js/save.js`), 서버 `rk_clean_items`, `rk_reset_players`(초기화 때 items만 남김), 랭킹 `rk_top`의 `eq`, 대결 `rk_duel_json`의 `hostEq`/`guestEq` (backend/schema.sql) |
 | 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
 | 시즌 우승 기준(소지금/펌프 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
