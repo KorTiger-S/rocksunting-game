@@ -42,7 +42,7 @@ function pgBuild(o){
     {n:'hat',t:'hat',vol:o.hatVol||.02,seq:bars(...L.hat)}
   ];
   if(o.riffs){L.riff[e]=o.endRiff+' . . . . . . .';ly.push({n:'riff',t:'gtr',pc:true,vol:o.riffVol,d:o.riffD||.75,seq:bars(...L.riff)});}
-  BGMT[o.id]=trk({bpm:o.bpm,len:L.lead.length*8,L:ly});
+  BGMT[o.id]=trk({bpm:o.bpm,len:L.lead.length*8,L:ly,form:o.form});   /* form: 4마디마다 구간 이름(규칙 채보가 같은 구간을 같게 만들 때 써요) */
 }
 const PGDR_SOFT={kick:'x . . . x . . .',snare:'. . . . x . . .',hat:'. . x . . . x .'};
 /* 1) 등굣길 뜀박질 — 쉬움 (C-G-Am-F, 등굣길 테마) */
@@ -293,7 +293,7 @@ const PGSONGS=[
    diffs:[{stars:3,target:680000,approach:1.9},{stars:5,target:710000,approach:1.75},{stars:7,target:760000,approach:1.55},{stars:9,target:790000,approach:1.42,wip:true}]},   /* wip: 채보 작업 중 — 허브에서 '🚧 채보 작업 중'으로 보이고 고를 수 없어요 */
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
-  {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
+  {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,rule:true,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
   {id:'pg11',name:'난지 캠프파이어 인더 홀',sub:'발 구르다 떼창으로 터지는 롹',seed:1111,diffs:[{stars:3,target:700000,approach:1.8},{stars:6,target:740000,approach:1.6},{stars:9,target:780000,approach:1.45},{stars:12,target:820000,approach:1.3}]},
   {id:'pg12',name:'ㅈㄱ의 카드 모험',sub:'파이리와 함께하는 모험 테마',seed:1212,intro:'jg',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:6,target:750000,approach:1.6},{stars:9,target:780000,approach:1.4}]},
   {id:'pg8',name:'투우사의 노래',sub:'비제 · 오페라 「카르멘」',seed:808,diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:720000,approach:1.8},{stars:6,target:760000,approach:1.6},{stars:8,target:790000,approach:1.4}]},
@@ -330,10 +330,36 @@ const PGJUMP_HALF=[0,0,0,.35,.6];   /* level별 반 마디 자리 점프 확률 
 const PGHOLD_P=[0,.7,.6,.5,.3];
 const PGGAP=[0,0,0,.4,.3];     /* level별 노트 사이 최대 간격(초). 어려움·매우 어려움은 이보다 벌어진 틈을 노트로 채워요 */
 const PGGAP_HEAD=.55;           /* 어려움은 마디 앞 절반만 조금 느슨하게 → 쿵 쿵 따다다다 흐름 */    /* level별, 노트 뒤로 4칸 이상 비면 그 사이를 롱노트로 만들 확률 */
+const pgHash=str=>{let h=7;for(const c of str)h=(Math.imul(h,31)+c.charCodeAt(0))|0;return h>>>0;};
+/* 규칙 채보(곡에 rule:true): 유저가 손으로 만든 '나락쓰레기장' 쉬움·보통·어려움 채보에서 찾은 규칙으로 발판을 정해요.
+   - 같은 구간(form 이름이 같은 4마디)은 같은 채보: 구간마다 난수·발판 상태를 새로 시작해요.
+   - 좌우 대칭 짝: ↖↗(1·3) / ↙↘(0·4) 짝을 번갈아 쓰고(쉬움은 마디마다, 보통부터는 반 마디마다), 한 발씩 왼쪽·오른쪽을 번갈아 밟아요.
+   - 점프 다음은 가운데 ●(벌린 발을 모으는 자리), 2마디 프레이즈의 마지막 박 노트도 ●로 닫아요.
+   - 점프: 지금 짝 그대로(↖+↗ / ↙+↘). 어려움부터는 프레이즈 둘째 마디에서 ↙+↗ / ↖+↘도 섞어요. */
+function pgRuleLanes(sg,items,notes){
+  const lv=sg.level,form=BGMT[sg.id].form||[];
+  let sec=-1,pairs=null,side=0,afterJ=false;
+  items.forEach((it,i)=>{
+    const {s,t,hold}=it,bar=s>>3,nx=items[i+1];
+    if((s>>5)!==sec){   /* 구간 시작: 짝 순서(구간 이름으로 정해요)와 발 순서를 처음부터 */
+      sec=s>>5;pairs=pgHash(form[sec]||'')%2?[[1,3],[0,4]]:[[0,4],[1,3]];side=0;afterJ=false;
+    }
+    const pr=pairs[lv===1?bar&1:(s>>2)&1];
+    if(it.jump){
+      const j=lv>=3&&(bar&1)?(s%8<4?[0,3]:[1,4]):pr;
+      j.forEach(l=>notes.push({t,lane:l,hold:0,s}));afterJ=true;return;
+    }
+    const close=(bar&1)&&s%2===0&&(!nx||(nx.s>>3)!==bar);   /* 프레이즈 둘째 마디의 마지막 박 노트 */
+    let lane;
+    if(afterJ||close)lane=2;
+    else{lane=pr[side];side^=1;}
+    afterJ=false;notes.push({t,lane,hold,s});
+  });
+}
 const PGCHARTS={};
 function pgChart(sg){
   if(PGCHARTS[sg.key])return PGCHARTS[sg.key];
-  const R=pgRng(sg.seed),lv=sg.level,spb=sg.spb,lib=lv===1?PGPAT1:lv===2?PGPAT2:lv===3?PGPAT3:PGPAT4;
+  let R=pgRng(sg.seed);const lv=sg.level,spb=sg.spb,lib=lv===1?PGPAT1:lv===2?PGPAT2:lv===3?PGPAT3:PGPAT4;
   /* 1) 노트 자리: {s 칸, t 시각, hold 롱노트 길이(없으면 아래에서 확률로), jump 점프 여부(없으면 확률로)} */
   let items;
   const EX=PG_CHART[sg.id];
@@ -358,7 +384,9 @@ function pgChart(sg){
       steps.push(...add);steps.sort((x,y)=>x-y);
       for(let i=steps.length-1;i>0;i--)if(steps[i]===steps[i-1])steps.splice(i,1);
     }
+    const form=sg.rule&&T.form;let sec=-1;
     items=steps.map((s,i)=>{
+      if(form&&(s>>5)!==sec){sec=s>>5;R=pgRng(sg.seed+pgHash(form[sec]||''));}   /* 규칙 채보: 같은 구간은 같은 난수 → 점프·롱노트도 같게 */
       const nx=i+1<steps.length?steps[i+1]:T.len,gap=nx-s,fin=i===steps.length-1;
       return {s,t:s*spb,
         jump:!fin&&((s%8===0&&R()<PGJUMP_P[lv-1])||(lv>=3&&s%8===4&&R()<PGJUMP_HALF[lv])),
@@ -375,6 +403,7 @@ function pgChart(sg){
     }
     return pat[pi++];
   };
+  if(sg.rule&&!EX){pgRuleLanes(sg,items,notes);items=[];}
   items.forEach(it=>{
     const {s,t,hold}=it;curS=s;
     if(it.lane!=null){notes.push({t,lane:it.lane,hold,s});last=it.lane;pat=null;return;}   /* 채보 메이커로 직접 찍은 노트 */
