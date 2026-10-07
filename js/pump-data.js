@@ -268,7 +268,7 @@ pgBuild({id:'pg12',bpm:132,wave:'square',leadVol:.038,bassVol:.08,kickVol:.16,
    - v2.3.7 싱크 보정: 분석(스펙트럼 창)으로 잰 시각은 실제 소리보다 33ms 일러서 노트가 일찍 내려왔어요. 드럼 타격 159개를 파형에서 1ms 단위로 다시 재서
      박자 지도를 33ms 늦췄고, 이제 노트와 실제 소리 시작의 차이는 중앙값 0~3ms예요.
    v2.5.2: 쉬움·보통·어려움은 유저가 채보 메이커로 직접 만든 채보.
-   v2.5.5: 매우 어려움(작업 중) = 유저 어려움 채보를 모두 그대로 두고 더했어요 — 앞뒤 16분이 빈 가사 음절, 1박 넘게 빈 곳은 8분(후렴은 8분마다),
+   v2.5.5: 매우 어려움(v2.5.7 오픈) = 유저 어려움 채보를 모두 그대로 두고 더했어요 — 앞뒤 16분이 빈 가사 음절, 1박 넘게 빈 곳은 8분(후렴은 8분마다),
      후렴 점프 앞 16분(따-닥). 더한 노트 발판은 그 반 마디 어려움 노트의 짝(↖↗/↙↘)을 따라 좌우 교대, 점프 다음은 ●, 앞뒤 노트와 같은 발판은 피해요.
    v2.3.6 이후: 쉬움은 유저가 채보 메이커로 직접 만든 채보(박자감의 기준). 보통·어려움·매우 어려움은 그 노트를 모두 그대로 두고 사이에만 더했어요:
      보통 = 박(4분) 자리 가사 + 앞뒤가 빈 8분 가사 / 어려움 = 8분 가사 + 1박 넘게 빈 곳은 박으로 / 매우 어려움 = 16분 가사 + 후렴 2박마다 앞 16분(따-닥).
@@ -292,7 +292,7 @@ const PG_BET=[1000,2000,3000,4000];   /* 난이도별 판돈(원, 고정). 쉬�
 const PGSONGS=[
   /* 새로 나온 곡은 맨 위에 두고 isNew:true로 곡 목록에 NEW 태그를 달아요(다음 신곡이 나오면 내려 주세요) */
   {id:'pg13',isNew:true,name:'나락쓰레기장',sub:'퇴근하고 롤 켜는 우리들의 노래',seed:1313,intro:'narak',theme:'narak',audio:'assets/music/narak.mp3',audioHead:.14,bpmx:148.93,audioOff:0,
-   diffs:[{stars:3,target:680000,approach:1.9},{stars:5,target:710000,approach:1.75},{stars:7,target:760000,approach:1.55},{stars:9,target:790000,approach:1.42,wip:true}]},   /* wip: 채보 작업 중 — 허브에서 '🚧 채보 작업 중'으로 보이고 고를 수 없어요 */
+   diffs:[{stars:3,target:680000,approach:1.9},{stars:5,target:710000,approach:1.75},{stars:7,target:760000,approach:1.55},{stars:9,target:790000,approach:1.42}]},   /* wip: 채보 작업 중 — 허브에서 '🚧 채보 작업 중'으로 보이고 고를 수 없어요 */
   {id:'pg1',name:'등굣길 뜀박질',sub:'가볍게 몸 풀기',seed:101,intro:'late',diffs:[{stars:2,target:650000,approach:2.0},{stars:3,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:7,target:780000,approach:1.4}]},
   {id:'pg9',name:'머대부고 교가',sub:'김순세 작곡 · 우리 학교 노래',seed:909,diffs:[{stars:1,target:650000,approach:2.0},{stars:2,target:700000,approach:1.8},{stars:5,target:750000,approach:1.6},{stars:8,target:780000,approach:1.4}]},
   {id:'pg10',name:'머대부고 교가 (롹 버전)',sub:'일렉기타로 달리는 우리 학교 노래',seed:1010,rule:true,diffs:[{stars:3,target:700000,approach:1.8},{stars:7,target:740000,approach:1.6},{stars:10,target:780000,approach:1.45},{stars:14,target:820000,approach:1.3}]},
