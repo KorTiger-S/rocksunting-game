@@ -98,9 +98,11 @@ const SFX={
   boot(){tone(392,.25,'triangle',.04);tone(587,.3,'triangle',.04,.12);tone(784,.7,'triangle',.05,.24);},          /* 컴퓨터·게임 켜지는 소리 */
   friendon(){tone(1175,.08,'square',.035);tone(1568,.2,'square',.035,.08);},                                      /* 친구 로그인 알림 띠링 */
   /* 프로필 방명록 */
-  scribble(){for(let i=0;i<4;i++)noise(.06,.03,i*.07,2600+i*300,1800,1.4);tone(NT.E6,.16,'triangle',.03,.32);}      /* 펜으로 슥슥 쓰고 '톡' */
+  scribble(){for(let i=0;i<4;i++)noise(.06,.03,i*.07,2600+i*300,1800,1.4);tone(NT.E6,.16,'triangle',.03,.32);},     /* 펜으로 슥슥 쓰고 '톡' */
+  /* AI 작곡 요청 */
+  compose(){[NT.C5,NT.E5,NT.G5,NT.C6,NT.E6].forEach((f,i)=>tone(f,.45,'sine',.045,i*.08));tone(NT.G6,.7,'triangle',.03,.42);noise(.35,.03,.4,1200,4200,.6,.1);}   /* 오르골 아르페지오 + 악보가 날아가는 '휙' */
 };
-const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
+const DUCK={win:2.4,bigwin:3.2,lose:2.4,bell:2,siren:1.4,compose:1.2};   /* 이 효과음이 나는 동안 배경음악을 줄이는 시간(초) */
 function sfx(n,a){if(muted)return;try{if(SFX[n]){SFX[n](a);if(DUCK[n])bgmDuck(DUCK[n]);}}catch(e){}}
 function cheer(){sfx('crowd');}
 

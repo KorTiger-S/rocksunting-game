@@ -22,7 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.5.7">
+<link rel="stylesheet" href="css/style.css?v=2.5.8">
 </head>
 <body>
 <header class="board">
@@ -48,6 +48,7 @@
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
+      <div class="card grow"><span class="gi" aria-hidden="true">🎼</span><div><h2>롹순팅 AI 작곡 <span class="newtag">NEW</span></h2><p id="glSong"></p></div><button class="go gopen" data-card="songCard">AI작곡하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
@@ -132,6 +133,51 @@
         <button class="go alt" id="duJoin">참가하기</button>
       </div>
       <p id="duNote"></p>
+    </div>
+    <!-- AI 작곡 요청 (js/compose.js): 로그인한 플레이어가 하루 1번 제목·가사·스타일을 보내면,
+         GitHub Actions(.github/workflows/song-issues.yml)가 GitHub 이슈로 옮겨요. 곡은 관리자가 ACE-Step으로 만들어요 -->
+    <div class="card chall gdet" id="songCard" hidden>
+      <button class="linkbtn gback">← 게임 목록</button>
+      <h2>롹순팅 AI 작곡 <span class="newtag">NEW</span></h2>
+      <p>제목과 가사를 쓰고 스타일을 고르면, 관리자가 AI 작곡(ACE-Step)으로 노래를 만들어 줘요. <b>하루에 1번</b> 요청할 수 있어요.</p>
+      <div class="sgmine" id="sgMine" hidden></div>
+      <form class="sgform" id="sgForm" autocomplete="off">
+        <label class="sglab" for="sgTitle">제목 <small id="sgTitleN"></small></label>
+        <input class="gbin" id="sgTitle" maxlength="40" placeholder="예: 쉬는 시간 10분" spellcheck="false">
+
+        <label class="sglab" for="sgLyrics">가사 <small id="sgLyricsN"></small></label>
+        <div class="sgtags" id="sgTags" aria-label="노래 구간 태그 넣기"></div>
+        <textarea class="gbin sgta" id="sgLyrics" rows="10" maxlength="2000" spellcheck="false" placeholder="[verse]&#10;종이 울리면 운동장으로&#10;주스의 빵 값은 내가 지킨다&#10;&#10;[chorus]&#10;롹! 롹! 롹순팅!"></textarea>
+        <p class="tip sgtip">위 버튼으로 [verse](1절) · [chorus](후렴) 같은 구간 표시를 넣으면 노래 구조가 더 잘 나와요.</p>
+
+        <span class="sglab">노래 스타일 <small>최대 3개</small></span>
+        <div class="sgchips" id="sgGenre" data-k="genre"></div>
+        <span class="sglab">분위기 <small>최대 3개</small></span>
+        <div class="sgchips" id="sgMood" data-k="mood"></div>
+        <span class="sglab">템포</span>
+        <div class="sgchips" id="sgTempo" data-k="tempo"></div>
+        <div class="pgrow sgbpm"><label for="sgBpm">BPM</label><input type="range" id="sgBpm" min="50" max="200" step="1"><span class="val" id="sgBpmV"></span></div>
+        <span class="sglab">보컬</span>
+        <div class="sgchips" id="sgVocal" data-k="vocal"></div>
+        <div id="sgLangW"><span class="sglab">가사 언어</span><div class="sgchips" id="sgLang" data-k="lang"></div></div>
+        <span class="sglab">곡 길이</span>
+        <div class="sgchips" id="sgDur" data-k="dur"></div>
+        <details class="pgopt">
+          <summary>더 자세히 (악기 · 조성 · 박자 · 하고 싶은 말)</summary>
+          <span class="sglab">주요 악기 <small>최대 4개 · 안 골라도 돼요</small></span>
+          <div class="sgchips" id="sgInst" data-k="inst"></div>
+          <span class="sglab">조성</span>
+          <div class="sgchips" id="sgKey" data-k="key"></div>
+          <span class="sglab">박자</span>
+          <div class="sgchips" id="sgMeter" data-k="meter"></div>
+          <label class="sglab" for="sgNote">하고 싶은 말 <small>200자까지</small></label>
+          <input class="gbin" id="sgNote" maxlength="200" placeholder="예: 후렴은 다 같이 따라 부를 수 있게 해 주세요">
+        </details>
+        <div class="sgprev"><b>AI에게 전달될 스타일</b><code id="sgPrev"></code></div>
+        <p class="tip sgtip">요청은 닉네임과 함께 GitHub 이슈(공개)에 올라가요. 개인 정보나 다른 사람을 놀리는 내용은 쓰지 마세요.</p>
+        <p class="lgmsg" id="sgMsg" aria-live="polite"></p>
+        <div class="acts"><button type="submit" class="go" id="sgGo">🎼 만들기 요청</button></div>
+      </form>
     </div>
     <div class="card chall gdet" id="shopCard" hidden>
       <button class="linkbtn gback">← 홈으로</button>
@@ -392,27 +438,29 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.5.7"></script>
-<script src="js/save.js?v=2.5.7"></script>
-<script src="js/cloud.js?v=2.5.7"></script>
-<script src="js/login.js?v=2.5.7"></script>
-<script src="js/rank.js?v=2.5.7"></script>
-<script src="js/audio.js?v=2.5.7"></script>
-<script src="js/input.js?v=2.5.7"></script>
-<script src="js/render.js?v=2.5.7"></script>
-<script src="js/kick-data.js?v=2.5.7"></script>
-<script src="js/kick.js?v=2.5.7"></script>
-<script src="js/hub.js?v=2.5.7"></script>
-<script src="js/shop.js?v=2.5.7"></script>
-<script src="js/uprof.js?v=2.5.7"></script>
-<script src="js/splash.js?v=2.5.7"></script>
-<script src="js/duel.js?v=2.5.7"></script>
-<script src="js/pump-data.js?v=2.5.7"></script>
-<script src="js/pump.js?v=2.5.7"></script>
-<script src="js/jgintro.js?v=2.5.7"></script>
-<script src="js/lateintro.js?v=2.5.7"></script>
-<script src="js/narakintro.js?v=2.5.7"></script>
-<script src="js/main.js?v=2.5.7"></script>
+<script src="js/util.js?v=2.5.8"></script>
+<script src="js/save.js?v=2.5.8"></script>
+<script src="js/cloud.js?v=2.5.8"></script>
+<script src="js/login.js?v=2.5.8"></script>
+<script src="js/rank.js?v=2.5.8"></script>
+<script src="js/audio.js?v=2.5.8"></script>
+<script src="js/input.js?v=2.5.8"></script>
+<script src="js/render.js?v=2.5.8"></script>
+<script src="js/kick-data.js?v=2.5.8"></script>
+<script src="js/kick.js?v=2.5.8"></script>
+<script src="js/hub.js?v=2.5.8"></script>
+<script src="js/shop.js?v=2.5.8"></script>
+<script src="js/uprof.js?v=2.5.8"></script>
+<script src="js/splash.js?v=2.5.8"></script>
+<script src="js/duel.js?v=2.5.8"></script>
+<script src="js/compose-data.js?v=2.5.8"></script>
+<script src="js/compose.js?v=2.5.8"></script>
+<script src="js/pump-data.js?v=2.5.8"></script>
+<script src="js/pump.js?v=2.5.8"></script>
+<script src="js/jgintro.js?v=2.5.8"></script>
+<script src="js/lateintro.js?v=2.5.8"></script>
+<script src="js/narakintro.js?v=2.5.8"></script>
+<script src="js/main.js?v=2.5.8"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>

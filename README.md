@@ -22,8 +22,8 @@ assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 �
 assets/music/*.mp3    음원 파일 곡 (소리새 펌프 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
 assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
-scripts/              시즌 마감 + 랭킹 보고서 생성 (GitHub Actions가 실행)
-.github/workflows/   시즌 자동 마감 워크플로우
+scripts/              시즌 마감 + 랭킹 보고서 생성, AI 작곡 요청 → 이슈 (GitHub Actions가 실행)
+.github/workflows/   시즌 자동 마감 · AI 작곡 요청 이슈 워크플로우
 dev/                  개발 도구 (빌드, 백엔드 테스트, 채보 메이커 chart-maker.html · apply_chart.js)
 dist/                 빌드 결과 (단일 HTML 파일)
 ```
@@ -46,6 +46,8 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `hub.js` | 허브 화면(게임 목록/내기), 프로필·시즌 뱃지, 라털 선생님 대출 |
 | `splash.js` | 시작 화면(등교 애니메이션) |
 | `duel.js` | 1:1 페널티킥 대결 |
+| `compose-data.js` | AI 작곡 선택지(`SONG_OPTS`: 장르·분위기·템포·보컬…, 한국어 이름 + ACE-Step 영어 태그)와 `songTags()`. `scripts/song_issues.js`도 이 파일을 읽어요 |
+| `compose.js` | AI 작곡 요청 화면 — 제목·가사·스타일 입력, 하루 1번 요청, 내 요청 상태 |
 | `pump-data.js` | 소리새 펌프의 곡 악보(`BGMT`에 등록), 곡 목록(`PGSONGS`), 채보 자동 생성(`pgChart`) |
 | `pump.js` | 소리새 펌프 — 허브 카드, 입력, 판정, 그리기, 정산, 마이크(도전 횟수) |
 | `jgintro.js` | 곡 인트로 애니메이션 엔진(`INTROS`, `jgPlay`) + 'ㅈㄱ의 카드 모험' 이야기(`JGS`, 음악 `BGMT.jg`) |
@@ -136,6 +138,15 @@ dist/                 빌드 결과 (단일 HTML 파일)
 - **결과 공유**: 결과 화면 아래 `💬 결과 이미지 카톡으로 보내기`(결과 카드 PNG로 휴대폰 공유창을 열어 카카오톡 등으로 전송). 공유창이 없는 브라우저는 이미지 파일로 저장돼요. 클립보드 이미지 복사는 붙여넣기가 안 되는 기기가 많아서 뺐어요. 이미지는 `pgShareDraw()`(`js/pump.js`)에서 그려요.
 - **랭킹**: 🏆 랭킹에 "펌프 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
 - **서버**: `S.mics`/`S.micAt`/`S.pumpBest`가 서버에 저장되고 랭킹 지표가 늘었어요. `schema.sql`을 다시 실행하기 전까지는 마이크 개수가 서버에 저장되지 않아요.
+
+## AI 작곡 요청 (v2.5.8~)
+- 게임 목록의 **🎼 롹순팅 AI 작곡 → AI작곡하기**: 제목 · 가사(`[verse]` `[chorus]` 같은 구간 태그 버튼) · 노래 스타일 · 분위기 · 템포(BPM) · 보컬 · 가사 언어 · 곡 길이 + (더 자세히) 악기 · 조성 · 박자 · 하고 싶은 말.
+- **로그인한 플레이어만, 한국 시간 하루 1번**(서버 `rk_song_request`가 막아요). 전체 하루 30개가 넘으면 다음 날로 미뤄요. 쓰던 내용은 이 기기에 임시 저장돼요.
+- 흐름: 게임 → Supabase `rk_songs`(new) → GitHub Actions **Song issues**(`.github/workflows/song-issues.yml`, 15분마다 + 수동 실행)가 이슈를 만들고(라벨 `ai-song`) issued로 표시 → 관리자가 이슈 내용으로 ACE-Step 실행 → **이슈를 닫으면** 다음 실행 때 done(게임의 「내 요청」에 "완성 🎵").
+- 이슈에는 닉네임, 선택값 표, ACE-Step에 바로 붙여 넣을 **Tags / Lyrics / 설정(duration · bpm · keyscale · timesignature · vocal_language)** 이 들어가요. 플레이어가 쓴 글은 코드 블록 안에 넣어서 링크·멘션이 되지 않아요.
+- GitHub 토큰은 게임에 넣지 않아요. 이슈는 Actions의 기본 토큰으로만 만들어요. 필요한 시크릿은 시즌 마감과 같은 `SUPABASE_SERVICE_KEY` 하나예요.
+- 이슈 본문 미리보기: `SUPABASE_URL=… SUPABASE_SERVICE_KEY=… node scripts/song_issues.js --dry`
+- 선택지를 늘리려면 `js/compose-data.js`의 `SONG_OPTS`에 추가하세요(id는 영문 소문자·숫자·_ 12자까지, 이미 쓰인 id는 지우지 말고 남겨 두세요).
 
 ## 버전 규칙
 `v메이저.마이너.패치` 형식이고 **v1.0.0에서 시작**해요. 버전은 스플래시 화면 하단과 도움말에 보여요.
