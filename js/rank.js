@@ -38,7 +38,7 @@ document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('clic
 /* ---------- 랭킹 공유 (이미지) ----------
    헛다리 레볼루션 결과 공유처럼, 지금 보고 있는 랭킹 탭을 세로 카드 이미지(PNG)로 그려서 휴대폰 공유창을 열어요.
    공유창은 버튼을 누른 순간 바로 열어야 해서, 랭킹을 불러오면 이미지를 미리 만들어 둬요. */
-const RK_NAME={money:'소지금',pumpBest:'헛다리 레볼루션 최고점',bestPts:'프리킥 최고점',wins:'승패'};
+const RK_NAME={money:'소지금',pumpBest:'헛다리 최고점',bestPts:'프리킥 최고점',wins:'승패'};
 const RKSH_W=720;
 let RK_SHARE=null;
 function rkShareMake(list,metric,cloud){
