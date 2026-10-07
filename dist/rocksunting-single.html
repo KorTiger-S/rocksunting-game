@@ -846,9 +846,9 @@ function renderSeason(){
   const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
   const pu=Date.parse(SEASON.practiceUntil||'');   /* 연습 기간: 이때까지의 기록은 시즌에 안 들어가고, 지나면 한 번 초기화돼요 */
   if(pu>Date.now()){const d=new Date(pu+KST_MS);chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`연습 기간 · ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화`;
-    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 헛다리 레볼루션 최고점':''}`;return;}
+    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 헛다리 최고점':''}`;return;}
   chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`${until} ${dtxt}`;
-  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'헛다리 레볼루션 최고점':'소지금'} (마감 시 기록 초기화)`;
+  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'헛다리 최고점':'소지금'} (마감 시 기록 초기화)`;
 }
 function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}
@@ -1123,7 +1123,7 @@ const RELEASE_NOTES={
     '🏆 정정: 시즌2 우승·준우승은 지금처럼 소지금으로 정해요. 랭킹은 소지금 탭부터 보여요.'
   ]},
   '2.2.0':{sub:'가을이 왔어요 🍂',items:[
-    '🏆 랭킹의 승리 탭이 없어지고, 소지금 · 헛다리 레볼루션 최고점 · 프리킥 최고점 탭으로 정리했어요. 시즌 우승·준우승은 소지금으로 정해요.',
+    '🏆 랭킹의 승리 탭이 없어지고, 소지금 · 헛다리 최고점 · 프리킥 최고점 탭으로 정리했어요. 시즌 우승·준우승은 소지금으로 정해요.',
     '🍂 시작 화면이 가을 옷을 입었어요. 낙엽이 떨어지고, 시즌2 표시도 생겼어요.',
     '🏠 홈 화면은 헛다리짚기 훈련이 맨 위로 올라오고, 준비 중이던 다른 내기 목록은 정리했어요.',
     '👑 모자가 동그란 얼굴 틀 밖으로 살짝 나오게 그려서, 게임 속 롹순팅도 모자를 제대로 써요.'
@@ -1143,7 +1143,7 @@ const RELEASE_NOTES={
     '💪 몸 관리(근력·체력·피로도·컨디션·기분)가 없어졌어요. 쇠질하기·난지바베큐·소리새·디델리도 함께 사라지고, 이제 실력만으로 승부해요!',
     '🏅 시즌이 끝나면 소지금 1등은 우승, 2등은 준우승 뱃지를 받아요. 프로필과 랭킹 이름 옆에서 볼 수 있어요.',
     '⚙ 옵션에서 노트 속도와 싱크(소리·화면 어긋남)를 맞출 수 있어요.',
-    '🏆 랭킹에 "헛다리 레볼루션 최고점" 탭이 생겼어요.'
+    '🏆 랭킹에 "헛다리 최고점" 탭이 생겼어요.'
   ]},
   '1.8.1':{sub:'허브가 한결 단순해졌어요',items:[
     '🧹 "오늘의 다른 선택"(오늘은 패스 · 매점 알바 · 호우의 아재개그) 메뉴를 없앴어요.'
@@ -2721,7 +2721,7 @@ let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list,box){
   box=box||$('#pfBadges');box.innerHTML='';
   if(!list){const p=document.createElement('p');p.className='none';p.textContent='불러오는 중…';box.appendChild(p);return;}
-  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'헛다리 레볼루션 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
+  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'헛다리 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
   list.forEach(b=>{
     const d=document.createElement('div'),s=document.createElement('small');
     d.className='badge b'+b.rank;d.textContent=`${b.rank===1?'🏆':'🥈'} 시즌${b.number} ${b.rank===1?'우승':'준우승'}`;
@@ -3084,7 +3084,7 @@ function renderShop(){
    랭킹에서 이름이나 얼굴을 누르면 열려요. 서버 rk_profile(캐릭터·뱃지·이번 시즌·지난 시즌별 순위)과
    rk_gb_list / rk_gb_write / rk_gb_delete(방명록)를 써요. 공개 정보라 보기에는 비밀번호가 필요 없고,
    방명록은 로그인한 플레이어만 한 줄(50자) 남길 수 있어요. 쓴 사람과 프로필 주인은 글을 지울 수 있어요. */
-const UP_METRIC={money:'소지금',pumpBest:'헛다리 레볼루션 최고점'};
+const UP_METRIC={money:'소지금',pumpBest:'헛다리 최고점'};
 const UP_GB_ERR={too_fast:'조금 있다가 다시 남겨 주세요. (20초에 한 번)',too_long:'50자까지만 남길 수 있어요.',empty:'내용을 적어 주세요.',
   bad_pin:'비밀번호가 달라서 남기지 못했어요. 다시 로그인해 주세요.',locked:'비밀번호를 여러 번 틀려 잠시 잠겼어요.',
   no_user:'아직 클라우드에 저장되지 않은 ID예요. 한 판 하고 다시 남겨 주세요.',not_allowed:'쓴 사람이나 프로필 주인만 지울 수 있어요.'};
@@ -3107,7 +3107,7 @@ function upNow(x){
   const prac=/-practice$/.test(x.season||'');
   if(x.rank)upRow(tab,'순위',prac?'연습 기간':`${x.rank}위 (${UP_METRIC[x.metric]||'소지금'} 기준)`);
   upRow(tab,'소지금',prac?'∞ 무한 (연습)':fmt(x.money||0)+'원');
-  if(PUMP_PUBLIC)upRow(tab,'헛다리 레볼루션 최고점',fmt(x.pumpBest||0)+'점');
+  if(PUMP_PUBLIC)upRow(tab,'헛다리 최고점',fmt(x.pumpBest||0)+'점');
   upRow(tab,'프리킥 최고점',(x.bestPts||0)+'점');
   upRow(tab,'1:1 대결',`${x.wins||0}승 ${x.losses||0}패`);
 }
@@ -4245,7 +4245,7 @@ const PG_LIFE0=55;   /* 시작 게이지(%) */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
 const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
 /* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요.
-   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 레볼루션 최고점·랭킹에도 아무것도 남기지 않아요. */
+   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 최고점·랭킹에도 아무것도 남기지 않아요. */
 const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
 const pgLocked=d=>!!d.wip&&!PG_TEST;
 const pgCost=(d,i)=>d.wip?0:pgBet(i);

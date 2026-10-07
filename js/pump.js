@@ -55,7 +55,7 @@ const PG_LIFE0=55;   /* 시작 게이지(%) */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
 const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
 /* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요.
-   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 레볼루션 최고점·랭킹에도 아무것도 남기지 않아요. */
+   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 최고점·랭킹에도 아무것도 남기지 않아요. */
 const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
 const pgLocked=d=>!!d.wip&&!PG_TEST;
 const pgCost=(d,i)=>d.wip?0:pgBet(i);

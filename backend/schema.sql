@@ -183,7 +183,7 @@ create or replace function public.rk_season_json() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object('key', value->>'key', 'number', (value->>'number')::int, 'game', value->>'game',
                             'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at', 'practiceUntil', value->>'practice_until',
-                            'metric', coalesce(value->>'metric', 'money'))   -- 우승 기준: money(소지금) | pumpBest(헛다리 레볼루션 최고점)
+                            'metric', coalesce(value->>'metric', 'money'))   -- 우승 기준: money(소지금) | pumpBest(헛다리 최고점)
   from public.rk_config where key = 'season'
 $$;
 
@@ -341,7 +341,7 @@ $$;
 --   insert into public.rk_config (key, value) values ('next_season',
 --     '{"key":"2026-10","game":"pump","game_name":"헛다리 레볼루션","ends_at":"2026-10-31T15:00:00Z","metric":"pumpBest"}')
 --   on conflict (key) do update set value = excluded.value;
--- 우승 기준(선택): "metric"에 "money"(소지금) 또는 "pumpBest"(헛다리 레볼루션 최고점). 없으면 이번 시즌 기준을 이어 가요. 지금 시즌은
+-- 우승 기준(선택): "metric"에 "money"(소지금) 또는 "pumpBest"(헛다리 최고점). 없으면 이번 시즌 기준을 이어 가요. 지금 시즌은
 --   update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';
 -- 연습 기간(선택): next_season에 "practice_until"(예: "2026-09-30T15:00:00Z")을 넣으면, 새 시즌은 그때까지 연습 기간이에요.
 --   연습 기간의 기록은 시즌 키 '<key>-practice'로 따로 쌓이고, practice_until이 지난 뒤 첫 호출(매일 00:10 자동화)에서
@@ -808,7 +808,7 @@ begin
   if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
   select * into u from public.rk_users where id = k;
   if not found then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
-  -- 이번 시즌 순위: 지금 우승 기준(소지금 | 헛다리 레볼루션 최고점)으로, 같은 시즌 키를 가진 사람 중에서
+  -- 이번 시즌 순위: 지금 우승 기준(소지금 | 헛다리 최고점)으로, 같은 시즌 키를 가진 사람 중에서
   v := case when m = 'pumpBest' then coalesce((u.data->>'pumpBest')::int, 0) else u.money end;
   select count(*) + 1 into rk from public.rk_users
   where season_key is not distinct from u.season_key

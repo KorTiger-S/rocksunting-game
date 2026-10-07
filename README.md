@@ -87,7 +87,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 기념일 표시는 `tag`(`.shoptag`), 사거나 입을 때 소리는 `sfx`(예: 한글날 아이템의 가야금 `royal`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
 | 상점 아이템 저장·보정(시즌이 끝나도 남음) | `S.items` = `{own, eq}` (`js/save.js`), 서버 `rk_clean_items`, `rk_reset_players`(초기화 때 items만 남김), 랭킹 `rk_top`의 `eq`, 대결 `rk_duel_json`의 `hostEq`/`guestEq` (backend/schema.sql) |
 | 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
-| 시즌 우승 기준(소지금/헛다리 레볼루션 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
+| 시즌 우승 기준(소지금/헛다리 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
 | 시작 화면(가을 테마·시즌 표시·낙엽) | `spAutumnSky()`, `SP_LEAVES`, `spLeaf()`, `spDraw()` (`js/splash.js`) |
 | 연습 기간(프리시즌) 규칙: 도전 횟수·소지금 무한, 상점에서 사기만 잠금 | `isPractice()`(내 시즌 키가 `-practice`로 끝나면), `PRACTICE_MONEY` (`js/save.js`), `practiceFill()` (`js/hub.js`), `ballUse()`/`micUse()`, 상점 `shopAction()` |
 | 호우를 이기면 마이크 돌려받기 | `pgFinish()`의 `micBack` (`js/pump.js`) |
@@ -115,7 +115,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 
 ## 헛다리 레볼루션 (시즌2 · v2.0.0~)
 ### 잠금 (시즌2 전까지 쓰던 것)
-`PUMP_PUBLIC=true`(`js/pump-data.js`)라서 지금은 모두에게 보여요. `false`로 되돌리면 허브에 **제목이 "???"로 가려진 카드**만 보이고, **관리자 번호(숫자 4자리)를 입력해야** 플레이할 수 있어요(그 기기에 기억, 카드 아래 "다시 잠그기"로 해제). 랭킹의 "헛다리 레볼루션 최고점" 탭은 `PUMP_PUBLIC=true`일 때만 보여요. 다음 시즌 게임을 미리 숨겨 둘 때 같은 방식으로 쓸 수 있어요.
+`PUMP_PUBLIC=true`(`js/pump-data.js`)라서 지금은 모두에게 보여요. `false`로 되돌리면 허브에 **제목이 "???"로 가려진 카드**만 보이고, **관리자 번호(숫자 4자리)를 입력해야** 플레이할 수 있어요(그 기기에 기억, 카드 아래 "다시 잠그기"로 해제). 랭킹의 "헛다리 최고점" 탭은 `PUMP_PUBLIC=true`일 때만 보여요. 다음 시즌 게임을 미리 숨겨 둘 때 같은 방식으로 쓸 수 있어요.
 - 번호는 소스에 남기지 않고 확인값 `PUMP_KEY`(`js/pump-data.js`)만 둬요. 바꾸려면 `node dev/pump_key.js 새번호`가 출력한 값을 `PUMP_KEY`에 붙여넣으세요.
 - ⚠ 브라우저에서 도는 코드라 **가벼운 잠금**이에요. 소스나 저장소(README·커밋)를 보는 사람에게까지 제목·내용을 숨기지는 못해요.
 - 로컬 테스트: 그냥 열어서(`npm run serve`) 번호를 입력하면 돼요. 로그인해서 하면 진짜 계정의 소지금이 바뀌고 `rk_matches`에 경기가 기록되니, 테스트용 ID를 따로 만들어 쓰세요.
@@ -136,7 +136,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 - **시작 게이지**: 55%에서 시작해요. (시즌2부터 몸 관리 능력치가 없어져서 모두 같아요)
 - **옵션**: 속도(×1~×3), 싱크(±200ms)는 이 기기에 기억돼요. 곡이 흐르는 AudioContext 시계를 기준으로 판정해서, 화면·소리가 어긋나면 싱크를 조절하면 돼요.
 - **결과 공유**: 결과 화면 아래 `💬 결과 이미지 카톡으로 보내기`(결과 카드 PNG로 휴대폰 공유창을 열어 카카오톡 등으로 전송). 공유창이 없는 브라우저는 이미지 파일로 저장돼요. 클립보드 이미지 복사는 붙여넣기가 안 되는 기기가 많아서 뺐어요. 이미지는 `pgShareDraw()`(`js/pump.js`)에서 그려요.
-- **랭킹**: 🏆 랭킹에 "헛다리 레볼루션 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
+- **랭킹**: 🏆 랭킹에 "헛다리 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
 - **서버**: `S.mics`/`S.micAt`/`S.pumpBest`가 서버에 저장되고 랭킹 지표가 늘었어요. `schema.sql`을 다시 실행하기 전까지는 마이크 개수가 서버에 저장되지 않아요.
 
 ## AI 작곡 요청 (v2.5.8~)

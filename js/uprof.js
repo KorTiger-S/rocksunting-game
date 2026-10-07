@@ -3,7 +3,7 @@
    랭킹에서 이름이나 얼굴을 누르면 열려요. 서버 rk_profile(캐릭터·뱃지·이번 시즌·지난 시즌별 순위)과
    rk_gb_list / rk_gb_write / rk_gb_delete(방명록)를 써요. 공개 정보라 보기에는 비밀번호가 필요 없고,
    방명록은 로그인한 플레이어만 한 줄(50자) 남길 수 있어요. 쓴 사람과 프로필 주인은 글을 지울 수 있어요. */
-const UP_METRIC={money:'소지금',pumpBest:'헛다리 레볼루션 최고점'};
+const UP_METRIC={money:'소지금',pumpBest:'헛다리 최고점'};
 const UP_GB_ERR={too_fast:'조금 있다가 다시 남겨 주세요. (20초에 한 번)',too_long:'50자까지만 남길 수 있어요.',empty:'내용을 적어 주세요.',
   bad_pin:'비밀번호가 달라서 남기지 못했어요. 다시 로그인해 주세요.',locked:'비밀번호를 여러 번 틀려 잠시 잠겼어요.',
   no_user:'아직 클라우드에 저장되지 않은 ID예요. 한 판 하고 다시 남겨 주세요.',not_allowed:'쓴 사람이나 프로필 주인만 지울 수 있어요.'};
@@ -26,7 +26,7 @@ function upNow(x){
   const prac=/-practice$/.test(x.season||'');
   if(x.rank)upRow(tab,'순위',prac?'연습 기간':`${x.rank}위 (${UP_METRIC[x.metric]||'소지금'} 기준)`);
   upRow(tab,'소지금',prac?'∞ 무한 (연습)':fmt(x.money||0)+'원');
-  if(PUMP_PUBLIC)upRow(tab,'헛다리 레볼루션 최고점',fmt(x.pumpBest||0)+'점');
+  if(PUMP_PUBLIC)upRow(tab,'헛다리 최고점',fmt(x.pumpBest||0)+'점');
   upRow(tab,'프리킥 최고점',(x.bestPts||0)+'점');
   upRow(tab,'1:1 대결',`${x.wins||0}승 ${x.losses||0}패`);
 }
