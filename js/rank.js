@@ -36,9 +36,9 @@ $('#rkClose').addEventListener('click',()=>{$('#rank').hidden=true;});
 document.querySelectorAll('.rtabs [data-m]').forEach(b=>b.addEventListener('click',()=>{rankMetric=b.dataset.m;renderRank();}));
 
 /* ---------- 랭킹 공유 (이미지) ----------
-   펌프 결과 공유처럼, 지금 보고 있는 랭킹 탭을 세로 카드 이미지(PNG)로 그려서 휴대폰 공유창을 열어요.
+   헛다리 레볼루션 결과 공유처럼, 지금 보고 있는 랭킹 탭을 세로 카드 이미지(PNG)로 그려서 휴대폰 공유창을 열어요.
    공유창은 버튼을 누른 순간 바로 열어야 해서, 랭킹을 불러오면 이미지를 미리 만들어 둬요. */
-const RK_NAME={money:'소지금',pumpBest:'펌프 최고점',bestPts:'프리킥 최고점',wins:'승패'};
+const RK_NAME={money:'소지금',pumpBest:'헛다리 최고점',bestPts:'프리킥 최고점',wins:'승패'};
 const RKSH_W=720;
 let RK_SHARE=null;
 function rkShareMake(list,metric,cloud){
@@ -93,7 +93,7 @@ async function rkShareDraw(sh,noFace){
   T('kortiger-s.github.io/rocksunting-game',W/2,H-36,16,'#6f789a','center',BODY,700);
   return cv;
 }
-/* 이미지를 휴대폰 공유창으로 보내요. 공유창이 없거나 못 열면 파일로 저장해요. (펌프 결과 공유도 같이 써요) */
+/* 이미지를 휴대폰 공유창으로 보내요. 공유창이 없거나 못 열면 파일로 저장해요. (헛다리 레볼루션 결과 공유도 같이 써요) */
 function saveImageFile(blob,name){
   const a=document.createElement('a'),u=URL.createObjectURL(blob);
   a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);

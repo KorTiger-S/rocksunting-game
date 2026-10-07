@@ -7,7 +7,7 @@ const COLS = {
   money: { label: '소지금', fmt: p => won(p.money) },
   wins: { label: '전적', fmt: p => `${p.wins}승 ${p.losses}패` },
   bestPts: { label: '최고점', fmt: p => p.bestPts + '점' },
-  pumpBest: { label: '펌프 최고점', fmt: p => Number(p.pumpBest || 0).toLocaleString('ko-KR') + '점' }
+  pumpBest: { label: '헛다리 최고점', fmt: p => Number(p.pumpBest || 0).toLocaleString('ko-KR') + '점' }
 };
 // 기준이 되는 항목을 맨 앞에 두고, 나머지 항목을 뒤에 붙인 TOP 10 표
 function table(players, key) {
@@ -23,7 +23,7 @@ function renderReport(r) {
   const active = players.filter(p => p.plays > 0 || p.wins > 0 || p.losses > 0);
   const cleared = players.filter(p => p.cleared);
   const metric = COLS[s.metric] ? s.metric : 'money';   // 이 시즌의 우승 기준 (money | pumpBest)
-  const SECT = { money: '## 🏆 소지금 TOP 10', wins: '## ⚽ 승리 TOP 10', bestPts: '## 🎯 최고점 TOP 10', pumpBest: '## 🎤 소리새 펌프 최고점 TOP 10' };
+  const SECT = { money: '## 🏆 소지금 TOP 10', wins: '## ⚽ 승리 TOP 10', bestPts: '## 🎯 최고점 TOP 10', pumpBest: '## 🎤 헛다리 최고점 TOP 10' };
   const order = [metric].concat(['money', 'wins', 'bestPts', 'pumpBest'].filter(k => k !== metric));
   const name = `${s.key}_season${s.number}_${s.game}`;
   const title = `시즌${s.number} 랭킹 보고서 — ${s.gameName} (${s.key})`;

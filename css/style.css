@@ -191,7 +191,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 @keyframes dangerShake{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,2px) rotate(-.6deg)}50%{transform:translate(3px,-2px) rotate(.6deg)}75%{transform:translate(-2px,-3px) rotate(-.4deg)}}
 @keyframes angryPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.08) rotate(-3deg);filter:drop-shadow(0 0 12px rgba(226,51,77,.85))}}
 
-/* 소리새 펌프 (시즌2) */
+/* 헛다리 레볼루션 (시즌2) */
 .newtag{display:inline-block;vertical-align:middle;margin-left:6px;padding:1px 8px;border-radius:99px;background:var(--gold);color:#3a2c00;font-family:var(--font);font-size:12px;font-weight:700}
 .songs{display:grid;gap:8px}
 .song{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);box-shadow:2px 2px 0 var(--line)}
@@ -218,7 +218,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .pgrow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
 .pgrow .go{min-width:44px;padding:4px 10px}
 .pgrow .val{min-width:84px;text-align:center;font-weight:700}
-/* 설정 > 펌프 키 변경 (배그 키 설정처럼 왼쪽은 이름, 오른쪽은 누르면 키를 기다리는 칸) */
+/* 설정 > 헛다리 레볼루션 키 변경 (배그 키 설정처럼 왼쪽은 이름, 오른쪽은 누르면 키를 기다리는 칸) */
 .setdlg{max-width:480px}
 .settabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin:8px 0 10px}
 .settab{flex:1;background:transparent;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:8px 6px;font-weight:700;font-size:15px;color:var(--muted)}
@@ -241,7 +241,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:5/3;touch-action:none;u
 .keypre{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:6px}
 .keypre .go{min-width:0;padding:6px 10px;font-size:13px}
 #pumpWrap{max-width:900px;margin:0 auto;padding:12px 16px 24px}
-/* 펌프를 하는 동안은 페이지가 스크롤되지 않게 막아요. 발판 사이 빈칸·여백을 눌러도 스크롤이 시작되면
+/* 헛다리 레볼루션을 하는 동안은 페이지가 스크롤되지 않게 막아요. 발판 사이 빈칸·여백을 눌러도 스크롤이 시작되면
    그동안 다른 손가락의 발판 입력이 취소돼서 키가 안 눌리는 문제가 있었어요. */
 html.pgplay,html.pgplay body{overflow:hidden;overscroll-behavior:none}
 html.pgplay #pumpWrap{touch-action:none}
@@ -249,7 +249,7 @@ html.pgplay #pumpWrap{touch-action:none}
 #pgCv{aspect-ratio:auto;width:100%}
 #pgRow{display:flex;flex-direction:column;align-items:center;gap:10px}
 #pgRow.side{flex-direction:row;align-items:flex-start;justify-content:center;gap:16px}
-/* 발판: 실제 펌프 발판처럼 3×3 칸의 네 모서리 + 가운데만 어두운 타일이에요 */
+/* 발판: 오락실 리듬 게임 발판처럼 3×3 칸의 네 모서리 + 가운데만 어두운 타일이에요 */
 #pgPad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,var(--pgrow,76px));width:100%;max-width:340px;padding:4px;background:#ececec;border:3px solid var(--line);border-radius:10px;box-shadow:3px 3px 0 var(--line)}
 #pgRow.side #pgPad{width:240px;grid-template-rows:repeat(3,72px);flex:none}
 #pgPad button{position:relative;margin:3px;padding:2px;border:0;border-radius:3px;background:#141416;touch-action:none;overflow:hidden;--c:#fff}
@@ -307,7 +307,7 @@ html.pgplay #pumpWrap{touch-action:none}
 .nm-red{color:#e2334d!important;font-weight:700}
 .nm-gold{color:#c98a00!important;font-weight:700;text-shadow:0 0 6px rgba(255,210,63,.45)}
 .nm-rainbow{background:linear-gradient(90deg,#ff4d6d,#e8a91c,#2f8f5b,#3aa0ff,#9b6bff);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:700}
-/* 소리새 펌프 곡 테마(.pgth, js/pump.js의 pgThemeApply): 그 곡을 할 때만 플레이 화면 주변·결과표에 붙어요.
+/* 헛다리 레볼루션 곡 테마(.pgth, js/pump.js의 pgThemeApply): 그 곡을 할 때만 플레이 화면 주변·결과표에 붙어요.
    배경 그림은 JS가 style.background로 깔고, 여기선 색 변수를 어두운 남색 + 금색으로 바꿔요 */
 .pgth{--card:#0a1428;--ink:#f0e6d2;--muted:#b9b2a0;--bar:rgba(200,170,110,.28);--line:#c8aa6e;--ring:#c8aa6e;color:var(--ink)}
 #pumpWrap.pgth{max-width:none;min-height:100vh;box-sizing:border-box}
