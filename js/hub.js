@@ -126,7 +126,7 @@ let BADGES=null;   /* {id, list:[{number,gameName,rank}]} */
 function drawBadges(list,box){
   box=box||$('#pfBadges');box.innerHTML='';
   if(!list){const p=document.createElement('p');p.className='none';p.textContent='불러오는 중…';box.appendChild(p);return;}
-  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
+  if(!list.length){const p=document.createElement('p');p.className='none';p.textContent=`아직 없어요. 시즌이 끝날 때 ${SEASON&&SEASON.metric==='pumpBest'?'헛다리 최고점':'소지금'} 1·2등이 우승·준우승 뱃지를 받아요.`;box.appendChild(p);return;}
   list.forEach(b=>{
     const d=document.createElement('div'),s=document.createElement('small');
     d.className='badge b'+b.rank;d.textContent=`${b.rank===1?'🏆':'🥈'} 시즌${b.number} ${b.rank===1?'우승':'준우승'}`;

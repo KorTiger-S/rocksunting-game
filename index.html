@@ -22,7 +22,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=2.5.8">
+<link rel="stylesheet" href="css/style.css?v=2.5.9">
 </head>
 <body>
 <header class="board">
@@ -46,9 +46,9 @@
     <div class="note" id="chat"></div>
     <div class="glist" id="gameList">
       <div class="card grow"><span class="gi" aria-hidden="true">🎤</span><div><h2><span id="glPumpT">???</span> <span class="newtag">시즌2</span></h2><p id="glPump"></p></div><button class="go gopen" data-card="pumpCard">게임하기</button></div>
+      <div class="card grow"><span class="gi" aria-hidden="true">🎼</span><div><h2>롹순팅 AI 작곡 <span class="newtag">NEW</span></h2><p id="glSong"></p></div><button class="go gopen" data-card="songCard">AI작곡하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">⚽</span><div><h2>주스의 프리킥 도전장</h2><p id="glFree"></p></div><button class="go gopen" data-card="freeCard">게임하기</button></div>
       <div class="card grow"><span class="gi" aria-hidden="true">🥅</span><div><h2>친구와 1:1 페널티킥 대결</h2><p id="glDuel"></p></div><button class="go gopen" data-card="duelCard">게임하기</button></div>
-      <div class="card grow"><span class="gi" aria-hidden="true">🎼</span><div><h2>롹순팅 AI 작곡 <span class="newtag">NEW</span></h2><p id="glSong"></p></div><button class="go gopen" data-card="songCard">AI작곡하기</button></div>
     </div>
     <div class="card chall gdet" id="freeCard" hidden>
       <button class="linkbtn gback">← 게임 목록</button>
@@ -91,7 +91,7 @@
           <p id="pgInfo"></p>
           <button class="linkbtn" id="pgIntroBtn" hidden style="justify-self:start">🎬 ㅈㄱ와 파이리 이야기 보기</button>
           <ul class="rules">
-            <li>오락실 펌프처럼 5개 발판 <b>↙ ↖ ● ↗ ↘</b>을 밟아서 리듬을 맞춰요. 노트가 위쪽 발판에 닿는 순간 밟아요.</li>
+            <li>오락실 리듬 게임처럼 5개 발판 <b>↙ ↖ ● ↗ ↘</b>을 밟아서 리듬을 맞춰요. 노트가 위쪽 발판에 닿는 순간 밟아요.</li>
             <li>키보드는 <span id="pgKeyTxt"><b>Z Q S E C</b> 또는 숫자패드 <b>1 7 5 9 3</b></span>(⚙ 설정에서 바꿀 수 있어요), 모바일은 화면 아래 발판을 터치! (<b>Esc</b>: 일시정지)</li>
             <li>길게 늘어난 노트(롱노트)는 끝까지 누르고 있어야 해요. 게이지가 0이 되면 <b>STAGE BREAK</b>, 판돈은 호우 차지예요.</li>
             <li>호우의 목표 점수 이상이면 <b>판돈 2배</b>, <b>S 랭크</b>(950,000점 이상)면 판돈의 절반을 더 얹어 줘요.</li>
@@ -101,7 +101,7 @@
             <summary>옵션 (속도 · 싱크 · 키)</summary>
             <div class="pgrow"><span>속도</span><button class="go ghost" id="pgSpdM">-</button><span class="val" id="pgSpdV"></span><button class="go ghost" id="pgSpdP">+</button></div>
             <div class="pgrow"><span>싱크</span><button class="go ghost" id="pgOffM">-10</button><span class="val" id="pgOffV"></span><button class="go ghost" id="pgOffP">+10</button></div>
-            <div class="pgrow"><button class="go alt" id="pgCalBtn">🎯 싱크 자동 측정</button><button class="go ghost" id="pgKeyBtn">⌨ 펌프 키 변경</button></div>
+            <div class="pgrow"><button class="go alt" id="pgCalBtn">🎯 싱크 자동 측정</button><button class="go ghost" id="pgKeyBtn">⌨ 헛다리 레볼루션 키 변경</button></div>
             <p class="tip" style="text-align:left;margin:0">소리와 노트가 어긋나면 자동 측정을 해 보세요. 직접 맞추려면 판정에 계속 <b>느림</b>이 뜨면 +쪽으로, <b>빠름</b>이 뜨면 -쪽으로 맞춰 보세요. 블루투스 이어폰을 쓰면 +쪽으로 크게 밀어야 할 수 있어요.</p>
           </details>
           <div class="acts">
@@ -221,11 +221,11 @@
 </div>
 <div id="pumpWrap" hidden>
   <div class="gtop">
-    <h2 id="pgTitle">소리새 펌프</h2>
+    <h2 id="pgTitle">헛다리 레볼루션</h2>
     <button class="go ghost" id="pgPauseBtn" style="margin-left:auto">⏸ 일시정지</button>
   </div>
   <div id="pgRow">
-    <div id="pgStage"><canvas id="pgCv" width="480" height="720" aria-label="소리새 펌프 플레이 화면"></canvas></div>
+    <div id="pgStage"><canvas id="pgCv" width="480" height="720" aria-label="헛다리 레볼루션 플레이 화면"></canvas></div>
     <div id="pgPad" hidden>
       <button data-l="1" aria-label="왼쪽 위 발판 (Q)"></button><button data-l="3" aria-label="오른쪽 위 발판 (E)"></button><button data-l="2" aria-label="가운데 발판 (S)"></button><button data-l="0" aria-label="왼쪽 아래 발판 (Z)"></button><button data-l="4" aria-label="오른쪽 아래 발판 (C)"></button>
     </div>
@@ -243,8 +243,8 @@
 <div class="ov ovfix" id="setDlg" hidden role="dialog" aria-labelledby="setT">
   <div class="card dialog setdlg">
     <h2 id="setT">⚙ 설정</h2>
-    <div class="settabs" role="tablist"><button type="button" class="settab on" role="tab" aria-selected="true">⌨ 펌프 키 변경</button></div>
-    <p class="setsec">소리새 펌프 발판</p>
+    <div class="settabs" role="tablist"><button type="button" class="settab on" role="tab" aria-selected="true">⌨ 헛다리 레볼루션 키 변경</button></div>
+    <p class="setsec">헛다리 레볼루션 발판</p>
     <table class="keytab" id="pgKeyTab"><thead><tr><th>발판</th><th>키 1</th><th>키 2</th></tr></thead><tbody></tbody></table>
     <p class="setmsg" id="pgKeyMsg" aria-live="polite"></p>
     <div class="keypre">
@@ -325,7 +325,7 @@
   <div class="card dialog">
     <h2>🏆 랭킹</h2>
     <p class="tip" id="rkSeason" style="margin-top:0"></p>
-    <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="pumpBest" hidden>펌프 최고점</button><button class="go ghost" data-m="bestPts">프리킥 최고점</button></div>
+    <div class="rtabs"><button class="go ghost on" data-m="money">소지금</button><button class="go ghost" data-m="pumpBest" hidden>헛다리 최고점</button><button class="go ghost" data-m="bestPts">프리킥 최고점</button></div>
     <table class="sumtab" id="rkTab"></table>
     <p class="tip" id="rkNote"></p>
     <div class="btns"><button class="go alt" id="rkShare">💬 랭킹 이미지 카톡으로 보내기</button><button class="go" id="rkClose">닫기</button></div>
@@ -438,29 +438,29 @@
      dev/build.js가 이 블록을 통째로 하나의 <script>로 합쳐서 dist/rocksunting-single.html을 만들어요.
      ?v=버전은 캐시 무효화용이에요. index.html을 그대로 배포할 때, 새 버전을 올려도 브라우저가 예전 js 파일을
      캐시에서 계속 쓰는 바람에 새 기능이 반영 안 되는 문제를 막아 줘요. 버전을 올릴 때 이 숫자도 같이 올리세요. -->
-<script src="js/util.js?v=2.5.8"></script>
-<script src="js/save.js?v=2.5.8"></script>
-<script src="js/cloud.js?v=2.5.8"></script>
-<script src="js/login.js?v=2.5.8"></script>
-<script src="js/rank.js?v=2.5.8"></script>
-<script src="js/audio.js?v=2.5.8"></script>
-<script src="js/input.js?v=2.5.8"></script>
-<script src="js/render.js?v=2.5.8"></script>
-<script src="js/kick-data.js?v=2.5.8"></script>
-<script src="js/kick.js?v=2.5.8"></script>
-<script src="js/hub.js?v=2.5.8"></script>
-<script src="js/shop.js?v=2.5.8"></script>
-<script src="js/uprof.js?v=2.5.8"></script>
-<script src="js/splash.js?v=2.5.8"></script>
-<script src="js/duel.js?v=2.5.8"></script>
-<script src="js/compose-data.js?v=2.5.8"></script>
-<script src="js/compose.js?v=2.5.8"></script>
-<script src="js/pump-data.js?v=2.5.8"></script>
-<script src="js/pump.js?v=2.5.8"></script>
-<script src="js/jgintro.js?v=2.5.8"></script>
-<script src="js/lateintro.js?v=2.5.8"></script>
-<script src="js/narakintro.js?v=2.5.8"></script>
-<script src="js/main.js?v=2.5.8"></script>
+<script src="js/util.js?v=2.5.9"></script>
+<script src="js/save.js?v=2.5.9"></script>
+<script src="js/cloud.js?v=2.5.9"></script>
+<script src="js/login.js?v=2.5.9"></script>
+<script src="js/rank.js?v=2.5.9"></script>
+<script src="js/audio.js?v=2.5.9"></script>
+<script src="js/input.js?v=2.5.9"></script>
+<script src="js/render.js?v=2.5.9"></script>
+<script src="js/kick-data.js?v=2.5.9"></script>
+<script src="js/kick.js?v=2.5.9"></script>
+<script src="js/hub.js?v=2.5.9"></script>
+<script src="js/shop.js?v=2.5.9"></script>
+<script src="js/uprof.js?v=2.5.9"></script>
+<script src="js/splash.js?v=2.5.9"></script>
+<script src="js/duel.js?v=2.5.9"></script>
+<script src="js/compose-data.js?v=2.5.9"></script>
+<script src="js/compose.js?v=2.5.9"></script>
+<script src="js/pump-data.js?v=2.5.9"></script>
+<script src="js/pump.js?v=2.5.9"></script>
+<script src="js/jgintro.js?v=2.5.9"></script>
+<script src="js/lateintro.js?v=2.5.9"></script>
+<script src="js/narakintro.js?v=2.5.9"></script>
+<script src="js/main.js?v=2.5.9"></script>
 <!-- BUILD:JS:END -->
 </body>
 </html>
