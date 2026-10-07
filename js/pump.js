@@ -54,6 +54,11 @@ const PG_LIFE0=55;   /* 시작 게이지(%) */
 /* ---------- 허브 카드: 곡 선택(0) → 난이도 선택(1, 난이도마다 판돈 고정) → 게임 설명 + 노래 시작(2) ---------- */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
 const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
+/* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요.
+   테스트 판은 판돈·마이크를 안 쓰고, 돈·펌프 최고점·랭킹에도 아무것도 남기지 않아요. */
+const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
+const pgLocked=d=>!!d.wip&&!PG_TEST;
+const pgCost=(d,i)=>d.wip?0:pgBet(i);
 function pgGo(step){
   pgStep=step;renderPumpCard();
   const c=$('#pumpCard');if(c.getBoundingClientRect().top<0)c.scrollIntoView({block:'start'});   /* 긴 곡 목록 아래에서 눌렀어도 다음 단계의 맨 위부터 보여요 */
@@ -77,7 +82,7 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
     const b=document.createElement('button');b.type='button';b.className='song';
     const t=document.createElement('b'),st=document.createElement('span');t.textContent=n;st.className='stars';
     b.appendChild(t);b.appendChild(st);
-    b.addEventListener('click',()=>{if(PGSONGS[PGO.song].diffs[i].wip){sfx('deny');toast('이 난이도는 채보 작업 중이에요. 조금만 기다려 주세요!');return;}if(S.money<pgBet(i)){sfx('deny');toast(`판돈 ${fmt(pgBet(i))}원이 필요해요.`);return;}PGO.diff=i;pgOptSave();pgGo(2);});
+    b.addEventListener('click',()=>{const d=PGSONGS[PGO.song].diffs[i];if(pgLocked(d)){sfx('deny');toast('이 난이도는 채보 작업 중이에요. 조금만 기다려 주세요!');return;}if(S.money<pgCost(d,i)){sfx('deny');toast(`판돈 ${fmt(pgBet(i))}원이 필요해요.`);return;}PGO.diff=i;pgOptSave();pgGo(2);});
     dbox.appendChild(b);
   });
 })();
@@ -88,25 +93,25 @@ function renderPumpCard(){
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
   micTick();renderMics();pgOptFix();
-  if(PGSONGS[PGO.song].diffs[PGO.diff].wip){PGO.diff=0;if(pgStep===2)pgStep=1;}   /* 작업 중 난이도는 고를 수 없어요 */
-  if(pgStep===2&&S.money<pgBet(PGO.diff))pgStep=1;   /* 돈이 모자라 이 난이도를 못 하게 되면 난이도 선택으로 돌아가요 */
+  if(pgLocked(PGSONGS[PGO.song].diffs[PGO.diff])){PGO.diff=0;if(pgStep===2)pgStep=1;}   /* 작업 중 난이도는 고를 수 없어요(채보 테스트 땐 돼요) */
+  if(pgStep===2&&S.money<pgCost(PGSONGS[PGO.song].diffs[PGO.diff],PGO.diff))pgStep=1;   /* 돈이 모자라 이 난이도를 못 하게 되면 난이도 선택으로 돌아가요 */
   [0,1,2].forEach(i=>{$('#pgStep'+i).hidden=i!==pgStep;});
   [...$('#pgSongs').children].forEach((b,i)=>b.classList.toggle('sel',i===PGO.song));
-  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),bet=pgBet(PGO.diff);
+  const sg=pgPick(PGO.song,PGO.diff),ch=pgChart(sg),bet=pgCost(sg,PGO.diff);
   $('#pgDiffT').textContent=`「${sg.name}」 난이도를 골라요`;
   [...$('#pgDiffs').children].forEach((b,i)=>{
-    const d=sg.diffs[i],poor=!d.wip&&S.money<pgBet(i);
-    b.classList.toggle('sel',i===PGO.diff);b.classList.toggle('poor',poor);b.classList.toggle('wip',!!d.wip);b.setAttribute('aria-disabled',poor||!!d.wip);
-    b.lastChild.textContent=d.wip?'🚧 채보 작업 중':`★${d.stars} · 판돈 ${fmt(pgBet(i))}원`;   /* 돈이 모자라면 CSS(.poor)가 "소지금 부족" 줄을 붙여요 */
-    b.setAttribute('aria-label',d.wip?`${PG_DIFFS[i]} · 채보 작업 중이라 아직 못 해요`:`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 ${fmt(pgBet(i))}원${poor?' · 소지금 부족':''}`);
+    const d=sg.diffs[i],lk=pgLocked(d),poor=!lk&&S.money<pgCost(d,i);
+    b.classList.toggle('sel',i===PGO.diff);b.classList.toggle('poor',poor);b.classList.toggle('wip',lk);b.setAttribute('aria-disabled',poor||lk);
+    b.lastChild.textContent=lk?'🚧 채보 작업 중':d.wip?`🧪 채보 테스트 · ★${d.stars} · 기록 안 남음`:`★${d.stars} · 판돈 ${fmt(pgBet(i))}원`;   /* 돈이 모자라면 CSS(.poor)가 "소지금 부족" 줄을 붙여요 */
+    b.setAttribute('aria-label',lk?`${PG_DIFFS[i]} · 채보 작업 중이라 아직 못 해요`:d.wip?`${PG_DIFFS[i]} · 채보 테스트 · 별 ${d.stars}개 · 기록 안 남음`:`${PG_DIFFS[i]} · 별 ${d.stars}개 · 판돈 ${fmt(pgBet(i))}원${poor?' · 소지금 부족':''}`);
   });
   $('#pgSumT').textContent=`${sg.name} · ${PG_DIFFS[PGO.diff]} ★${sg.stars}`;
-  $('#pgSumB').textContent=`판돈 ${fmt(bet)}원`;
+  $('#pgSumB').textContent=sg.wip?'🧪 채보 테스트 · 판돈·마이크 없이, 기록 안 남아요':`판돈 ${fmt(bet)}원`;
   $('#pgIntroBtn').hidden=!sg.intro;if(sg.intro)$('#pgIntroBtn').textContent=INTROS[sg.intro].btn;
   $('#pgInfo').textContent=`호우 목표 ${fmt(sg.target)}점 · 노트 ${ch.taps+ch.holds}개 · 약 ${sg.secs}초`;
   $('#pgSpdV').textContent='×'+PG_SPEEDS[PGO.spd];$('#pgSpdM').disabled=PGO.spd<=0;$('#pgSpdP').disabled=PGO.spd>=PG_SPEEDS.length-1;
   $('#pgOffV').textContent=(PGO.off>0?'+':'')+PGO.off+'ms';$('#pgOffM').disabled=PGO.off<=-200;$('#pgOffP').disabled=PGO.off>=200;
-  $('#pgStart').disabled=!(S.money>=bet&&S.mics>0);
+  $('#pgStart').disabled=!(S.money>=bet&&(S.mics>0||sg.wip));
 }
 $('#pgSpdM').addEventListener('click',()=>{PGO.spd--;pgOptSave();renderPumpCard();});
 $('#pgSpdP').addEventListener('click',()=>{PGO.spd++;pgOptSave();renderPumpCard();});
@@ -215,12 +220,12 @@ function pgNewGame(sg,bet,before){
 function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는 건너뛰고) 들어온 경우. 버튼 클릭 땐 이벤트 객체가 와요 */
   if(!pgUnlocked()||!USER||mode!=='hub'||JG.on)return;
   micTick();pgOptFix();
-  const sg=pgPick(PGO.song,PGO.diff),bet=pgBet(PGO.diff);
-  if(sg.wip){sfx('deny');toast('이 난이도는 채보 작업 중이에요.');renderHub();return;}
+  const sg=pgPick(PGO.song,PGO.diff),bet=pgCost(sg,PGO.diff);
+  if(pgLocked(sg)){sfx('deny');toast('이 난이도는 채보 작업 중이에요.');renderHub();return;}
   if(S.money<bet){sfx('deny');toast(`판돈 ${fmt(bet)}원이 필요해요.`);return;}
   pgAudLoad(sg);pgThemeImg(sg);   /* 음원·테마 그림은 인트로가 도는 동안 불러 둬요 */
-  if(sg.intro&&S.mics>0&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
-  if(!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
+  if(sg.intro&&(S.mics>0||sg.wip)&&introDone!==true){jgPlay(sg.intro,()=>pumpStart(true));return;}   /* 인트로가 있는 곡은 매번 인트로부터 (건너뛰기 버튼·Esc로 바로 노래) */
+  if(!sg.wip&&!micUse()){sfx('deny');toast('마이크가 없어요. 채워질 때까지 기다려 주세요.');renderHub();return;}
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
   mode='pump';pgThemeApply(sg);showPump(true);pgResize();
@@ -308,7 +313,7 @@ function pgAudPlay(g){
 }
 function pgAudStop(g,when){const s=g.src;g.src=null;if(s)try{s.stop(when||0);}catch(e){}}
 function pgAudFail(g){   /* 음원을 못 불러왔어요: 판돈과 마이크를 돌려주고 나가요 */
-  if(!g.settled){g.settled=true;S.money+=g.bet;if(!isPractice()){S.mics=Math.min(MIC_MAX,(S.mics||0)+1);if(S.mics>=MIC_MAX)S.micAt=0;}save();}
+  if(!g.settled){g.settled=true;S.money+=g.bet;if(!isPractice()&&!g.sg.wip){S.mics=Math.min(MIC_MAX,(S.mics||0)+1);if(S.mics>=MIC_MAX)S.micAt=0;}save();}
   g.state='end';pgStopAudio(g);sfx('error');toast('노래 파일을 불러오지 못했어요. 판돈과 마이크를 돌려줬어요.',4000);pgExit();
 }
 
@@ -521,15 +526,16 @@ function pgFinish(failed,quit){
   const score=pgScore(g),grade=failed?'F':pgGrade(score),win=!failed&&score>=g.sg.target,bonus=Math.round(g.bet*.5/100)*100;
   const delta=win?2*g.bet+(grade==='S'?bonus:0):0;   /* 판돈은 시작할 때 이미 뺐으니, 이기면 판돈의 2배(+S랭크 보너스)만 더해요 */
   g.settled=true;g.score=score;g.grade=grade;g.win=win;
+  const test=!!g.sg.wip;   /* 채보 테스트 판: 돈·최고점·플레이 수·마이크·랭킹 모두 그대로 */
   S.money=Math.max(0,S.money+delta);
-  if(!failed)S.pumpBest=Math.max(S.pumpBest||0,score);
+  if(!failed&&!test)S.pumpBest=Math.max(S.pumpBest||0,score);
   /* 호우를 이기면(목표 점수 이상) 이번 판에 쓴 마이크를 돌려받아요 */
   let micBack=false;
-  if(win&&!isPractice()){const had=S.mics||0;S.mics=Math.min(MIC_MAX,had+1);if(S.mics>=MIC_MAX)S.micAt=0;micBack=S.mics>had;}
-  S.plays=(S.plays||0)+1;
+  if(win&&!isPractice()&&!test){const had=S.mics||0;S.mics=Math.min(MIC_MAX,had+1);if(S.mics>=MIC_MAX)S.micAt=0;micBack=S.mics>had;}
+  if(!test)S.plays=(S.plays||0)+1;
   if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
+  if(!test)cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
   sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
   if(micBack)setTimeout(()=>{toast('🎤 호우를 이겨서 마이크를 돌려받았어요!',3000);sfx('ping');},900);
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
@@ -545,7 +551,8 @@ function pgFinish(failed,quit){
     if(g.ok+g.ng)rows.push(['롱노트',`성공 ${g.ok} · 실패 ${g.ng}`]);
     rows.push(['호우 목표',fmt(g.sg.target)+'점']);
     let h=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
-    h+=`<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(g.bet)}원</td></tr>`+(win&&grade==='S'?`<tr><td>S 랭크 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
+    if(test)h+=`<tr><td>🧪 채보 테스트</td><td>기록 안 남아요</td></tr>`;
+    else h+=`<tr><td>판돈</td><td class="${win?'plus':'minus'}">${win?'+':'-'}${fmt(g.bet)}원</td></tr>`+(win&&grade==='S'?`<tr><td>S 랭크 보너스</td><td class="plus">+${fmt(bonus)}원</td></tr>`:'')+
        `<tr><td>소지금</td><td>${fmt(g.before)} → ${fmt(S.money)}원</td></tr>`;
     $('#pgRTab').innerHTML=h;
     const line=pick(say);$('#pgRSay').textContent='호우: '+line;
