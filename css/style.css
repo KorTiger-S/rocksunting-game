@@ -318,3 +318,26 @@ html.pgplay #pumpWrap{touch-action:none}
 .dialog.pgth #pgRSay{color:var(--ink)!important}
 .dialog.pgth .go:not(.ghost){background:#c8aa6e;color:#010a13;border-color:#010a13}
 #pumpWrap.pgth #pgPad{background:rgba(1,10,19,.82);box-shadow:0 0 18px rgba(200,170,110,.3)}
+/* AI 작곡 요청 (js/compose.js) */
+.sgform{display:grid;gap:8px}
+.sglab{display:block;margin-top:6px;font-weight:700;font-size:14px;color:var(--ink)}
+.sglab small{font-weight:400;font-size:12px;color:var(--muted);margin-left:4px}
+.sgform .gbin{width:100%}
+.sgta{resize:vertical;min-height:180px;line-height:1.6;font-size:15px}
+.sgtip{text-align:left!important;margin:0!important}
+.sgtags,.sgchips{display:flex;flex-wrap:wrap;gap:6px}
+.sgtags button{padding:3px 9px;border:1.5px dashed var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px;font-weight:700}
+.sgchips button{padding:5px 11px;border:2px solid var(--line);border-radius:99px;background:var(--card);color:var(--ink);font-size:14px;font-weight:700;box-shadow:2px 2px 0 var(--line)}
+.sgchips button[aria-pressed="true"]{background:var(--ring);color:#fff}
+.sgchips button:disabled{opacity:.4;cursor:default}
+.sgbpm{margin:2px 0}
+.sgbpm label{font-weight:700;font-size:14px}
+.sgbpm input{flex:1;min-width:140px;accent-color:var(--ring)}
+.sgform .pgopt{display:grid;gap:8px}
+.sgprev{display:grid;gap:4px;padding:10px 12px;border:2px dashed var(--line);border-radius:12px;font-size:13px;text-align:left}
+.sgprev code{font-size:13px;color:var(--muted);word-break:break-word;white-space:normal}
+.sgmine{display:grid;gap:6px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--bar);font-size:14px}
+.sgmine ul{margin:0;padding-left:18px}
+.sgmine li small{color:var(--muted)}
+.sgst{display:inline-block;padding:0 7px;margin-left:4px;border-radius:99px;font-size:12px;font-weight:700;background:var(--card);border:1.5px solid var(--line)}
+.sgst.done{background:var(--ok);color:#fff}

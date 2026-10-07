@@ -903,8 +903,138 @@ begin
   return jsonb_build_object('ok', true, 'list', public.rk_gb_json(o, 30));
 end $$;
 
+-- AI 작곡 요청: 로그인한 플레이어가 제목·가사·스타일을 하루(한국 시간) 1번 보낸다. (화면: js/compose.js, 선택지: js/compose-data.js)
+-- GitHub Actions(.github/workflows/song-issues.yml → scripts/song_issues.js)가 service_role 키로 rk_song_pending을 읽어
+-- GitHub 이슈를 만들고 rk_song_mark로 issued 표시를 한다. 관리자가 곡을 만들고 이슈를 닫으면 다음 실행 때 done이 된다.
+-- 상태: new(접수) → issued(이슈 생성됨) → done(완성). 도배 방지: 한 사람 하루 1번, 전체 하루 30개.
+create table if not exists public.rk_songs (
+  id          bigint generated always as identity primary key,
+  author      text not null,                 -- 요청한 사람(소문자 ID)
+  author_name text not null,                 -- 표시용 ID(닉네임)
+  title       text not null,
+  lyrics      text not null default '',
+  note        text not null default '',      -- 하고 싶은 말
+  opts        jsonb not null default '{}',   -- 장르·분위기·템포·BPM 등 (id만, 영어 태그는 js/compose-data.js)
+  status      text not null default 'new',   -- new | issued | done
+  issue       int,                           -- GitHub 이슈 번호
+  created_at  timestamptz not null default now(),
+  issued_at   timestamptz
+);
+create index if not exists rk_songs_author_idx on public.rk_songs (author, created_at desc);
+create index if not exists rk_songs_status_idx on public.rk_songs (status, id);
+alter table public.rk_songs enable row level security;
+revoke all on public.rk_songs from anon, authenticated;
+
+-- 내부 도우미: 선택지 id 하나(영문 소문자·숫자·_). 아니면 기본값
+create or replace function public.rk_song_id(v jsonb, dflt text) returns text
+language sql immutable as $$
+  select case when jsonb_typeof(v) = 'string' and (v #>> '{}') ~ '^[a-z0-9_]{1,12}$' then v #>> '{}' else dflt end
+$$;
+-- 내부 도우미: 선택지 id 목록(중복 제거, 고른 순서 유지, 최대 n개)
+create or replace function public.rk_song_ids(v jsonb, n int) returns jsonb
+language sql immutable as $$
+  select coalesce(jsonb_agg(x order by o), '[]'::jsonb) from (
+    select x, min(o) as o from (
+      select j #>> '{}' as x, o from jsonb_array_elements(case when jsonb_typeof(v) = 'array' then v else '[]'::jsonb end) with ordinality as t(j, o)
+      where jsonb_typeof(j) = 'string' and j #>> '{}' ~ '^[a-z0-9_]{1,12}$') s
+    group by x order by min(o) limit n) d
+$$;
+-- 내부 도우미: 여러 줄 글 정리(제어 문자 제거, 줄바꿈 통일, 빈 줄은 최대 1줄)
+create or replace function public.rk_song_text(t text) returns text
+language sql immutable as $$
+  select btrim(regexp_replace(regexp_replace(regexp_replace(normalize(coalesce(t, ''), NFC), E'\r\n?', E'\n', 'g'),
+                '[\x01-\x08\x0b-\x1f\x7f]', '', 'g'), E'\n{3,}', E'\n\n', 'g'), E' \t\n')
+$$;
+-- 내부 도우미: 오늘(한국 시간) 이 사람이 요청했는지
+create or replace function public.rk_song_today(k text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.rk_songs where author = k
+                 and (created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date)
+$$;
+-- 내부 도우미: 내 최근 요청 5개
+create or replace function public.rk_song_list(k text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('no', id, 'title', title, 'status', status, 'issue', issue, 'at', created_at) order by id desc), '[]'::jsonb)
+  from (select * from public.rk_songs where author = k order by id desc limit 5) s
+$$;
+
+create or replace function public.rk_song_request(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  k text := lower(public.rk_norm_id(p->>'id')); a text;
+  ttl text := btrim(regexp_replace(normalize(coalesce(p->>'title', ''), NFC), '[[:cntrl:][:space:]]+', ' ', 'g'));
+  lyr text := public.rk_song_text(p->>'lyrics');
+  nt text := btrim(regexp_replace(normalize(coalesce(p->>'note', ''), NFC), '[[:cntrl:][:space:]]+', ' ', 'g'));
+  o jsonb := case when jsonb_typeof(p->'opts') = 'object' then p->'opts' else '{}'::jsonb end;
+  op jsonb; dur text;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  dur := public.rk_song_id(o->'dur', '120');
+  if dur not in ('30', '60', '120', '180', '240') then dur := '120'; end if;
+  op := jsonb_build_object(
+    'genre', public.rk_song_ids(o->'genre', 3), 'mood', public.rk_song_ids(o->'mood', 3), 'inst', public.rk_song_ids(o->'inst', 4),
+    'tempo', public.rk_song_id(o->'tempo', 'mid'), 'bpm', public.rk_int(o->'bpm', 50, 200, 100),
+    'vocal', public.rk_song_id(o->'vocal', 'male'), 'lang', public.rk_song_id(o->'lang', 'ko'), 'dur', dur,
+    'key', public.rk_song_id(o->'key', 'auto'), 'meter', public.rk_song_id(o->'meter', '4'));
+  if op->>'vocal' = 'inst' then lyr := ''; end if;   -- 연주곡은 가사 없음
+  if ttl = '' then return jsonb_build_object('ok', false, 'error', 'no_title'); end if;
+  if lyr = '' and op->>'vocal' <> 'inst' then return jsonb_build_object('ok', false, 'error', 'no_lyrics'); end if;
+  if jsonb_array_length(op->'genre') = 0 then return jsonb_build_object('ok', false, 'error', 'no_genre'); end if;
+  if char_length(ttl) > 40 or char_length(lyr) > 2000 or char_length(nt) > 200 then return jsonb_build_object('ok', false, 'error', 'too_long'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
+  perform pg_advisory_xact_lock(hashtext('rk_song_request'));   -- 동시에 두 번 눌러도 하루 1번이 지켜지게
+  if public.rk_song_today(k) then return jsonb_build_object('ok', false, 'error', 'daily_limit'); end if;
+  if (select count(*) from public.rk_songs where (created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date) >= 30 then
+    return jsonb_build_object('ok', false, 'error', 'busy');
+  end if;
+  insert into public.rk_songs (author, author_name, title, lyrics, note, opts)
+  values (k, (select name from public.rk_users where id = k), ttl, lyr, nt, op);
+  return jsonb_build_object('ok', true, 'today', true, 'list', public.rk_song_list(k));
+end $$;
+
+create or replace function public.rk_song_mine(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text := lower(public.rk_norm_id(p->>'id')); a text;
+begin
+  if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
+  if not public.rk_pin_ok(p->>'pin') then return jsonb_build_object('ok', false, 'error', 'bad_pin'); end if;
+  a := public.rk_auth(k, p->>'pin');
+  if a = 'none' then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
+  if a <> 'ok' then return jsonb_build_object('ok', false, 'error', a); end if;
+  return jsonb_build_object('ok', true, 'today', public.rk_song_today(k), 'list', public.rk_song_list(k));
+end $$;
+
+-- 관리용(service_role만): 이슈로 옮길 요청(new) / 이슈가 열려 있는 요청(issued)
+create or replace function public.rk_song_pending(p jsonb default '{}') returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('ok', true,
+    'new', coalesce((select jsonb_agg(jsonb_build_object('no', id, 'author', author_name, 'title', title, 'lyrics', lyrics, 'note', note,
+                                                         'opts', opts, 'at', created_at) order by id)
+                     from (select * from public.rk_songs where status = 'new' order by id limit 20) s), '[]'::jsonb),
+    'issued', coalesce((select jsonb_agg(jsonb_build_object('no', id, 'issue', issue) order by id)
+                        from public.rk_songs where status = 'issued' and issue is not null), '[]'::jsonb))
+$$;
+-- 관리용(service_role만): {no, issue} → issued,  {no, status:'done'} → done
+create or replace function public.rk_song_mark(p jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n int; sid bigint := public.rk_int(p->'no', 0, 2147483647, 0); iss int := public.rk_int(p->'issue', 0, 2147483647, 0);
+begin
+  if p->>'status' = 'done' then
+    update public.rk_songs set status = 'done' where id = sid and status = 'issued';
+  elsif iss > 0 then
+    update public.rk_songs set status = 'issued', issue = iss, issued_at = now() where id = sid and status = 'new';
+  end if;
+  get diagnostics n = row_count;
+  return jsonb_build_object('ok', n > 0);
+end $$;
+
 -- 브라우저(anon)는 아래 함수만 실행할 수 있다. 내부 도우미와 시즌 마감 함수는 막아 둔다.
 revoke all on function public.rk_auth(text, text), public.rk_season_json(), public.rk_default_data(), public.rk_badge_list(text), public.rk_reset_players(text), public.rk_gb_json(text, int) from public, anon, authenticated;
+revoke all on function public.rk_song_id(jsonb, text), public.rk_song_ids(jsonb, int), public.rk_song_text(text), public.rk_song_today(text), public.rk_song_list(text),
+                       public.rk_song_pending(jsonb), public.rk_song_mark(jsonb) from public, anon, authenticated;
 revoke all on function public.rk_duel_user(jsonb), public.rk_duel_shot(double precision, double precision, double precision, int), public.rk_duel_gauss(), public.rk_duel_json(public.rk_duels, text),
                        public.rk_duel_settle(public.rk_duels, text), public.rk_duel_active(text), public.rk_duel_pay(text, int, text), public.rk_duel_record(text, boolean, text) from public, anon, authenticated;
 revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
@@ -912,12 +1042,15 @@ revoke all on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_s
                        public.rk_profile(jsonb), public.rk_gb_list(jsonb), public.rk_gb_write(jsonb), public.rk_gb_delete(jsonb),
                        public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date),
                        public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
-                       public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb) from public;
+                       public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb),
+                       public.rk_song_request(jsonb), public.rk_song_mine(jsonb) from public;
 revoke all on function public.rk_close_season(jsonb), public.rk_season_report(jsonb), public.rk_set_season_end(date) from anon, authenticated;
 grant execute on function public.rk_ping(jsonb), public.rk_load(jsonb), public.rk_save(jsonb),
                           public.rk_score(jsonb), public.rk_top(jsonb), public.rk_season_get(jsonb), public.rk_change_pin(jsonb), public.rk_badges(jsonb),
                           public.rk_profile(jsonb), public.rk_gb_list(jsonb), public.rk_gb_write(jsonb), public.rk_gb_delete(jsonb),
                           public.rk_duel_create(jsonb), public.rk_duel_join(jsonb), public.rk_duel_state(jsonb),
-                          public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb)
+                          public.rk_duel_pick(jsonb), public.rk_duel_leave(jsonb), public.rk_duel_peek(jsonb),
+                          public.rk_song_request(jsonb), public.rk_song_mine(jsonb)
   to anon, authenticated;
 grant execute on function public.rk_close_season(jsonb), public.rk_season_report(jsonb) to service_role;
+grant execute on function public.rk_song_pending(jsonb), public.rk_song_mark(jsonb) to service_role;
