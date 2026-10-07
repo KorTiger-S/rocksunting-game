@@ -1,6 +1,6 @@
 'use strict';
-/* ---------- 소리새 펌프 (시즌2 · v2.0.0~) ----------
-   호우와 하는 5패널 리듬 내기예요. 오락실 펌프처럼 노트가 화면 아래에서 위로 올라오고, 위쪽 발판(↙ ↖ ● ↗ ↘)에 닿는 순간 맞춰 밟아요.
+/* ---------- 헛다리 레볼루션 (시즌2 · v2.0.0~) ----------
+   호우와 하는 5패널 리듬 내기예요. 오락실 리듬 게임처럼 노트가 화면 아래에서 위로 올라오고, 위쪽 발판(↙ ↖ ● ↗ ↘)에 닿는 순간 맞춰 밟아요.
    - 곡·채보: pump-data.js (악보는 Web Audio로 합성, 채보는 악보에서 자동 생성)
    - 시계: 곡이 흐르는 AudioContext 시간(AC.currentTime)을 기준으로 삼아서, 화면·소리·판정이 어긋나지 않아요.
      탭이 가려지면 AudioContext가 멈추면서 게임도 같이 멈춰요.
@@ -27,7 +27,7 @@ function micUse(){
 const micWaitSec=()=>Math.max(0,Math.ceil(((S.micAt+MIC_MIN)*60000-Date.now())/1000));
 function renderMics(){
   const b=S.mics==null?MIC_MAX:S.mics;
-  $('#mics').setAttribute('aria-label',`소리새 펌프 도전 횟수 ${b}/${MIC_MAX}`);
+  $('#mics').setAttribute('aria-label',`헛다리 레볼루션 도전 횟수 ${b}/${MIC_MAX}`);
   [...$('#mics').children].forEach((el,i)=>el.classList.toggle('used',i>=b));
   const w=micWaitSec(),t=`${Math.floor(w/60)}:${String(w%60).padStart(2,'0')}`;
   $('#micNote').textContent=b>=MIC_MAX?'도전 횟수가 가득 찼어요!':b<=0?`마이크가 다 떨어졌어요. 다음 마이크까지 ${t}`:`다음 마이크까지 ${t} (30분마다 1개 충전)`;
@@ -55,7 +55,7 @@ const PG_LIFE0=55;   /* 시작 게이지(%) */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
 const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
 /* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요.
-   테스트 판은 판돈·마이크를 안 쓰고, 돈·펌프 최고점·랭킹에도 아무것도 남기지 않아요. */
+   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 레볼루션 최고점·랭킹에도 아무것도 남기지 않아요. */
 const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
 const pgLocked=d=>!!d.wip&&!PG_TEST;
 const pgCost=(d,i)=>d.wip?0:pgBet(i);
@@ -88,7 +88,7 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
 })();
 function renderPumpCard(){
   const open=pgUnlocked();
-  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 펌프 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
+  document.querySelector('.rtabs [data-m="pumpBest"]').hidden=!PUMP_PUBLIC;   /* 랭킹의 헛다리 레볼루션 항목은 모두에게 공개하기 전까지 숨겨요(잠금을 푼 기기도) */
   $('#pgH2').firstChild.textContent=open?'호우와 소리새 헛다리짚기 훈련 ':'??? ';
   $('#pgLock').hidden=open;$('#pgOpen').hidden=!open;$('#pgRelock').hidden=PUMP_PUBLIC;
   if(!open)return;
@@ -138,7 +138,7 @@ const PGCOL=['#3aa0ff','#ff4d6d','#ffd23f','#ff4d6d','#3aa0ff'];
 const PGANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ ● ↗ ↘ (위쪽 화살표를 돌려서 그려요) */
 const PGJN=['PERFECT','GREAT','GOOD','BAD','MISS'],PGJC=['#ffe066','#7bed9f','#6ec8ff','#c9a0ff','#ff6b6b'];
 const PGWT=[1,.8,.5,.2,0],PGLIFE=[1.5,1,0,-4,-8];   /* 판정별 점수 가중치, 게이지 변화 */
-/* 발판 키: 발판(lane)마다 키 2칸. 설정 > 펌프 키 변경에서 바꾸고 이 기기에만 저장해요(rk:pgkeys). PGKEYS는 거기서 만든 {키 코드: 발판} 표 */
+/* 발판 키: 발판(lane)마다 키 2칸. 설정 > 헛다리 레볼루션 키 변경에서 바꾸고 이 기기에만 저장해요(rk:pgkeys). PGKEYS는 거기서 만든 {키 코드: 발판} 표 */
 const PGKBIND_DEF=[['KeyZ','Numpad1'],['KeyQ','Numpad7'],['KeyS','Numpad5'],['KeyE','Numpad9'],['KeyC','Numpad3']];
 let PGKBIND=PGKBIND_DEF.map(a=>a.slice()),PGKEYS={};
 try{const o=JSON.parse(lsGet('rk:pgkeys')||'null');if(Array.isArray(o)&&o.length===5)PGKBIND=o.map(a=>[0,1].map(i=>Array.isArray(a)&&typeof a[i]==='string'&&a[i]?a[i]:''));}catch(e){}
@@ -229,7 +229,7 @@ function pumpStart(introDone){   /* introDone===true: 인트로를 보고(또는
   const before=S.money;S.money-=bet;save();
   PG=pgNewGame(sg,bet,before);
   mode='pump';pgThemeApply(sg);showPump(true);pgResize();
-  $('#pgTitle').textContent=`호우와 소리새 펌프 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
+  $('#pgTitle').textContent=`호우와 헛다리 레볼루션 · ${sg.name} (${PG_DIFFS[sg.diff]})`;
   $('#pgResult').hidden=true;$('#pgPause').hidden=true;
   pgBegin();
   const g=PG;
@@ -535,7 +535,7 @@ function pgFinish(failed,quit){
   if(!test)S.plays=(S.plays||0)+1;
   if(S.money>=1000000&&!S.cleared){S.cleared=true;toast('🎉 100만 원 달성! (엔딩 애니메이션은 다음 업데이트에서 만나요)',5000);setTimeout(()=>sfx('bigwin'),1800);}
   save();
-  if(!test)cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`펌프 ${grade} ${win?'승':'패'}`,money:S.money});
+  if(!test)cloudScore({bet:g.bet,goals:0,pts:Math.min(99999,Math.round(score/10)),result:`헛다리 레볼루션 ${grade} ${win?'승':'패'}`,money:S.money});
   sfx(failed?'lose':grade==='S'?'bigwin':win?'win':'lose');
   if(micBack)setTimeout(()=>{toast('🎤 호우를 이겨서 마이크를 돌려받았어요!',3000);sfx('ping');},900);
   const c=g.cnt,allP=!failed&&c[1]+c[2]+c[3]+c[4]+g.ng===0,fc=!failed&&c[3]+c[4]+g.ng===0;
@@ -602,7 +602,7 @@ async function pgShareDraw(g,noFace){
   else{c.fillStyle='rgba(255,255,255,.035)';for(let x=0;x<W;x+=24)c.fillRect(x,0,1,PGSH_H);for(let y=0;y<PGSH_H;y+=24)c.fillRect(0,y,W,1);}
   c.fillStyle=th?'#c8aa6e':'#ffd23f';c.fillRect(0,0,W,8);
   /* 머리: 게임 이름 · 곡 */
-  T('호우와 소리새 펌프',W/2,62,38,'#ffd23f','center');
+  T('호우와 헛다리 레볼루션',W/2,62,38,'#ffd23f','center');
   T('롹순팅 키우기 · 시즌2',W/2,102,18,'#9aa3c2','center',BODY,700);
   T(g.sg.name,W/2,170,46,'#fff','center');
   T(`${PG_DIFFS[g.sg.diff]} ★${g.sg.stars} · BPM ${g.sg.bpm}`,W/2,218,22,'#c9d3ff','center',BODY,700);
@@ -638,12 +638,12 @@ async function pgShareDraw(g,noFace){
   T('kortiger-s.github.io/rocksunting-game',W-40,PGSH_H-28,16,'#6f789a','right',BODY,700);
   return cv;
 }
-const pgShareName=g=>`소리새펌프_${g.sg.name.replace(/\s+/g,'')}_${g.share.grade}.png`;
+const pgShareName=g=>`헛다리레볼루션_${g.sg.name.replace(/\s+/g,'')}_${g.share.grade}.png`;
 async function pgShareSend(){
   const g=PG;if(!g||!g.shareP)return;
   let blob=g.shareBlob;
   try{if(!blob)blob=await g.shareP;}catch(e){sfx('error');toast('이미지를 만들지 못했어요.');return;}
-  shareImageFile(blob,pgShareName(g),'소리새 펌프 결과',`${USER?USER.id+'의 ':''}소리새 펌프 결과: ${g.sg.name}(${PG_DIFFS[g.sg.diff]}) ${g.share.grade} ${fmt(g.share.score)}점`);   /* 공유창 · 저장은 rank.js */
+  shareImageFile(blob,pgShareName(g),'헛다리 레볼루션 결과',`${USER?USER.id+'의 ':''}헛다리 레볼루션 결과: ${g.sg.name}(${PG_DIFFS[g.sg.diff]}) ${g.share.grade} ${fmt(g.share.score)}점`);   /* 공유창 · 저장은 rank.js */
 }
 $('#pgRShare').addEventListener('click',pgShareSend);
 
@@ -795,7 +795,7 @@ window.addEventListener('keydown',e=>{
 },true);
 $('#pgCal').addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();pgCalTap();});
 
-/* ---------- 설정 > 펌프 키 변경 ----------
+/* ---------- 설정 > 헛다리 레볼루션 키 변경 ----------
    배그 키 설정처럼 칸을 누르고 원하는 키를 누르면 바뀌어요. 다른 발판에 쓰던 키면 그쪽에서 빼 와요. */
 const PGK_ROWS=[1,3,2,0,4],PGK_ARW=['↙','↖','●','↗','↘'];   /* 표는 숫자패드처럼 위 → 가운데 → 아래 순서 */
 const PGK_BAN=/^(Escape|Tab|Enter|NumpadEnter|Backspace|Delete|NumLock|ContextMenu|(Control|Alt|Meta|OS)(Left|Right)?|F\d+)$/;

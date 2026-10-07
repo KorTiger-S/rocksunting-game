@@ -76,7 +76,7 @@ const SFX={
   /* 몸 관리 */
   clank(){tone(220,.05,'square',.05);tone(880,.06,'triangle',.04,.05);tone(180,.09,'square',.05,.1);},          /* 쇠질하기: 아령 부딪는 소리 */
   sizzle(){noise(.5,.045,0,3000,5500,.4,.15);noise(.3,.03,.15,4000,6500,.3,.05);},                               /* 난지바베큐: 고기 굽는 소리 */
-  /* 소리새 펌프 */
+  /* 헛다리 레볼루션 */
   stomp(){tone(170,.07,'sine',.1,0,65);noise(.035,.05,0,3200,1800,1);},                                          /* 발판을 밟는 소리 */
   pgmiss(){tone(140,.1,'sawtooth',.03,0,85);},                                                                   /* 노트를 놓쳤을 때 */
   pgok(){tone(NT.G5,.06,'triangle',.04);tone(NT.C6,.14,'triangle',.04,.05);},                                    /* 롱노트를 끝까지 눌렀을 때 */
@@ -266,7 +266,7 @@ function wantBgm(){
     if(st.status==='done'&&!DU.anim&&DU.shown===st.hist.length)return null;   /* 승부가 끝나면 팡파르만 */
     return 'duel';
   }
-  if(mode==='pump')return null;   /* 소리새 펌프는 곡 자체가 음악이라(pump.js가 직접 재생) 배경음악은 쉬어요 */
+  if(mode==='pump')return null;   /* 헛다리 레볼루션은 곡 자체가 음악이라(pump.js가 직접 재생) 배경음악은 쉬어요 */
   return mode==='hub'?'hub':'match';
 }
 function bgmSync(){if(!BGM.unlocked)return;bgmPlay(BGM.on?wantBgm():null);}

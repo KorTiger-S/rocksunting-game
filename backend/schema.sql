@@ -148,9 +148,9 @@ language sql immutable as $$
     'houLeft', public.rk_int(d->'houLeft', 0, 3, 3),
     'balls',   public.rk_int(d->'balls',   0, 5, 5),
     'ballAt',  public.rk_int(d->'ballAt',  0, 2147483647, 0),
-    'mics',    public.rk_int(d->'mics',    0, 5, 5),               -- 소리새 펌프 도전 횟수(마이크)
+    'mics',    public.rk_int(d->'mics',    0, 5, 5),               -- 헛다리 레볼루션 도전 횟수(마이크)
     'micAt',   public.rk_int(d->'micAt',   0, 2147483647, 0),
-    'pumpBest', public.rk_int(d->'pumpBest', 0, 1000000, 0),       -- 소리새 펌프 클리어 최고 점수
+    'pumpBest', public.rk_int(d->'pumpBest', 0, 1000000, 0),       -- 헛다리 레볼루션 클리어 최고 점수
     'items', public.rk_clean_items(d->'items'),                      -- 상점 아이템(시즌이 끝나도 남음)
     'up', jsonb_build_object(
       'shoes', public.rk_int(d#>'{up,shoes}', 0, 3, 0),
@@ -183,7 +183,7 @@ create or replace function public.rk_season_json() returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object('key', value->>'key', 'number', (value->>'number')::int, 'game', value->>'game',
                             'gameName', value->>'game_name', 'startedAt', value->>'started_at', 'endsAt', value->>'ends_at', 'practiceUntil', value->>'practice_until',
-                            'metric', coalesce(value->>'metric', 'money'))   -- 우승 기준: money(소지금) | pumpBest(펌프 최고점)
+                            'metric', coalesce(value->>'metric', 'money'))   -- 우승 기준: money(소지금) | pumpBest(헛다리 레볼루션 최고점)
   from public.rk_config where key = 'season'
 $$;
 
@@ -339,9 +339,9 @@ $$;
 -- 마감 시: 랭킹 스냅샷을 rk_seasons에 저장 → 모든 플레이어 기록 초기화 → 다음 시즌 시작.
 -- 다음 시즌 설정(선택): rk_config 'next_season'에 넣어 두면 마감 때 그 값으로 시작하고 지운다. 없는 항목은 이번 시즌 값/자동 계산.
 --   insert into public.rk_config (key, value) values ('next_season',
---     '{"key":"2026-10","game":"pump","game_name":"소리새 펌프","ends_at":"2026-10-31T15:00:00Z","metric":"pumpBest"}')
+--     '{"key":"2026-10","game":"pump","game_name":"헛다리 레볼루션","ends_at":"2026-10-31T15:00:00Z","metric":"pumpBest"}')
 --   on conflict (key) do update set value = excluded.value;
--- 우승 기준(선택): "metric"에 "money"(소지금) 또는 "pumpBest"(펌프 최고점). 없으면 이번 시즌 기준을 이어 가요. 지금 시즌은
+-- 우승 기준(선택): "metric"에 "money"(소지금) 또는 "pumpBest"(헛다리 레볼루션 최고점). 없으면 이번 시즌 기준을 이어 가요. 지금 시즌은
 --   update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';
 -- 연습 기간(선택): next_season에 "practice_until"(예: "2026-09-30T15:00:00Z")을 넣으면, 새 시즌은 그때까지 연습 기간이에요.
 --   연습 기간의 기록은 시즌 키 '<key>-practice'로 따로 쌓이고, practice_until이 지난 뒤 첫 호출(매일 00:10 자동화)에서
@@ -808,7 +808,7 @@ begin
   if k is null then return jsonb_build_object('ok', false, 'error', 'bad_id'); end if;
   select * into u from public.rk_users where id = k;
   if not found then return jsonb_build_object('ok', false, 'error', 'no_user'); end if;
-  -- 이번 시즌 순위: 지금 우승 기준(소지금 | 펌프 최고점)으로, 같은 시즌 키를 가진 사람 중에서
+  -- 이번 시즌 순위: 지금 우승 기준(소지금 | 헛다리 레볼루션 최고점)으로, 같은 시즌 키를 가진 사람 중에서
   v := case when m = 'pumpBest' then coalesce((u.data->>'pumpBest')::int, 0) else u.money end;
   select count(*) + 1 into rk from public.rk_users
   where season_key is not distinct from u.season_key

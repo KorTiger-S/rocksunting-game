@@ -3,7 +3,7 @@
 const LEGACY_KEY='rocksunting-freekick-v1';
 const DEF=()=>({bestPts:0,plays:0,money:10000,wins:0,losses:0,cleared:false,
   balls:5,ballAt:0,   /* 프리킥 도전 횟수(축구공 5개): 남은 개수 + 다음 공이 충전되기 시작한 시각(epoch 분). 30분마다 1개 충전 */
-  mics:5,micAt:0,pumpBest:0,   /* 소리새 펌프(시즌2): 마이크 5개(도전 횟수, 30분마다 1개 충전) + 다음 마이크 충전 시작 시각(epoch 분) + 클리어한 최고 점수 */
+  mics:5,micAt:0,pumpBest:0,   /* 헛다리 레볼루션(시즌2): 마이크 5개(도전 횟수, 30분마다 1개 충전) + 다음 마이크 충전 시작 시각(epoch 분) + 클리어한 최고 점수 */
   houDate:-1,houLeft:3,
   items:{own:[],eq:{}}});   /* 상점 아이템(shop.js): 산 것 + 슬롯별 장착. 시즌이 끝나도 남아요 */   /* 호우의 아재개그: 실제 달력 날짜(KST 자정 기준 epoch day) + 그 날 남은 참여 횟수(하루 3회) */
 const MEM={};
@@ -33,9 +33,9 @@ function renderSeason(){
   const dtxt=left>0?`D-${left}`:left===0?'오늘 마감':'마감 임박';
   const pu=Date.parse(SEASON.practiceUntil||'');   /* 연습 기간: 이때까지의 기록은 시즌에 안 들어가고, 지나면 한 번 초기화돼요 */
   if(pu>Date.now()){const d=new Date(pu+KST_MS);chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`연습 기간 · ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화`;
-    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 펌프 최고점':''}`;return;}
+    rk.textContent=`시즌${SEASON.number} 연습 기간이에요. 지금 기록은 ${d.getUTCMonth()+1}/${d.getUTCDate()} ${d.getUTCHours()}시에 초기화되고, 그때부터 ${until} 진행돼요.${SEASON.metric==='pumpBest'?' 우승 기준: 헛다리 레볼루션 최고점':''}`;return;}
   chip.hidden=false;$('#hSeasonL').textContent=`시즌${SEASON.number}`;$('#hSeasonV').textContent=`${until} ${dtxt}`;
-  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'펌프 최고점':'소지금'} (마감 시 기록 초기화)`;
+  rk.textContent=`시즌${SEASON.number} · ${SEASON.gameName} · ${until} 진행 · 우승 기준: ${SEASON.metric==='pumpBest'?'헛다리 레볼루션 최고점':'소지금'} (마감 시 기록 초기화)`;
 }
 function mergeData(d){const b=DEF();return Object.assign(b,d||{});}
 function readLocal(id){try{const r=lsGet(ukey(id));return r?JSON.parse(r):null;}catch(e){return null;}}

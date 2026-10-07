@@ -1,6 +1,6 @@
-# 롹순팅 키우기 (소리새 펌프 · 프리킥 승부)
+# 롹순팅 키우기 (헛다리 레볼루션 · 프리킥 승부)
 
-머대부속 고등학교에서 친구들과 벌이는 내기 게임이에요. 판돈 없는 프리킥 5킥 승부(v2.2.1~)와, 시즌2(2026년 10월)부터 열린 5패널 리듬게임 **소리새 펌프**(홈 화면 이름 "호우와 소리새 헛다리짚기 훈련")가 있어요.
+머대부속 고등학교에서 친구들과 벌이는 내기 게임이에요. 판돈 없는 프리킥 5킥 승부(v2.2.1~)와, 시즌2(2026년 10월)부터 열린 5패널 리듬게임 **헛다리 레볼루션**(홈 화면 이름 "호우와 소리새 헛다리짚기 훈련")가 있어요.
 HTML/CSS/JavaScript만으로 만들어져서 **설치할 것 없이** 브라우저로 열면 돌아가요.
 
 ## 바로 실행하기
@@ -17,9 +17,9 @@ css/style.css         스타일
 js/                   게임 전체 로직 (여러 파일, 아래 "js/ 파일 구성" 참고)
 assets/faces/*.png    배경·어깨를 제거한 캐릭터 얼굴 표정 12종 (투명 배경, 150×190)
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
-assets/theme/*.jpg    소리새 펌프 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
+assets/theme/*.jpg    헛다리 레볼루션 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
 assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 시각·현재 채보)
-assets/music/*.mp3    음원 파일 곡 (소리새 펌프 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
+assets/music/*.mp3    음원 파일 곡 (헛다리 레볼루션 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
 assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성, AI 작곡 요청 → 이슈 (GitHub Actions가 실행)
@@ -48,8 +48,8 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | `duel.js` | 1:1 페널티킥 대결 |
 | `compose-data.js` | AI 작곡 선택지(`SONG_OPTS`: 장르·분위기·템포·보컬…, 한국어 이름 + ACE-Step 영어 태그)와 `songTags()`. `scripts/song_issues.js`도 이 파일을 읽어요 |
 | `compose.js` | AI 작곡 요청 화면 — 제목·가사·스타일 입력, 하루 1번 요청, 내 요청 상태 |
-| `pump-data.js` | 소리새 펌프의 곡 악보(`BGMT`에 등록), 곡 목록(`PGSONGS`), 채보 자동 생성(`pgChart`) |
-| `pump.js` | 소리새 펌프 — 허브 카드, 입력, 판정, 그리기, 정산, 마이크(도전 횟수) |
+| `pump-data.js` | 헛다리 레볼루션의 곡 악보(`BGMT`에 등록), 곡 목록(`PGSONGS`), 채보 자동 생성(`pgChart`) |
+| `pump.js` | 헛다리 레볼루션 — 허브 카드, 입력, 판정, 그리기, 정산, 마이크(도전 횟수) |
 | `jgintro.js` | 곡 인트로 애니메이션 엔진(`INTROS`, `jgPlay`) + 'ㅈㄱ의 카드 모험' 이야기(`JGS`, 음악 `BGMT.jg`) |
 | `lateintro.js` | '등굣길 뜀박질' 인트로(지각 → 두발 검사 → 담 넘기 → 주스), 장면 목록 `LTS` |
 | `narakintro.js` | '나락쓰레기장' 인트로(사무실 → 6시 퇴근 → 집안일 → 밤 9시 게임 접속 → 10시 친구들 로그인), 장면 목록 `NKS`, 친구 이름 `NK_FRIENDS` |
@@ -74,20 +74,20 @@ dist/                 빌드 결과 (단일 HTML 파일)
 | 프리킥 도전 횟수(축구공 5개·30분마다 1개 충전) | `BALL_MAX`, `BALL_MIN`, `ballTick()`, `ballUse()`, `renderBalls()` (`js/hub.js`), 저장은 `S.balls`/`S.ballAt`(epoch 분), 서버 보정은 `rk_clean` (backend/schema.sql) |
 | 프리킥 골키퍼 민첩성(판돈 없이 고정) | `FREE_LEVEL`, `applyBet()` (`js/kick.js`) |
 | 업데이트 내역(v2.0.0부터 안 읽은 것을 차례대로) | `RELEASE_NOTES`, `NOTES_FROM`, `maybeShowNotes()`/`showNextNote()`/`closeNotes()` (`js/login.js`), 읽은 버전은 `rk:seen:ID` |
-| 소리새 펌프 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
-| 소리새 펌프 음원(mp3) 곡 | `PGSONGS`의 `audio`·`bpmx`·`audioOff` + 시각으로 적은 채보 `PG_CHART`(가사 음절에 맞춘 난이도 4개, 표기는 주석 참고) (`js/pump-data.js`), 재생은 `pgAudLoad()`/`pgAudPlay()`/`pgAudStop()` (`js/pump.js`). `index.html`을 파일로 직접 열면(file://) 음원을 못 읽어요 |
-| 소리새 펌프 채보 직접 만들기(채보 메이커) | `dev/chart-maker.html` — 로컬 서버(`npm run serve`)나 GitHub Pages에서 `…/dev/chart-maker.html`로 열어요. 노래를 들으며 게임 키로 플레이하면 녹음되고, 내 싱크 → 평균 오차 → 곡 박자 지도(16분/8분 칸) 순서로 보정해요. 곡 데이터는 `assets/music/<곡>.json`(beats 8분음표 시각, lyrics 가사 음절 시각, levels 현재 채보). 가사 글자를 끌거나 '가사 타이밍 녹음'으로 가사 위치도 맞춰요. '다른 난이도 만들기'(`regen`, `MK_GAP`·`MK_FILL`)는 한 채보로 나머지 난이도를 자동으로 다시 만들어요. 💾 저장한 파일은 `node dev/apply_chart.js 파일.json`으로 `PG_CHART`에 들어가요('시각/발판[:롱노트]', 가사 위치는 `assets/music/<곡>.json`에) |
-| 소리새 펌프 곡 테마(그 곡에서만 배경 그림·색) | `PGSONGS`의 `theme` + `PG_THEMES`, `pgThemeApply()`(화면·결과표), `pgDraw()`·`pgShareDraw()`(캔버스) (`js/pump.js`), 색은 `.pgth` (`css/style.css`) |
-| 소리새 펌프 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
-| 소리새 펌프 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |
-| 소리새 펌프 판돈 정산·S 랭크 보너스·시작 게이지 | `pgFinish()`, `PG_LIFE0`(시작 게이지 55%) (`js/pump.js`) |
-| 소리새 펌프 도전 횟수(마이크 5개·30분마다 1개 충전) | `MIC_MAX`, `MIC_MIN`, `micTick()`, `micUse()` (`js/pump.js`), 저장은 `S.mics`/`S.micAt`, 서버 보정은 `rk_clean` (backend/schema.sql) |
-| 소리새 펌프 키 배치 | `PGKEYS` (`js/pump.js`), 모바일 발판은 `#pgPad` (index.html) |
+| 헛다리 레볼루션 곡/난이도/호우 목표 점수 | `PGSONGS` (`js/pump-data.js`), 악보는 같은 파일의 `pgBuild({...})` |
+| 헛다리 레볼루션 음원(mp3) 곡 | `PGSONGS`의 `audio`·`bpmx`·`audioOff` + 시각으로 적은 채보 `PG_CHART`(가사 음절에 맞춘 난이도 4개, 표기는 주석 참고) (`js/pump-data.js`), 재생은 `pgAudLoad()`/`pgAudPlay()`/`pgAudStop()` (`js/pump.js`). `index.html`을 파일로 직접 열면(file://) 음원을 못 읽어요 |
+| 헛다리 레볼루션 채보 직접 만들기(채보 메이커) | `dev/chart-maker.html` — 로컬 서버(`npm run serve`)나 GitHub Pages에서 `…/dev/chart-maker.html`로 열어요. 노래를 들으며 게임 키로 플레이하면 녹음되고, 내 싱크 → 평균 오차 → 곡 박자 지도(16분/8분 칸) 순서로 보정해요. 곡 데이터는 `assets/music/<곡>.json`(beats 8분음표 시각, lyrics 가사 음절 시각, levels 현재 채보). 가사 글자를 끌거나 '가사 타이밍 녹음'으로 가사 위치도 맞춰요. '다른 난이도 만들기'(`regen`, `MK_GAP`·`MK_FILL`)는 한 채보로 나머지 난이도를 자동으로 다시 만들어요. 💾 저장한 파일은 `node dev/apply_chart.js 파일.json`으로 `PG_CHART`에 들어가요('시각/발판[:롱노트]', 가사 위치는 `assets/music/<곡>.json`에) |
+| 헛다리 레볼루션 곡 테마(그 곡에서만 배경 그림·색) | `PGSONGS`의 `theme` + `PG_THEMES`, `pgThemeApply()`(화면·결과표), `pgDraw()`·`pgShareDraw()`(캔버스) (`js/pump.js`), 색은 `.pgth` (`css/style.css`) |
+| 헛다리 레볼루션 채보(발판 배치·점프·롱노트 확률) | `PGPAT1~4`, `PGJUMP_P`, `PGJUMP_HALF`, `PGHOLD_P`, `PGGAP`·`PGGAP_HEAD`(어려움부터 노트 사이 최대 간격), `pgChart()` (`js/pump-data.js`) — 곡 id+난이도가 같으면 항상 같은 채보 |
+| 헛다리 레볼루션 판정 폭·점수·게이지·랭크 | `pgNewGame()`의 `W`, `PGWT`, `PGLIFE`, `pgScore()`, `pgGrade()` (`js/pump.js`) |
+| 헛다리 레볼루션 판돈 정산·S 랭크 보너스·시작 게이지 | `pgFinish()`, `PG_LIFE0`(시작 게이지 55%) (`js/pump.js`) |
+| 헛다리 레볼루션 도전 횟수(마이크 5개·30분마다 1개 충전) | `MIC_MAX`, `MIC_MIN`, `micTick()`, `micUse()` (`js/pump.js`), 저장은 `S.mics`/`S.micAt`, 서버 보정은 `rk_clean` (backend/schema.sql) |
+| 헛다리 레볼루션 키 배치 | `PGKEYS` (`js/pump.js`), 모바일 발판은 `#pgPad` (index.html) |
 | 시즌 뱃지(시즌 소지금 1등 우승 · 2등 준우승, 프로필과 랭킹 이름 옆에 표시) | `rk_badge_list`/`rk_badges`, `rk_top`의 `badges` (backend/schema.sql, 마감된 시즌 스냅샷 `rk_seasons`에서 계산), 프로필은 `renderBadges()`/`drawBadges()` (`js/hub.js`) · `#pfBadges` (index.html), 랭킹은 `rankBadges()` (`js/rank.js`, 🏆1 = 시즌1 우승 · 누르면 설명) |
 | 상점 아이템(이름·가격·슬롯·그림) | `SHOP_ITEMS`, `SHOP_SLOTS` (`js/shop.js`). 모자·안경·얼굴 소품은 150×190 좌표의 SVG(`svg`), 그림 아이템은 `img`에 150×190 투명 PNG 경로. 테두리·이름 색은 CSS 클래스(`css`, `css/style.css`의 `.fr-*`/`.nm-*`). 기념일 표시는 `tag`(`.shoptag`), 사거나 입을 때 소리는 `sfx`(예: 한글날 아이템의 가야금 `royal`). 사고 나서 남아야 하는 돈 `SHOP_KEEP` |
 | 상점 아이템 저장·보정(시즌이 끝나도 남음) | `S.items` = `{own, eq}` (`js/save.js`), 서버 `rk_clean_items`, `rk_reset_players`(초기화 때 items만 남김), 랭킹 `rk_top`의 `eq`, 대결 `rk_duel_json`의 `hostEq`/`guestEq` (backend/schema.sql) |
 | 얼굴에 아이템 입히기 | `<img>`는 `setFace(el, 표정)`, 캔버스는 얼굴을 그린 뒤 `drawDress(c, eq, …같은 영역)` (`js/shop.js`) |
-| 시즌 우승 기준(소지금/펌프 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
+| 시즌 우승 기준(소지금/헛다리 레볼루션 최고점) | `rk_config` season의 `metric`(`money`·`pumpBest`, 없으면 소지금) — 마감 스냅샷 순서·뱃지(`rk_close_season`, `rk_badge_list`, 기준 점수 0이면 뱃지 없음)·보고서 순서(`scripts/season_report.js`)·랭킹 첫 탭(`seasonMetric()`, `js/rank.js`). 바꾸려면 `update public.rk_config set value = value || '{"metric":"pumpBest"}' where key = 'season';` 또는 `next_season`에 `metric` |
 | 시작 화면(가을 테마·시즌 표시·낙엽) | `spAutumnSky()`, `SP_LEAVES`, `spLeaf()`, `spDraw()` (`js/splash.js`) |
 | 연습 기간(프리시즌) 규칙: 도전 횟수·소지금 무한, 상점에서 사기만 잠금 | `isPractice()`(내 시즌 키가 `-practice`로 끝나면), `PRACTICE_MONEY` (`js/save.js`), `practiceFill()` (`js/hub.js`), `ballUse()`/`micUse()`, 상점 `shopAction()` |
 | 호우를 이기면 마이크 돌려받기 | `pgFinish()`의 `micBack` (`js/pump.js`) |
@@ -113,18 +113,18 @@ dist/                 빌드 결과 (단일 HTML 파일)
 - **시간**: 킥마다 25초 안에 못 고르면 무작위로 정해져요. 90초 넘게 응답이 없으면 몰수패, 대기방은 15분 뒤 닫혀요.
 - **배포할 때**: 새 테이블/함수(`rk_duels`, `rk_duel_*`)가 필요해서 **`backend/schema.sql`을 Supabase SQL Editor에서 다시 실행**해야 해요. (여러 번 실행해도 안전해요. 이전에 칸 선택 방식으로 실행했더라도 그대로 덮어써요.)
 
-## 소리새 펌프 (시즌2 · v2.0.0~)
+## 헛다리 레볼루션 (시즌2 · v2.0.0~)
 ### 잠금 (시즌2 전까지 쓰던 것)
-`PUMP_PUBLIC=true`(`js/pump-data.js`)라서 지금은 모두에게 보여요. `false`로 되돌리면 허브에 **제목이 "???"로 가려진 카드**만 보이고, **관리자 번호(숫자 4자리)를 입력해야** 플레이할 수 있어요(그 기기에 기억, 카드 아래 "다시 잠그기"로 해제). 랭킹의 "펌프 최고점" 탭은 `PUMP_PUBLIC=true`일 때만 보여요. 다음 시즌 게임을 미리 숨겨 둘 때 같은 방식으로 쓸 수 있어요.
+`PUMP_PUBLIC=true`(`js/pump-data.js`)라서 지금은 모두에게 보여요. `false`로 되돌리면 허브에 **제목이 "???"로 가려진 카드**만 보이고, **관리자 번호(숫자 4자리)를 입력해야** 플레이할 수 있어요(그 기기에 기억, 카드 아래 "다시 잠그기"로 해제). 랭킹의 "헛다리 레볼루션 최고점" 탭은 `PUMP_PUBLIC=true`일 때만 보여요. 다음 시즌 게임을 미리 숨겨 둘 때 같은 방식으로 쓸 수 있어요.
 - 번호는 소스에 남기지 않고 확인값 `PUMP_KEY`(`js/pump-data.js`)만 둬요. 바꾸려면 `node dev/pump_key.js 새번호`가 출력한 값을 `PUMP_KEY`에 붙여넣으세요.
 - ⚠ 브라우저에서 도는 코드라 **가벼운 잠금**이에요. 소스나 저장소(README·커밋)를 보는 사람에게까지 제목·내용을 숨기지는 못해요.
 - 로컬 테스트: 그냥 열어서(`npm run serve`) 번호를 입력하면 돼요. 로그인해서 하면 진짜 계정의 소지금이 바뀌고 `rk_matches`에 경기가 기록되니, 테스트용 ID를 따로 만들어 쓰세요.
 - **시즌2 오픈 때 한 일**(2026-10-01, v2.0.0): `PUMP_PUBLIC=true`, 버전 2.0.0, `<title>`·로그인 문구 변경, 몸 관리 능력치 제거, `backend/schema.sql` 재실행, 시즌 게임 이름 변경 SQL(아래 "시즌제" 절)
 
 ### 게임 소개
-호우와 하는 **5패널 리듬 내기**예요. 오락실 펌프처럼 노트가 화면 아래에서 위로 올라오고, 위쪽 발판(↙ ↖ ● ↗ ↘)에 닿을 때 맞춰 밟아요.
-- **조작**: 키보드 `Z Q S E C`(↙ ↖ ● ↗ ↘, 숫자패드 `1 7 5 9 3`도 돼요. 상단 바 ⚙ 설정 > 펌프 키 변경에서 발판마다 키 2개까지 바꿀 수 있고 기기에 `rk:pgkeys`로 저장) · `Esc` 일시정지(이어하기 3초 카운트다운)
-  - **발판 화면**(`#pgPad`, 실제 펌프 발판처럼 3×3 칸의 네 모서리+가운데): 모바일은 화면 아래에서 멀티터치로 누르고, PC는 창이 넓으면(860px↑) 캔버스 옆에 떠서 키 안내(Q E S Z C)와 눌림 표시를 겸해요(클릭도 가능). 키보드로 눌러도 발판이 같이 눌려 보여요.
+호우와 하는 **5패널 리듬 내기**예요. 오락실 리듬 게임처럼 노트가 화면 아래에서 위로 올라오고, 위쪽 발판(↙ ↖ ● ↗ ↘)에 닿을 때 맞춰 밟아요.
+- **조작**: 키보드 `Z Q S E C`(↙ ↖ ● ↗ ↘, 숫자패드 `1 7 5 9 3`도 돼요. 상단 바 ⚙ 설정 > 헛다리 레볼루션 키 변경에서 발판마다 키 2개까지 바꿀 수 있고 기기에 `rk:pgkeys`로 저장) · `Esc` 일시정지(이어하기 3초 카운트다운)
+  - **발판 화면**(`#pgPad`, 오락실 리듬 게임 발판처럼 3×3 칸의 네 모서리+가운데): 모바일은 화면 아래에서 멀티터치로 누르고, PC는 창이 넓으면(860px↑) 캔버스 옆에 떠서 키 안내(Q E S Z C)와 눌림 표시를 겸해요(클릭도 가능). 키보드로 눌러도 발판이 같이 눌려 보여요.
 - **곡**: 12곡 × 난이도 4개(쉬움·보통·어려움·매우 어려움). '머대부고 교가 (롹 버전)'은 일렉기타 리드·파워코드 리프로 편곡한 BPM 184 곡, '난지 캠프파이어 인더 홀'은 이 게임용으로 새로 지은 BPM 176 롹 곡, 'ㅈㄱ의 카드 모험'은 새로 지은 밝은 모험 테마예요. 'ㅈㄱ의 카드 모험'과 '등굣길 뜀박질'은 시작할 때마다 인트로 애니메이션(`js/jgintro.js`, `js/lateintro.js`)이 먼저 나오고(건너뛰기 버튼·Esc로 바로 노래), 곡을 고르면 나오는 '🎬 … 이야기 보기'로 다시 볼 수 있어요. 새 인트로는 `INTROS`에 장면 목록을 등록하고 곡에 `intro:'키'`를 달면 돼요. 허브 카드에서 곡을 고른 뒤 난이도를 골라요(둘 다 이 기기에 기억). 곡마다 난이도별 별·호우 목표 점수·노트 속도는 `PGSONGS[].diffs`(`js/pump-data.js`).
   - 새로 지은 곡: 「등굣길 뜀박질」 「매점 러시」 「운명의 페널티킥」, 「비창 3악장」(베토벤 「비창」 3악장의 분위기를 살려 새로 지은 칩튠).
   - 저작권이 끝난 클래식(작곡가 사후 70년 경과): 「캉캉」(오펜바흐) · 「터키 행진곡」(모차르트) · 「왕벌의 비행」(림스키코르사코프) · 「투우사의 노래」(비제). 원곡 주제 선율만 가져와 칩튠으로 새로 편곡했어요(음반·현대 편곡·리믹스·공식 채보를 따라 하지 않아요).
@@ -136,7 +136,7 @@ dist/                 빌드 결과 (단일 HTML 파일)
 - **시작 게이지**: 55%에서 시작해요. (시즌2부터 몸 관리 능력치가 없어져서 모두 같아요)
 - **옵션**: 속도(×1~×3), 싱크(±200ms)는 이 기기에 기억돼요. 곡이 흐르는 AudioContext 시계를 기준으로 판정해서, 화면·소리가 어긋나면 싱크를 조절하면 돼요.
 - **결과 공유**: 결과 화면 아래 `💬 결과 이미지 카톡으로 보내기`(결과 카드 PNG로 휴대폰 공유창을 열어 카카오톡 등으로 전송). 공유창이 없는 브라우저는 이미지 파일로 저장돼요. 클립보드 이미지 복사는 붙여넣기가 안 되는 기기가 많아서 뺐어요. 이미지는 `pgShareDraw()`(`js/pump.js`)에서 그려요.
-- **랭킹**: 🏆 랭킹에 "펌프 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
+- **랭킹**: 🏆 랭킹에 "헛다리 레볼루션 최고점" 탭이 생겼어요(클리어한 판의 최고 점수).
 - **서버**: `S.mics`/`S.micAt`/`S.pumpBest`가 서버에 저장되고 랭킹 지표가 늘었어요. `schema.sql`을 다시 실행하기 전까지는 마이크 개수가 서버에 저장되지 않아요.
 
 ## AI 작곡 요청 (v2.5.8~)
@@ -198,9 +198,9 @@ node dev/build.js "https://프로젝트ID.supabase.co" "anon-public-key"
   1. `rk_close_season` 함수가 랭킹을 `rk_seasons` 테이블에 스냅샷으로 저장 → 전원 초기화 → 다음 시즌 시작
   2. 보고서(`reports/<시즌>_season<번호>_<게임>.md` + `.csv`)를 이 저장소의 **`reports` 브랜치**에 commit
   3. 같은 내용을 **Issue**로 올려서 메일로 알려줘요
-- 다음 시즌은 자동으로 이어져요(시즌2 = 2026년 10월 · 소리새 펌프). 시즌 보고서의 게임 이름을 바꾸려면, **시즌1이 마감된 뒤** Supabase SQL Editor에서 실행하세요(프리킥도 계속 할 수 있어서 이름만 바뀌어요).
+- 다음 시즌은 자동으로 이어져요(시즌2 = 2026년 10월 · 헛다리 레볼루션). 시즌 보고서의 게임 이름을 바꾸려면, **시즌1이 마감된 뒤** Supabase SQL Editor에서 실행하세요(프리킥도 계속 할 수 있어서 이름만 바뀌어요).
   ```sql
-  update public.rk_config set value = jsonb_set(jsonb_set(value, '{game}', '"pump"'), '{game_name}', '"소리새 펌프"') where key = 'season';
+  update public.rk_config set value = jsonb_set(jsonb_set(value, '{game}', '"pump"'), '{game_name}', '"헛다리 레볼루션"') where key = 'season';
   ```
 - 마감 뒤 예전 화면에서 늦게 저장하거나 이 기기에 지난 시즌 기록이 남아 있어도, 서버가 시즌이 다르면 저장을 거부하고 초기화된 기록을 내려줘서 되살아나지 않아요.
 
@@ -238,7 +238,7 @@ npm run test:backend     schema.sql 로직 테스트 (PGlite: Node 안에서 도
 
 ## 알려진 한계
 - 비밀번호는 숫자 4자리라 약해요. 5회 실패 잠금이 있지만, 남이 일부러 틀려서 특정 ID를 5분간 잠글 수는 있어요.
-- 값 조작 방지는 서버의 범위 보정 정도만 있어요. (소리새 펌프의 점수·정산도 브라우저가 계산하고 서버는 범위만 보정해요) 진짜 경쟁용 랭킹이라면 서버에서 경기를 검증해야 해요.
+- 값 조작 방지는 서버의 범위 보정 정도만 있어요. (헛다리 레볼루션의 점수·정산도 브라우저가 계산하고 서버는 범위만 보정해요) 진짜 경쟁용 랭킹이라면 서버에서 경기를 검증해야 해요.
 - 아직 만들지 않은 것: 식당 달리기 등 나머지 퀘스트 5종, 100만 원 달성 엔딩(비트코인 애니메이션과 60년 뒤 쿠키 영상)
 
 ## 개발 팁

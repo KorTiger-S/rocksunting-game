@@ -1,4 +1,4 @@
-// 소리새 펌프 관리자 번호(숫자 4자리)의 확인값을 만든다.
+// 헛다리 레볼루션 관리자 번호(숫자 4자리)의 확인값을 만든다.
 // 사용법:  node dev/pump_key.js 1234   → 출력된 값을 js/pump-data.js 의 PUMP_KEY 에 붙여넣으세요.
 // (js/save.js 의 pinHash 와 같은 계산이에요. 번호 자체는 소스에 남기지 않고 이 값만 남겨요.)
 function pinHash(id, pin) {
