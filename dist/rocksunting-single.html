@@ -3631,7 +3631,6 @@ if(typeof module!=='undefined')module.exports={SONG_OPTS,SONG_TAGS,SONG_MAX,SONG
    요청은 Supabase rk_songs 테이블에 쌓이고, GitHub Actions(.github/workflows/song-issues.yml)가 GitHub 이슈로 옮겨요.
    관리자가 이슈를 보고 ACE-Step으로 곡을 만든 뒤 이슈를 닫으면 "완성"으로 바뀌어요.
    쓰던 내용은 이 기기에 임시 저장돼요(rk:sg:<ID>). */
-const SONG_REPO='https://github.com/KorTiger-S/rocksunting-game';
 const SG_DEF=()=>({title:'',lyrics:'',note:'',genre:[],mood:[],tempo:'mid',bpm:100,vocal:'male',lang:'ko',dur:'120',inst:[],key:'auto',meter:'4'});
 let SG=SG_DEF(),sgUser=null,sgBusy=false,SG_MINE=null;   /* SG_MINE: {id, today, list} 서버에서 받은 내 요청 */
 const SG_MULTI={genre:SONG_MAX.genre,mood:SONG_MAX.mood,inst:SONG_MAX.inst};
@@ -3704,7 +3703,6 @@ function renderSongMine(){
     st.className='sgst'+(s.status==='done'?' done':'');st.textContent=SG_ST[s.status]||s.status;
     sm.textContent=' '+new Date(s.at).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'});
     li.append(t,st,sm);
-    if(s.issue){const a=document.createElement('a');a.href=`${SONG_REPO}/issues/${s.issue}`;a.target='_blank';a.rel='noopener';a.textContent=` #${s.issue}`;li.appendChild(a);}
     ul.appendChild(li);
   });
   box.appendChild(ul);
