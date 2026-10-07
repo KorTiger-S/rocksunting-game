@@ -632,24 +632,11 @@ async function pgShareDraw(g,noFace){
   return cv;
 }
 const pgShareName=g=>`소리새펌프_${g.sg.name.replace(/\s+/g,'')}_${g.share.grade}.png`;
-function pgShareSave(g,blob){   /* 공유창이 없는 브라우저: 파일로 저장 */
-  const a=document.createElement('a'),u=URL.createObjectURL(blob);
-  a.href=u;a.download=pgShareName(g);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
-}
 async function pgShareSend(){
   const g=PG;if(!g||!g.shareP)return;
   let blob=g.shareBlob;
   try{if(!blob)blob=await g.shareP;}catch(e){sfx('error');toast('이미지를 만들지 못했어요.');return;}
-  const file=new File([blob],pgShareName(g),{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{
-      await navigator.share({files:[file],title:'소리새 펌프 결과',text:`${USER?USER.id+'의 ':''}소리새 펌프 결과: ${g.sg.name}(${PG_DIFFS[g.sg.diff]}) ${g.share.grade} ${fmt(g.share.score)}점`});
-      sfx('swish');
-    }catch(e){if(e&&e.name!=='AbortError'){pgShareSave(g,blob);toast('공유창을 열지 못해서 이미지를 저장했어요. 카톡에서 사진으로 보내 주세요.');}}
-    return;
-  }
-  pgShareSave(g,blob);sfx('coin');
-  toast('이 기기에서는 공유창을 열 수 없어서 이미지를 저장했어요. 카톡에서 사진으로 보내 주세요.');
+  shareImageFile(blob,pgShareName(g),'소리새 펌프 결과',`${USER?USER.id+'의 ':''}소리새 펌프 결과: ${g.sg.name}(${PG_DIFFS[g.sg.diff]}) ${g.share.grade} ${fmt(g.share.score)}점`);   /* 공유창 · 저장은 rank.js */
 }
 $('#pgRShare').addEventListener('click',pgShareSend);
 
