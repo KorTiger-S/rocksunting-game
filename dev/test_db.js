@@ -558,6 +558,39 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     await db.query(`update public.rk_users set season_key = $1 where id in ($2, $3)`, [SEASON, A.id, B.id]);
   }
 
+  // ----- AI 작곡 요청 (하루 1번) -----
+  {
+    const S1 = { id: '히포우', pin: P }, opts = { genre: ['rock', 'punk'], mood: ['energetic'], tempo: 'fast', bpm: 132, vocal: 'male', lang: 'ko', dur: '120' };
+    ok((await rpc('song_request', { ...S1, title: '  ', lyrics: '가사', opts })).error === 'no_title', '작곡: 제목이 없으면 거부');
+    ok((await rpc('song_request', { ...S1, title: '쉬는 시간', lyrics: '', opts })).error === 'no_lyrics', '작곡: 연주곡이 아닌데 가사가 없으면 거부');
+    ok((await rpc('song_request', { ...S1, title: '쉬는 시간', lyrics: '가사', opts: { ...opts, genre: [] } })).error === 'no_genre', '작곡: 장르를 안 고르면 거부');
+    ok((await rpc('song_request', { ...S1, title: 'x'.repeat(41), lyrics: '가사', opts })).error === 'too_long', '작곡: 제목 40자 초과 거부');
+    ok((await rpc('song_request', { ...S1, pin: '9999', title: '쉬는 시간', lyrics: '가사', opts })).error === 'bad_pin', '작곡: 비밀번호가 틀리면 거부');
+    ok((await rpc('song_request', { id: '없는사람', pin: P, title: '쉬는 시간', lyrics: '가사', opts })).error === 'no_user', '작곡: 가입 안 한 ID는 거부');
+    ok((await rpc('song_mine', S1)).today === false, '작곡: 요청 전에는 today=false');
+    r = await rpc('song_request', { ...S1, title: '쉬는\n시간', lyrics: '[verse]\r\n종이 울리면\u0007\n\n\n\n[chorus]\n롹!', note: '신나게', opts: { ...opts, genre: ['rock', 'rock', 'BAD!', 'punk', 'metal', 'edm'], bpm: 999, dur: '999' } });
+    ok(r.ok && r.today && r.list.length === 1 && r.list[0].status === 'new' && r.list[0].title === '쉬는 시간', '작곡: 요청 접수(제목 한 줄로)');
+    const row = (await db.query('select * from public.rk_songs order by id desc limit 1')).rows[0];
+    ok(row.lyrics === '[verse]\n종이 울리면\n\n[chorus]\n롹!', '작곡: 가사 제어 문자 제거 · 줄바꿈 정리');
+    ok(JSON.stringify(row.opts.genre) === '["rock","punk","metal"]' && row.opts.bpm === 200 && row.opts.dur === '120' && row.author_name === '히포우', '작곡: 옵션 보정(중복·잘못된 id 제거, 최대 3개, BPM 상한, 길이 기본값)');
+    ok((await rpc('song_request', { ...S1, title: '두 번째', lyrics: '가사', opts })).error === 'daily_limit', '작곡: 같은 날 두 번째 요청은 거부');
+    ok((await rpc('song_mine', S1)).today === true, '작곡: 요청 뒤에는 today=true');
+    r = await rpc('song_request', { id: 'ABCd', pin: P, title: '연주곡', lyrics: '무시될 가사', opts: { ...opts, vocal: 'inst' } });
+    ok(r.ok && (await db.query(`select lyrics from public.rk_songs where author = 'abcd'`)).rows[0].lyrics === '', '작곡: 연주곡은 가사 없이 접수');
+    let pend = (await db.query(`select public.rk_song_pending() as r`)).rows[0].r;
+    ok(pend.new.length === 2 && pend.new[0].author === '히포우' && pend.issued.length === 0, '작곡: 관리용 대기 목록');
+    const no = pend.new[0].no;
+    ok((await db.query(`select public.rk_song_mark($1::jsonb) as r`, [JSON.stringify({ no, issue: 42 })])).rows[0].r.ok, '작곡: 이슈 번호 기록');
+    ok(!(await db.query(`select public.rk_song_mark($1::jsonb) as r`, [JSON.stringify({ no, issue: 43 })])).rows[0].r.ok, '작곡: 이미 이슈가 된 요청은 다시 기록 안 됨(중복 이슈 방지)');
+    pend = (await db.query(`select public.rk_song_pending() as r`)).rows[0].r;
+    ok(pend.new.length === 1 && pend.issued.length === 1 && pend.issued[0].issue === 42, '작곡: issued로 옮겨짐');
+    await db.query(`select public.rk_song_mark($1::jsonb)`, [JSON.stringify({ no, status: 'done' })]);
+    r = await rpc('song_mine', S1);
+    ok(r.list[0].status === 'done' && r.list[0].issue === 42, '작곡: 이슈를 닫으면 완성(done)');
+    await db.query(`update public.rk_songs set created_at = created_at - interval '1 day' where author = '히포우'`);
+    ok((await rpc('song_request', { ...S1, title: '다음 날', lyrics: '가사', opts })).ok, '작곡: 다음 날(한국 시간)엔 다시 요청 가능');
+  }
+
   // ----- 권한: anon은 테이블에 직접 접근 불가, rk_ 함수만 실행 가능 -----
   await db.exec('set role anon');
   let denied = false; try { await db.query('select * from public.rk_users'); } catch (e) { denied = true; }
@@ -565,6 +598,10 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
   denied = false; try { await db.query(`select public.rk_auth('철수', '1234')`); } catch (e) { denied = true; }
   ok(denied, 'anon은 내부 함수 rk_auth를 직접 호출할 수 없음');
   ok((await rpc('top', { metric: 'money' })).ok, 'anon도 rk_top 함수는 실행 가능');
+  denied = false; try { await db.query(`select public.rk_song_pending()`); } catch (e) { denied = true; }
+  ok(denied, 'anon은 관리용 rk_song_pending(작곡 요청 가사 목록)을 호출할 수 없음');
+  denied = false; try { await db.query(`select * from public.rk_songs`); } catch (e) { denied = true; }
+  ok(denied, 'anon은 rk_songs를 직접 읽을 수 없음');
   await db.exec('reset role');
 
   console.log(fails ? `\n실패 ${fails}건` : '\n전부 통과');

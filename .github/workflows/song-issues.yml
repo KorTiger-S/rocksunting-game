@@ -1,0 +1,31 @@
+name: Song issues
+
+# 롹순팅 키우기의 「AI 작곡」 요청을 GitHub 이슈로 옮긴다. (scripts/song_issues.js)
+# - 새 요청(Supabase rk_songs, status=new) → 이슈 생성(라벨 ai-song) → issued
+# - 이슈가 닫히면 → done (게임의 「내 요청」에 "완성 🎵")
+# GitHub의 schedule은 몇 분~수십 분 늦게 돌 수 있다. 바로 옮기고 싶으면 Actions 탭에서 Run workflow.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency: song-issues
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Requests to issues
+        env:
+          SUPABASE_URL: https://arvoervppgbcihzguncs.supabase.co
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/song_issues.js
