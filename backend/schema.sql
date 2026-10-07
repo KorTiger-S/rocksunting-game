@@ -951,10 +951,10 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.rk_songs where author = k
                  and (created_at at time zone 'Asia/Seoul')::date = (now() at time zone 'Asia/Seoul')::date)
 $$;
--- 내부 도우미: 내 최근 요청 5개
+-- 내부 도우미: 내 최근 요청 5개 (GitHub 이슈 번호는 플레이어에게 보내지 않는다)
 create or replace function public.rk_song_list(k text) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('no', id, 'title', title, 'status', status, 'issue', issue, 'at', created_at) order by id desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('no', id, 'title', title, 'status', status, 'at', created_at) order by id desc), '[]'::jsonb)
   from (select * from public.rk_songs where author = k order by id desc limit 5) s
 $$;
 

@@ -586,7 +586,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } else console
     ok(pend.new.length === 1 && pend.issued.length === 1 && pend.issued[0].issue === 42, '작곡: issued로 옮겨짐');
     await db.query(`select public.rk_song_mark($1::jsonb)`, [JSON.stringify({ no, status: 'done' })]);
     r = await rpc('song_mine', S1);
-    ok(r.list[0].status === 'done' && r.list[0].issue === 42, '작곡: 이슈를 닫으면 완성(done)');
+    ok(r.list[0].status === 'done' && !('issue' in r.list[0]), '작곡: 이슈를 닫으면 완성(done), 이슈 번호는 플레이어에게 안 보냄');
     await db.query(`update public.rk_songs set created_at = created_at - interval '1 day' where author = '히포우'`);
     ok((await rpc('song_request', { ...S1, title: '다음 날', lyrics: '가사', opts })).ok, '작곡: 다음 날(한국 시간)엔 다시 요청 가능');
   }
