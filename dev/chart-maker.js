@@ -6,7 +6,8 @@
      3) 곡의 실제 박자 지도(beats: 8분음표 시각, 템포가 흔들리는 곡도 따라가요)의 16분/8분 칸에 붙여요.
    곡 데이터(MK_SONGS의 data): {beats: 8분음표 시각(ms), lyrics: [[음절, ms]], levels: 지금 게임 채보 [[ms, 발판, 롱노트ms]] × 4}
    저장한 파일 → node dev/apply_chart.js 파일.json 으로 js/pump-data.js의 PG_CHART에 들어가요('시각/발판[:롱노트]' 표기). */
-const MK_SONGS=[{id:'pg13',name:'나락쓰레기장',file:'narak',audio:'../assets/music/narak.mp3',data:'../assets/music/narak.json'}];
+const MK_SONGS=[{id:'pg13',name:'나락쓰레기장',file:'narak',audio:'../assets/music/narak.mp3',data:'../assets/music/narak.json'},
+  {id:'pg14',name:'잘 해줘',file:'haejwo',audio:'../assets/music/haejwo.mp3',data:'../assets/music/haejwo.json'}];
 const LV_NAMES=['쉬움','보통','어려움','매우 어려움'];
 const COL=['#3aa0ff','#ff4d6d','#ffd23f','#ff4d6d','#3aa0ff'];
 const ANG=[Math.PI*1.25,Math.PI*1.75,0,Math.PI*.25,Math.PI*.75];   /* ↙ ↖ ● ↗ ↘ */

@@ -19,7 +19,7 @@ assets/faces/*.png    배경·어깨를 제거한 캐릭터 얼굴 표정 12종 
 assets/logo.svg       대표 로고(머대부속고 교표) · favicon-32.png / icon-180.png는 탭·홈 화면 아이콘
 assets/theme/*.jpg    헛다리 레볼루션 곡 테마 그림 ('나락쓰레기장' 플레이 화면·결과표·공유 이미지 배경)
 assets/music/*.json   채보 메이커용 곡 데이터(박자 지도·가사 시각·현재 채보)
-assets/music/*.mp3    음원 파일 곡 (헛다리 레볼루션 '나락쓰레기장'). 단일 파일 빌드에선 data URI로 들어가요
+assets/music/*.mp3    음원 파일 곡 (헛다리 레볼루션 '나락쓰레기장' · '잘 해줘'). 단일 파일 빌드에선 data URI로 들어가요. 같은 이름의 .json은 채보 메이커용 곡 데이터(박자 지도·가사 위치)
 assets/og-image.png   카카오톡 등 링크 미리보기 이미지 (1200×630, index.html의 og:image)
 backend/schema.sql    Supabase(PostgreSQL) 테이블 + 로그인/저장/랭킹 함수
 scripts/              시즌 마감 + 랭킹 보고서 생성, AI 작곡 요청 → 이슈 (GitHub Actions가 실행)
