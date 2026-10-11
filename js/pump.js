@@ -37,12 +37,17 @@ setInterval(()=>{
   if(micTick()){save();renderHub();sfx('ping');toast('🎤 마이크가 하나 충전됐어요!');}else renderMics();
 },1000);
 
+/* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요(공개 전 곡도 곡 목록에 보여요).
+   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 최고점·랭킹에도 아무것도 남기지 않아요. */
+const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
+
 /* ---------- 옵션 (이 기기에 기억) ---------- */
 const PG_SPEEDS=[1,1.5,2,2.5,3];   /* 노트가 올라오는 속도 배율 */
 let PGO={song:0,diff:0,spd:1,off:0};   /* diff: 0 쉬움 · 1 보통 · 2 어려움 · 3 매우 어려움 · off: 싱크 보정(ms). +면 노트가 늦게 내려와요 */
 try{const o=JSON.parse(lsGet('rk:pump')||'null');if(o&&typeof o==='object')PGO=Object.assign(PGO,o);}catch(e){}
 function pgOptFix(){
   PGO.song=clamp(Math.floor(+PGO.song)||0,0,PGSONGS.length-1);
+  if(pgHidden(PGSONGS[PGO.song]))PGO.song=PGSONGS.findIndex(s=>!pgHidden(s));   /* 숨긴 곡을 골라 둔 채였으면 보이는 첫 곡으로 */
   PGO.diff=clamp(Math.floor(+PGO.diff)||0,0,PG_DIFFS.length-1);
   PGO.spd=clamp(Math.floor(+PGO.spd)||0,0,PG_SPEEDS.length-1);
   PGO.off=clamp(Math.round((+PGO.off||0)/10)*10,-200,200);
@@ -54,10 +59,8 @@ const PG_LIFE0=55;   /* 시작 게이지(%) */
 /* ---------- 허브 카드: 곡 선택(0) → 난이도 선택(1, 난이도마다 판돈 고정) → 게임 설명 + 노래 시작(2) ---------- */
 let pgStep=0;   /* 게임 목록에서 카드를 열면 0부터. 한 판 끝나고 돌아오면 2(같은 곡 바로 다시 하기) */
 const pgBet=d=>PG_BET[d]||1000;   /* 난이도별 판돈(pump-data.js의 PG_BET) */
-/* 채보 테스트: 주소 끝에 ?chart-test 를 붙여 열면 채보 작업 중(wip) 난이도도 플레이할 수 있어요.
-   테스트 판은 판돈·마이크를 안 쓰고, 돈·헛다리 최고점·랭킹에도 아무것도 남기지 않아요. */
-const PG_TEST=/[?&]chart-test(?![\w-])/.test(location.search);
 const pgLocked=d=>!!d.wip&&!PG_TEST;
+function pgHidden(s){return !!s.hidden&&!PG_TEST;}   /* 공개 전 곡(PGSONGS의 hidden)은 채보 테스트 때만 곡 목록에 보여요 */
 const pgCost=(d,i)=>d.wip?0:pgBet(i);
 function pgGo(step){
   pgStep=step;renderPumpCard();
@@ -68,7 +71,7 @@ document.querySelectorAll('#pumpCard .pgprev').forEach(b=>b.addEventListener('cl
 (function buildSongList(){
   const box=$('#pgSongs');
   PGSONGS.forEach((s,i)=>{
-    const b=document.createElement('button');b.type='button';b.className='song';
+    const b=document.createElement('button');b.type='button';b.className='song';b.hidden=pgHidden(s);   /* 숨겨도 버튼은 만들어 둬야 곡 번호(PGO.song)와 순서가 맞아요 */
     const d=document.createElement('div'),n=document.createElement('b'),sm=document.createElement('small'),st=document.createElement('span');
     n.textContent=s.name;if(s.isNew){const tg=document.createElement('span');tg.className='newtag';tg.textContent='NEW';n.appendChild(tg);}
     sm.textContent=`${s.sub} · BPM ${s.bpm}`;st.className='stars';st.textContent='★ '+s.diffs.map(d=>d.wip?'–':d.stars).join(' · ');   /* 작업 중 난이도는 – */   /* 쉬움 · 보통 · 어려움 · 매우 어려움 별 개수 */
